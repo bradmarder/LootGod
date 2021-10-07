@@ -10,11 +10,30 @@ var app = builder.Build();
 
 app.MapGet("/", () => "Hello World!");
 
+app.MapPost("CreateLoot", async (context) =>
+{
+	var dto = await context.Request.ReadFromJsonAsync<CreateLoot>();
+	ArgumentNullException.ThrowIfNull(dto);
+	var db = context.RequestServices.GetRequiredService<LootGodContext>();
+	_ = db.Loots.Add(new(dto.Name, dto.Quantity));
+	_ = await db.SaveChangesAsync();
+});
+
+app.MapPost("CreateLootRequest", async (context) =>
+{
+	var dto = await context.Request.ReadFromJsonAsync<CreateLootRequest>();
+	ArgumentNullException.ThrowIfNull(dto);
+	var db = context.RequestServices.GetRequiredService<LootGodContext>();
+	_ = db.LootRequests.Add(new(dto.CharacterName));
+	_ = await db.SaveChangesAsync();
+});
+
 app.Run();
 
 public class LootGodContext : DbContext
 {
 	public DbSet<LootRequest> LootRequests => Set<LootRequest>();
+	public DbSet<Loot> Loots => Set<Loot>();
 }
 
 public class LootRequest
@@ -37,25 +56,48 @@ public class LootRequest
 
 	public EQClass Class { get; set; }
 
-	public int ItemId { get; set; }
+	public int LootId { get; set; }
 
-	[ForeignKey(nameof(ItemId))]
-	public virtual Item Item { get; set; } = null!;
+	[Range(1, 255)]
+	public int Quantity { get; set; }
+
+	[ForeignKey(nameof(LootId))]
+	public virtual Loot Loot { get; set; } = null!;
 }
-
-public class Item
+public class CreateLootRequest
 {
-	public Item(string name)
+	[StringLength(24)]
+	public string CharacterName { get; set; } = null!;
+
+	public bool IsMain { get; set; }
+	public EQClass Class { get; set; } // Enum.IsDefined
+	public int LootId { get; set; }
+
+	[Range(1, 255)]
+	public int Quantity { get; set; }
+}
+public class CreateLoot
+{
+	public int Quantity { get; set; }
+	public string Name { get; set; } = null!;
+}
+public class Loot
+{
+	public Loot(string name, int quantity)
 	{
 		Name = name;
+		Quantity = quantity;
 	}
 
 	[Key]
 	public int Id { get; set; }
 
+	[Range(0, 255)]
+	public int Quantity { get; set; }
+
 	public string Name { get; set; }
 
-	[InverseProperty(nameof(LootRequest.Item))]
+	[InverseProperty(nameof(LootRequest.Loot))]
 	public virtual ICollection<LootRequest> LootRequests { get; } = null!;
 }
 
