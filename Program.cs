@@ -19,7 +19,11 @@ app.MapGet("/", () => "Hello World!");
 app.MapGet("GetLootRequests", async (context) =>
 {
 	var db = context.RequestServices.GetRequiredService<LootGodContext>();
-	var requests = await db.LootRequests.ToListAsync();
+	var requests = await db.LootRequests.OrderByDescending(x => x.CreatedDate).ToListAsync();
+
+	// use a DTO instead
+	foreach (var x in requests) { x.IP = null; }
+
 	await context.Response.WriteAsJsonAsync(requests);
 });
 
@@ -64,6 +68,15 @@ app.MapPost("CreateLootRequest", async (context) =>
 	if (requestCount > 100) { throw new Exception("Limit Break - More than 100 requests per week from single IP"); }
 
 	_ = db.LootRequests.Add(new(dto, ip));
+	_ = await db.SaveChangesAsync();
+});
+
+app.MapPost("DeleteLootRequest", async (context) =>
+{
+	var db = context.RequestServices.GetRequiredService<LootGodContext>();
+	var id = int.Parse(context.Request.Query["id"]);
+	var item = await db.LootRequests.SingleAsync(x => x.Id == id);
+	db.LootRequests.Remove(item);
 	_ = await db.SaveChangesAsync();
 });
 

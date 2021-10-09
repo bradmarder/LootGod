@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -49,6 +50,8 @@ namespace LootGod
 
 		[ForeignKey(nameof(LootId))]
 		public virtual Loot Loot { get; set; } = null!;
+
+		public virtual bool IsAlt => !string.Equals(MainName, CharacterName, StringComparison.OrdinalIgnoreCase); 
 
 		//[ForeignKey(nameof(PlayerId))]
 		//public virtual Player Player { get; set; } = null!;
