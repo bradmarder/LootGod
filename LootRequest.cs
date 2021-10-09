@@ -13,6 +13,7 @@ namespace LootGod
 	[Index(nameof(CharacterName), nameof(LootId), IsUnique = true)]
 	public class LootRequest
 	{
+		public LootRequest() { }
 		public LootRequest(CreateLootRequest dto, string? ip)
 		{
 			IP = ip;
@@ -32,10 +33,10 @@ namespace LootGod
 		public string? IP { get; set; }
 
 		[MaxLength(24)]
-		public string MainName { get; set; }
+		public string MainName { get; set; } = null!;
 
 		[MaxLength(24)]
-		public string CharacterName { get; set; }
+		public string CharacterName { get; set; } = null!;
 
 		//public bool IsMain { get; set; }
 

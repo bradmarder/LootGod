@@ -11,6 +11,7 @@ namespace LootGod
 	[Index(nameof(Name), IsUnique = true)]
 	public class Loot
 	{
+		public Loot() { }
 		public Loot(CreateLoot dto)
 		{
 			Name = dto.Name;
@@ -20,11 +21,10 @@ namespace LootGod
 		[Key]
 		public int Id { get; set; }
 
-		[Range(0, 255)]
-		public int Quantity { get; set; }
+		public byte Quantity { get; set; }
 
 		[MaxLength(255)]
-		public string Name { get; set; }
+		public string Name { get; set; } = null!;
 
 		[InverseProperty(nameof(LootRequest.Loot))]
 		public virtual ICollection<LootRequest> LootRequests { get; } = null!;
