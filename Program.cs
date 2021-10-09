@@ -80,6 +80,15 @@ app.MapPost("DeleteLootRequest", async (context) =>
 	_ = await db.SaveChangesAsync();
 });
 
+app.MapPost("DeleteLoot", async (context) =>
+{
+	var db = context.RequestServices.GetRequiredService<LootGodContext>();
+	var id = int.Parse(context.Request.Query["id"]);
+	var item = await db.Loots.SingleAsync(x => x.Id == id);
+	db.Loots.Remove(item);
+	_ = await db.SaveChangesAsync();
+});
+
 //app.MapPost("CreatePlayer", async (context) =>
 //{
 //	var dto = await context.Request.ReadFromJsonAsync<CreatePlayer>();
