@@ -98,7 +98,7 @@ function App() {
     };
 
     const myLootRequests = useMemo(() =>
-        requests.filter(x => x.mainName.toLowerCase() === mainName.toLowerCase()),
+        requests.filter(x => x.mainName?.toLowerCase() === mainName?.toLowerCase()),
         [mainName, requests]);
 
     const isCreateLootDisabled = loots.length === 0 || isLoading || charName === '' || lootId === 0 || eqClass === '' || quantity < 1;
