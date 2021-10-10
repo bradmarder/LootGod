@@ -60,15 +60,16 @@ function App() {
     const start = async () => {
         localStorage.setItem('name', mainName);
         setIsReady(true);
-
-        const res = await axios.get<ILootRequest[]>(api + '/GetLootRequests');
-        setRequests(res.data);
-
+        await getLootRequests();
         await getLoots();
     };
     const getLoots = async () => {
         const res = await axios.get<ILoot[]>(api + '/GetLoots');
         setLoots(res.data);
+    };
+    const getLootRequests = async () => {
+        const res = await axios.get<ILootRequest[]>(api + '/GetLootRequests');
+        setRequests(res.data);
     };
 
     const logout = () => {
@@ -80,9 +81,11 @@ function App() {
     useEffect(() => {
         (async () => {
             await getLoots();
+            await getLootRequests();
         })();
     }, []);
-    const isCreateLootDisabled = loots.length === 0 || isLoading || charName === '' || lootId === 0 || eqClass === '';
+
+    const isCreateLootDisabled = loots.length === 0 || isLoading || charName === '' || lootId === 0 || eqClass === '' || quantity < 1;
 
     const deleteLootRequest = async (id: number) => {
         setIsLoading(true);
@@ -138,19 +141,19 @@ function App() {
                         <Alert variant={'primary'}>
                             <Alert.Heading>Let's Get Started!</Alert.Heading>
                             <p>Please enter your main character name</p>
-                            <Form>
+                            <Form onSubmit={start}>
                                 <Form.Control type="text" value={mainName} onChange={e => setMainName(e.target.value)} />
                             </Form>
                             <br />
-                            <Button onClick={start} variant="primary">Start</Button>
+                            <Button onClick={start} disabled={mainName === ''} variant="primary">Start</Button>
                         </Alert>
                     }
                     {isReady &&
                         <Row>
                             <Col>
                                 <Alert variant='primary'>
-                                    <h2>Create Loot Request</h2>
-                                    <Form>
+                                    <h4>Create Loot Request</h4>
+                                    <Form onSubmit={e => { e.preventDefault(); }}>
                                         <Row>
                                             <Col>
                                                 <Form.Group className="mb-3">
@@ -193,7 +196,7 @@ function App() {
                                     </Form>
                                 </Alert>
                                 <br />
-                                <h2>My Loot Requests</h2>
+                                <h3>My Loot Requests</h3>
                                 {requests.length === 0 &&
                                     <Alert variant='warning'>You currently have zero requests</Alert>
                                 }
@@ -214,8 +217,8 @@ function App() {
                                                 <tr key={item.id}>
                                                     <td>{item.characterName}</td>
                                                     <td>{item.isAlt ? 'Alt' : 'Main'}</td>
-                                                    <td>{item.class}</td>
-                                                    <td>{item.lootId}</td>
+                                                    <td>{classes[item.class as any]}</td>
+                                                    <td>{loots.find(x => x.id === item.lootId)?.name}</td>
                                                     <td>{item.quantity}</td>
                                                     <td>
                                                         <Button variant='danger' onClick={() => deleteLootRequest(item.id)}>Delete</Button>
@@ -228,8 +231,8 @@ function App() {
                             </Col>
                             <Col>
                                 <Alert variant='primary'>
-                                    <h2>Create Loot</h2>
-                                    <Form>
+                                    <h4>Create Loot (Admin only)</h4>
+                                    <Form onSubmit={createLoot}>
                                         <Row>
                                             <Col>
                                                 <Form.Group>
@@ -248,7 +251,7 @@ function App() {
                                         <Button variant='success' onClick={createLoot}>Create</Button>
                                     </Form>
                                 </Alert>
-                                <h2>Available Loots</h2>
+                                <h3>Available Loots</h3>
                                 {loots.length === 0 &&
                                     <Alert variant='warning'>
                                         Looks like there aren't any loots available right now
