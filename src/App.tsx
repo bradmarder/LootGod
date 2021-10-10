@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import './App.css';
-import { Container, Row, Col, Alert, Button, Form, Table } from 'react-bootstrap';
+import { Container, Row, Col, Alert, Button, Form, Table, Accordion } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios, { AxiosPromise } from 'axios';
 
@@ -60,8 +60,6 @@ function App() {
     const start = async () => {
         localStorage.setItem('name', mainName);
         setIsReady(true);
-        await getLootRequests();
-        await getLoots();
     };
     const getLoots = async () => {
         const res = await axios.get<ILoot[]>(api + '/GetLoots');
@@ -72,18 +70,22 @@ function App() {
         setRequests(res.data);
     };
 
-    const logout = () => {
-        localStorage.removeItem('name');
-        setMainName('');
-        setIsReady(false);
-    };
-
     useEffect(() => {
         (async () => {
             await getLoots();
             await getLootRequests();
         })();
     }, []);
+
+    const logout = () => {
+        localStorage.removeItem('name');
+        setMainName('');
+        setIsReady(false);
+    };
+
+    const myLootRequests = useMemo(() =>
+        requests.filter(x => x.mainName.toLowerCase() === mainName.toLowerCase()),
+        [mainName, requests]);
 
     const isCreateLootDisabled = loots.length === 0 || isLoading || charName === '' || lootId === 0 || eqClass === '' || quantity < 1;
 
@@ -117,7 +119,6 @@ function App() {
         setQuantity(1);
         setClass('');
         setIsLoading(false);
-        // reset form fields?
     };
     const createLoot = async () => {
         const data = {
@@ -197,10 +198,10 @@ function App() {
                                 </Alert>
                                 <br />
                                 <h3>My Loot Requests</h3>
-                                {requests.length === 0 &&
+                                {myLootRequests.length === 0 &&
                                     <Alert variant='warning'>You currently have zero requests</Alert>
                                 }
-                                {requests.length > 0 &&
+                                {myLootRequests.length > 0 &&
                                     <Table striped bordered hover size="sm">
                                         <thead>
                                             <tr>
@@ -257,27 +258,41 @@ function App() {
                                         Looks like there aren't any loots available right now
                                     </Alert>
                                 }
-                                {loots.length > 0 &&
-                                    <Table striped bordered hover>
-                                        <thead>
-                                            <tr>
-                                                <th>Loot</th>
-                                                <th>Quantity</th>
-                                                <th></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {loots.map(item =>
-                                                <tr key={item.id}>
-                                                    <td>{item.name}</td>
-                                                    <td>{item.quantity}</td>
-                                                    <td>
-                                                        <Button variant='danger' onClick={() => deleteLoot(item.id)}>Delete</Button>
-                                                    </td>
-                                                </tr>
+                            {loots.length > 0 &&
+                                <Accordion>
+                                {loots.map((item, i) =>
+                                    <Accordion.Item key={item.id} eventKey={i.toString()}>
+                                        <Accordion.Header>{item.name} | {item.quantity} available | {requests.filter(x => x.lootId === item.id).length} request(s)</Accordion.Header>
+                                        <Accordion.Body>
+                                            <Button variant='danger' onClick={() => deleteLoot(item.id)}>Delete "{item.name}" and all {requests.filter(x => x.lootId === item.id).length} request(s)</Button>
+                                            <hr />
+                                            {requests.filter(x => x.lootId === item.id).map(req =>
+                                                <span key={req.id}><strong>{req.mainName}</strong> | {req.characterName} | {req.isAlt ? 'alt' : 'main'} | {classes[req.class as any]} | {req.quantity}<hr /></span>
                                             )}
-                                        </tbody>
-                                    </Table>
+                                        </Accordion.Body>
+                                    </Accordion.Item>
+                                )}
+                                </Accordion>
+                                    //<Table striped bordered hover>
+                                    //    <thead>
+                                    //        <tr>
+                                    //            <th>Loot</th>
+                                    //            <th>Quantity</th>
+                                    //            <th></th>
+                                    //        </tr>
+                                    //    </thead>
+                                    //    <tbody>
+                                    //        {loots.map(item =>
+                                    //            <tr key={item.id}>
+                                    //                <td>{item.name}</td>
+                                    //                <td>{item.quantity}</td>
+                                    //                <td>
+                                    //                    <Button variant='danger' onClick={() => deleteLoot(item.id)}>Delete</Button>
+                                    //                </td>
+                                    //            </tr>
+                                    //        )}
+                                    //    </tbody>
+                                    //</Table>
                                 }
                             </Col>
                         </Row>
