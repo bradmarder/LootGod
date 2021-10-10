@@ -8,7 +8,10 @@ namespace LootGod
 {
 	public class LootGodContext : DbContext
 	{
-		public LootGodContext(DbContextOptions<LootGodContext> options) : base(options) { }
+		public LootGodContext(DbContextOptions<LootGodContext> options) : base(options)
+		{
+			ChangeTracker.LazyLoadingEnabled = false;
+		}
 
 		public DbSet<LootRequest> LootRequests => Set<LootRequest>();
 		public DbSet<Loot> Loots => Set<Loot>();

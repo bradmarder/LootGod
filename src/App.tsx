@@ -3,6 +3,7 @@ import './App.css';
 import { Container, Row, Col, Alert, Button, Form, Table, Accordion } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios, { AxiosPromise } from 'axios';
+import { HubConnectionBuilder } from '@microsoft/signalr';
 
 enum EQClass {
     Bard = 'Bard',
@@ -77,6 +78,19 @@ function App() {
         })();
     }, []);
 
+    useEffect(() => {
+        const connection = new HubConnectionBuilder()
+            .withUrl(api + "/lootHub")
+            .build();
+
+        connection.on("refresh", (loots: any, requests:any) => {
+            setRequests(requests['$values'] as ILootRequest[]);
+            setLoots(loots['$values'] as ILoot[]);
+        });
+
+        connection.start();
+    }, []);
+
     const logout = () => {
         localStorage.removeItem('name');
         setMainName('');
@@ -92,14 +106,14 @@ function App() {
     const deleteLootRequest = async (id: number) => {
         setIsLoading(true);
         await axios.post(api + '/DeleteLootRequest?id=' + id);
-        setRequests(requests.filter(x => x.id !== id));
+        // setRequests(requests.filter(x => x.id !== id)); signalR handles
         setIsLoading(false);
     };
 
     const deleteLoot = async (id: number) => {
         setIsLoading(true);
         await axios.post(api + '/DeleteLoot?id=' + id);
-        setLoots(loots.filter(x => x.id !== id));
+        //setLoots(loots.filter(x => x.id !== id)); signalR handles
         setIsLoading(false);
     }
 
@@ -113,7 +127,7 @@ function App() {
         };
         setIsLoading(true);
         const res = await axios.post<{}, AxiosPromise<ILootRequest>>(api + '/CreateLootRequest', data);
-        setRequests([res.data, ...requests]);
+        // setRequests([res.data, ...requests]); signalR handles
         setCharName('');
         setLootId(0);
         setQuantity(1);
@@ -127,7 +141,7 @@ function App() {
         };
         setIsLoading(true);
         const res = await axios.post<{}, AxiosPromise<ILoot>>(api + '/CreateLoot', data);
-        setLoots([res.data, ...loots]);
+        // setLoots([res.data, ...loots]); signalR handles
         setCreateLootName('');
         setCreateLootQuantity(1);
         setIsLoading(false);

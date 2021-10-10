@@ -2,18 +2,38 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 
 namespace LootGod
 {
+	public class LootHub : Hub
+	{
+		public static async Task RefreshLoots(HttpContext context)
+		{
+			var db = context.RequestServices.GetRequiredService<LootGodContext>();
+			var loots = await db.Loots.OrderBy(x => x.Name).ToListAsync();
+			var requests = await db.LootRequests.OrderByDescending(x => x.CreatedDate).ToListAsync();
+
+			// USE DTO! avoid infinite reference loop
+			//foreach (var x in loots) { x.LootRequests.Clear(); }
+			//foreach (var x in requests) { x.Loot = null!; }
+
+			var hub = context.RequestServices.GetRequiredService<IHubContext<LootHub>>();
+			await hub.Clients.All.SendAsync("refresh", loots, requests);
+		}
+	}
 	public class Startup
 	{
 		public Startup(IConfiguration configuration)
@@ -32,8 +52,14 @@ namespace LootGod
 			services.AddCors(options =>
 							options.AddDefaultPolicy(
 								policy =>
-									policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+									policy.AllowAnyMethod().AllowAnyHeader().AllowCredentials().SetIsOriginAllowed(x => true)));
 			services.AddRouting();
+			services
+				.AddSignalR(e => e.EnableDetailedErrors = true)
+				.AddJsonProtocol(options => {
+					options.PayloadSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+			});
+
 		}
 
 		public void Configure(IApplicationBuilder app, LootGodContext db)
@@ -41,9 +67,10 @@ namespace LootGod
 			db.Database.EnsureCreated();
 
 			app.UseRouting();
-			app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+			app.UseCors();
 			app.UseEndpoints(endpoints =>
 			{
+				endpoints.MapHub<LootHub>("/lootHub");
 				endpoints.MapGet("/", async (context) =>
 				{
 					await context.Response.WriteAsync("Hello World!");
@@ -84,6 +111,8 @@ namespace LootGod
 					}
 					_ = await db.SaveChangesAsync();
 					await context.Response.WriteAsJsonAsync(loot);
+
+					await LootHub.RefreshLoots(context);
 				});
 
 				endpoints.MapPost("CreateLootRequest", async (context) =>
@@ -108,6 +137,8 @@ namespace LootGod
 					_ = await db.SaveChangesAsync();
 
 					await context.Response.WriteAsJsonAsync(item);
+
+					await LootHub.RefreshLoots(context);
 				});
 
 				endpoints.MapPost("DeleteLootRequest", async (context) =>
@@ -117,6 +148,8 @@ namespace LootGod
 					var item = await db.LootRequests.SingleAsync(x => x.Id == id);
 					db.LootRequests.Remove(item);
 					_ = await db.SaveChangesAsync();
+
+					await LootHub.RefreshLoots(context);
 				});
 
 				endpoints.MapPost("DeleteLoot", async (context) =>
@@ -129,6 +162,8 @@ namespace LootGod
 					db.LootRequests.RemoveRange(item.LootRequests);
 					db.Loots.Remove(item);
 					_ = await db.SaveChangesAsync();
+
+					await LootHub.RefreshLoots(context);
 				});
 
 				//app.MapPost("CreatePlayer", async (context) =>
