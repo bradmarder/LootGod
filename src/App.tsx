@@ -164,7 +164,8 @@ function App() {
         setCreateLootName('');
         setCreateLootQuantity(1);
     };
-
+    const spells = loots.filter(x => x.isSpell);
+    const lootItems = loots.filter(x => !x.isSpell);
     return (
         <Container fluid>
             <Row>
@@ -286,15 +287,42 @@ function App() {
                                         </Form>
                                     </Alert>
                                 }
+                                <h3>Available Spells</h3>
+                                {spells.length === 0 &&
+                                    <Alert variant='warning'>
+                                        Looks like there aren't any spells available right now
+                                    </Alert>
+                                }
+                                {spells.length > 0 &&
+                                    <Accordion>
+                                        {spells.map((item, i) =>
+                                            <Accordion.Item key={item.id} eventKey={i.toString()}>
+                                                <Accordion.Header>{item.name} | {item.quantity} available | {requests.filter(x => x.lootId === item.id).length} request(s)</Accordion.Header>
+                                                <Accordion.Body>
+                                                    {isAdmin &&
+                                                        <>
+                                                            <Button variant='danger' onClick={() => deleteLoot(item.id)}>Delete "{item.name}" and all {requests.filter(x => x.lootId === item.id).length} request(s)</Button>
+                                                            <hr />
+                                                        </>
+                                                    }
+                                                    {requests.filter(x => x.lootId === item.id).map(req =>
+                                                        <span key={req.id}><strong>{req.mainName}</strong> | {req.characterName} | {req.isAlt ? 'alt' : 'main'} | {classes[req.class as any]} | {req.quantity}<hr /></span>
+                                                    )}
+                                                </Accordion.Body>
+                                            </Accordion.Item>
+                                        )}
+                                    </Accordion>
+                                }
+                                <hr />
                                 <h3>Available Loots</h3>
-                                {loots.length === 0 &&
+                                {lootItems.length === 0 &&
                                     <Alert variant='warning'>
                                         Looks like there aren't any loots available right now
                                     </Alert>
                                 }
-                                {loots.length > 0 &&
+                                {lootItems.length > 0 &&
                                     <Accordion>
-                                        {loots.map((item, i) =>
+                                        {lootItems.map((item, i) =>
                                             <Accordion.Item key={item.id} eventKey={i.toString()}>
                                                 <Accordion.Header>{item.name} | {item.quantity} available | {requests.filter(x => x.lootId === item.id).length} request(s)</Accordion.Header>
                                                 <Accordion.Body>

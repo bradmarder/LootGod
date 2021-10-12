@@ -18,11 +18,13 @@ namespace LootGod
 			"Median",
 			"Greater",
 			"Glowing",
+			"Captured",
 		};
 
 		private static readonly HashSet<string> _spellSuffixes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 		{
 			"Rune",
+			"Ethernere",
 		};
 
 		public Loot() { }
