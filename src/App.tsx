@@ -246,7 +246,7 @@ function App() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {requests.map((item, i) =>
+                                            {myLootRequests.map((item, i) =>
                                                 <tr key={item.id}>
                                                     <td>{item.characterName}</td>
                                                     <td>{item.isAlt ? 'Alt' : 'Main'}</td>
