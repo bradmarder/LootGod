@@ -32,9 +32,11 @@ namespace LootGod
 
 		public string? IP { get; set; }
 
+		[Required]
 		[MaxLength(24)]
 		public string MainName { get; set; } = null!;
 
+		[Required]
 		[MaxLength(24)]
 		public string CharacterName { get; set; } = null!;
 

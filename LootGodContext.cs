@@ -13,6 +13,7 @@ namespace LootGod
 			ChangeTracker.LazyLoadingEnabled = false;
 		}
 
+		public DbSet<LoginAttempt> LoginAttempts => Set<LoginAttempt>();
 		public DbSet<LootRequest> LootRequests => Set<LootRequest>();
 		public DbSet<Loot> Loots => Set<Loot>();
 		//public DbSet<Player> Players => Set<Player>();
@@ -21,6 +22,11 @@ namespace LootGod
 		{
 			modelBuilder
 				.Entity<LootRequest>()
+				.Property(x => x.CreatedDate)
+				.HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+			modelBuilder
+				.Entity<LoginAttempt>()
 				.Property(x => x.CreatedDate)
 				.HasDefaultValueSql("CURRENT_TIMESTAMP");
 

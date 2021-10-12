@@ -18,6 +18,47 @@ using System.Threading.Tasks;
 
 namespace LootGod
 {
+	public class LootRequestDto
+	{
+		public LootRequestDto(LootRequest model)
+		{
+			Id = model.Id;
+			CreatedDate = model.CreatedDate;
+			IP = model.IP;
+			MainName = model.MainName;
+			CharacterName = model.CharacterName;
+			Class = model.Class;
+			LootId = model.LootId;
+			Quantity = model.Quantity;
+			IsAlt = model.IsAlt;
+		}
+
+		public int Id { get; }
+		public DateTime CreatedDate { get; }
+		public string? IP { get; }
+		public string MainName { get; }
+		public string CharacterName { get; }
+		public EQClass Class { get; }
+		public int LootId { get; }
+		public int Quantity { get; }
+		public bool IsAlt { get; }
+	}
+	public class LootDto
+	{
+		public LootDto(Loot model)
+		{
+			Id = model.Id;
+			Quantity = model.Quantity;
+			Name = model.Name;
+			IsSpell = model.IsSpell;
+		}
+
+		public int Id { get; }
+		public byte Quantity { get; }
+		public string Name { get; }
+		public bool IsSpell { get; }
+	}
+
 	public class LootHub : Hub
 	{
 		public static async Task RefreshLoots(HttpContext context)
@@ -25,13 +66,11 @@ namespace LootGod
 			var db = context.RequestServices.GetRequiredService<LootGodContext>();
 			var loots = await db.Loots.OrderBy(x => x.Name).ToListAsync();
 			var requests = await db.LootRequests.OrderByDescending(x => x.CreatedDate).ToListAsync();
-
-			// USE DTO! avoid infinite reference loop
-			//foreach (var x in loots) { x.LootRequests.Clear(); }
-			//foreach (var x in requests) { x.Loot = null!; }
-
 			var hub = context.RequestServices.GetRequiredService<IHubContext<LootHub>>();
-			await hub.Clients.All.SendAsync("refresh", loots, requests);
+
+			await hub.Clients.All.SendAsync("refresh",
+				loots.Select(x => new LootDto(x)),
+				requests.Select(x => new LootRequestDto(x)));
 		}
 	}
 	public class Startup
@@ -54,17 +93,13 @@ namespace LootGod
 								policy =>
 									policy.AllowAnyMethod().AllowAnyHeader().AllowCredentials().SetIsOriginAllowed(x => true)));
 			services.AddRouting();
-			services
-				.AddSignalR(e => e.EnableDetailedErrors = true)
-				.AddJsonProtocol(options => {
-					options.PayloadSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
-			});
-
+			services.AddSignalR(e => e.EnableDetailedErrors = true);
 		}
 
 		public void Configure(IApplicationBuilder app, LootGodContext db)
 		{
 			db.Database.EnsureCreated();
+			db.Database.ExecuteSqlRaw("CREATE TABLE IF NOT EXISTS LoginAttempts(Id INTEGER PRIMARY KEY AUTOINCREMENT, CreatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP, Name TEXT NOT NULL, IP TEXT NOT NULL)");
 
 			app.UseRouting();
 			app.UseCors();
@@ -76,13 +111,26 @@ namespace LootGod
 					await context.Response.WriteAsync("Hello World!");
 				});
 
+				endpoints.MapPost("login", async (context) =>
+				{
+					var ip = context.Connection.RemoteIpAddress?.ToString();
+					if (ip is null) { return; }
+
+					var dto = await context.Request.ReadFromJsonAsync<CreateLoginAttempt>();
+					if (dto is null) { throw new ArgumentNullException(nameof(dto)); }
+
+					var db = context.RequestServices.GetRequiredService<LootGodContext>();
+					_ = db.LoginAttempts.Add(new(dto.MainName, ip));
+					_ = await db.SaveChangesAsync();
+				});
+
 				endpoints.MapGet("GetLootRequests", async (context) =>
 				{
 					var db = context.RequestServices.GetRequiredService<LootGodContext>();
-					var requests = await db.LootRequests.OrderByDescending(x => x.CreatedDate).ToListAsync();
-
-					// use a DTO instead
-					foreach (var x in requests) { x.IP = null; }
+					var requests = (await db.LootRequests
+						.OrderByDescending(x => x.CreatedDate)
+						.ToListAsync())
+						.Select(x => new LootRequestDto(x));
 
 					await context.Response.WriteAsJsonAsync(requests);
 				});
@@ -90,7 +138,11 @@ namespace LootGod
 				endpoints.MapGet("GetLoots", async (context) =>
 				{
 					var db = context.RequestServices.GetRequiredService<LootGodContext>();
-					var requests = await db.Loots.OrderBy(x => x.Name).ToListAsync();
+					var requests = (await db.Loots
+						.OrderBy(x => x.Name)
+						.ToListAsync())
+						.Select(x => new LootDto(x));
+
 					await context.Response.WriteAsJsonAsync(requests);
 				});
 
@@ -110,7 +162,6 @@ namespace LootGod
 						loot.Quantity = dto.Quantity;
 					}
 					_ = await db.SaveChangesAsync();
-					await context.Response.WriteAsJsonAsync(loot);
 
 					await LootHub.RefreshLoots(context);
 				});
@@ -135,8 +186,6 @@ namespace LootGod
 					var item = new LootRequest(dto, ip);
 					_ = db.LootRequests.Add(item);
 					_ = await db.SaveChangesAsync();
-
-					await context.Response.WriteAsJsonAsync(item);
 
 					await LootHub.RefreshLoots(context);
 				});

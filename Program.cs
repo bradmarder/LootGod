@@ -22,7 +22,10 @@ host.Run();
 //using var foo = scope.ServiceProvider.GetRequiredService<LootGodContext>();
 //foo.Database.EnsureCreated();
 
-
+public class CreateLoginAttempt
+{
+	public string MainName { get; set; } = null!;
+}
 public class CreatePlayer
 {
 	public string Name { get; set; } = null!;

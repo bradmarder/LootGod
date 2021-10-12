@@ -58,8 +58,9 @@ function App() {
     const [createLootName, setCreateLootName] = useState('');
     const [createLootQuantity, setCreateLootQuantity] = useState(1);
 
-    const start = async () => {
+    const login = async () => {
         localStorage.setItem('name', mainName);
+        await axios.post(api + "/login", { mainName });
         setIsReady(true);
     };
     const getLoots = async () => {
@@ -70,6 +71,7 @@ function App() {
         const res = await axios.get<ILootRequest[]>(api + '/GetLootRequests');
         setRequests(res.data);
     };
+    const isAdmin = mainName === 'Benemage' || mainName === 'Dhau';
 
     useEffect(() => {
         (async () => {
@@ -83,9 +85,9 @@ function App() {
             .withUrl(api + "/lootHub")
             .build();
 
-        connection.on("refresh", (loots: any, requests:any) => {
-            setRequests(requests['$values'] as ILootRequest[]);
-            setLoots(loots['$values'] as ILoot[]);
+        connection.on("refresh", (loots: ILoot[], requests: ILootRequest[]) => {
+            setLoots(loots);
+            setRequests(requests);
         });
 
         connection.start();
@@ -98,23 +100,29 @@ function App() {
     };
 
     const myLootRequests = useMemo(() =>
-        requests.filter(x => x.mainName?.toLowerCase() === mainName?.toLowerCase()),
+        requests.filter(x => x.mainName.toLowerCase() === mainName.toLowerCase()),
         [mainName, requests]);
 
     const isCreateLootDisabled = loots.length === 0 || isLoading || charName === '' || lootId === 0 || eqClass === '' || quantity < 1;
 
     const deleteLootRequest = async (id: number) => {
         setIsLoading(true);
-        await axios.post(api + '/DeleteLootRequest?id=' + id);
-        // setRequests(requests.filter(x => x.id !== id)); signalR handles
-        setIsLoading(false);
+        try {
+            await axios.post(api + '/DeleteLootRequest?id=' + id);
+        }
+        finally {
+            setIsLoading(false);
+        }
     };
 
     const deleteLoot = async (id: number) => {
         setIsLoading(true);
-        await axios.post(api + '/DeleteLoot?id=' + id);
-        //setLoots(loots.filter(x => x.id !== id)); signalR handles
-        setIsLoading(false);
+        try {
+            await axios.post(api + '/DeleteLoot?id=' + id);
+        }
+        finally {
+            setIsLoading(false);
+        }
     }
 
     const createLootRequest = async () => {
@@ -126,13 +134,20 @@ function App() {
             Quantity: quantity,
         };
         setIsLoading(true);
-        const res = await axios.post<{}, AxiosPromise<ILootRequest>>(api + '/CreateLootRequest', data);
-        // setRequests([res.data, ...requests]); signalR handles
+        try {
+            await axios.post<{}, AxiosPromise<ILootRequest>>(api + '/CreateLootRequest', data);
+        }
+        catch {
+            // DUPLICATE REQUEST ERROR MESSAGE
+            alert('duplicate request for name and loot');
+        }
+        finally {
+            setIsLoading(false);
+        }
         setCharName('');
         setLootId(0);
         setQuantity(1);
         setClass('');
-        setIsLoading(false);
     };
     const createLoot = async () => {
         const data = {
@@ -140,11 +155,14 @@ function App() {
             Quantity: createLootQuantity,
         };
         setIsLoading(true);
-        const res = await axios.post<{}, AxiosPromise<ILoot>>(api + '/CreateLoot', data);
-        // setLoots([res.data, ...loots]); signalR handles
+        try {
+            await axios.post<{}, AxiosPromise<ILoot>>(api + '/CreateLoot', data);
+        }
+        finally {
+            setIsLoading(false);
+        }
         setCreateLootName('');
         setCreateLootQuantity(1);
-        setIsLoading(false);
     };
 
     return (
@@ -155,12 +173,12 @@ function App() {
                     {!isReady &&
                         <Alert variant={'primary'}>
                             <Alert.Heading>Let's Get Started!</Alert.Heading>
-                            <p>Please enter your main character name</p>
-                            <Form onSubmit={start}>
+                            <p>Please enter your <strong>MAIN</strong> character name (<em>not</em> your alt/box or "Mickey Mouse")</p>
+                            <Form onSubmit={login}>
                                 <Form.Control type="text" value={mainName} onChange={e => setMainName(e.target.value)} />
                             </Form>
                             <br />
-                            <Button onClick={start} disabled={mainName === ''} variant="primary">Start</Button>
+                            <Button onClick={login} disabled={mainName === ''} variant="primary">Start</Button>
                         </Alert>
                     }
                     {isReady &&
@@ -172,7 +190,7 @@ function App() {
                                         <Row>
                                             <Col>
                                                 <Form.Group className="mb-3">
-                                                    <Form.Label>Character Name</Form.Label>
+                                                    <Form.Label>Character requesting loot (enter your MAIN's name or your ALT's name)</Form.Label>
                                                     <Form.Control type="text" placeholder="Enter name" value={charName} onChange={e => setCharName(e.target.value)} />
                                                 </Form.Group>
                                             </Col>
@@ -245,80 +263,68 @@ function App() {
                                 }
                             </Col>
                             <Col>
-                                <Alert variant='primary'>
-                                    <h4>Create Loot (Admin only)</h4>
-                                    <Form onSubmit={createLoot}>
-                                        <Row>
-                                            <Col>
-                                                <Form.Group>
-                                                    <Form.Label>Name</Form.Label>
-                                                    <Form.Control type="text" placeholder="Enter loot name" value={createLootName} onChange={e => setCreateLootName(e.target.value)} />
-                                                </Form.Group>
-                                            </Col>
-                                            <Col>
-                                                <Form.Group>
-                                                    <Form.Label>Quantity</Form.Label>
-                                                    <Form.Control type="number" placeholder="Quantity" min="1" max="255" value={createLootQuantity} onChange={e => setCreateLootQuantity(Number(e.target.value))} />
-                                                </Form.Group>
-                                            </Col>
-                                        </Row>
-                                        <br />
-                                        <Button variant='success' onClick={createLoot}>Create</Button>
-                                    </Form>
-                                </Alert>
+                                {isAdmin &&
+                                    <Alert variant='primary'>
+                                        <h4>Create Loot (Admin only)</h4>
+                                        <Form onSubmit={createLoot}>
+                                            <Row>
+                                                <Col>
+                                                    <Form.Group>
+                                                        <Form.Label>Name</Form.Label>
+                                                        <Form.Control type="text" placeholder="Enter loot name" value={createLootName} onChange={e => setCreateLootName(e.target.value)} />
+                                                    </Form.Group>
+                                                </Col>
+                                                <Col>
+                                                    <Form.Group>
+                                                        <Form.Label>Quantity</Form.Label>
+                                                        <Form.Control type="number" placeholder="Quantity" min="1" max="255" value={createLootQuantity} onChange={e => setCreateLootQuantity(Number(e.target.value))} />
+                                                    </Form.Group>
+                                                </Col>
+                                            </Row>
+                                            <br />
+                                            <Button variant='success' onClick={createLoot}>Create</Button>
+                                        </Form>
+                                    </Alert>
+                                }
                                 <h3>Available Loots</h3>
                                 {loots.length === 0 &&
                                     <Alert variant='warning'>
                                         Looks like there aren't any loots available right now
                                     </Alert>
                                 }
-                            {loots.length > 0 &&
-                                <Accordion>
-                                {loots.map((item, i) =>
-                                    <Accordion.Item key={item.id} eventKey={i.toString()}>
-                                        <Accordion.Header>{item.name} | {item.quantity} available | {requests.filter(x => x.lootId === item.id).length} request(s)</Accordion.Header>
-                                        <Accordion.Body>
-                                            <Button variant='danger' onClick={() => deleteLoot(item.id)}>Delete "{item.name}" and all {requests.filter(x => x.lootId === item.id).length} request(s)</Button>
-                                            <hr />
-                                            {requests.filter(x => x.lootId === item.id).map(req =>
-                                                <span key={req.id}><strong>{req.mainName}</strong> | {req.characterName} | {req.isAlt ? 'alt' : 'main'} | {classes[req.class as any]} | {req.quantity}<hr /></span>
-                                            )}
-                                        </Accordion.Body>
-                                    </Accordion.Item>
-                                )}
-                                </Accordion>
-                                    //<Table striped bordered hover>
-                                    //    <thead>
-                                    //        <tr>
-                                    //            <th>Loot</th>
-                                    //            <th>Quantity</th>
-                                    //            <th></th>
-                                    //        </tr>
-                                    //    </thead>
-                                    //    <tbody>
-                                    //        {loots.map(item =>
-                                    //            <tr key={item.id}>
-                                    //                <td>{item.name}</td>
-                                    //                <td>{item.quantity}</td>
-                                    //                <td>
-                                    //                    <Button variant='danger' onClick={() => deleteLoot(item.id)}>Delete</Button>
-                                    //                </td>
-                                    //            </tr>
-                                    //        )}
-                                    //    </tbody>
-                                    //</Table>
+                                {loots.length > 0 &&
+                                    <Accordion>
+                                        {loots.map((item, i) =>
+                                            <Accordion.Item key={item.id} eventKey={i.toString()}>
+                                                <Accordion.Header>{item.name} | {item.quantity} available | {requests.filter(x => x.lootId === item.id).length} request(s)</Accordion.Header>
+                                                <Accordion.Body>
+                                                    {isAdmin &&
+                                                        <>
+                                                            <Button variant='danger' onClick={() => deleteLoot(item.id)}>Delete "{item.name}" and all {requests.filter(x => x.lootId === item.id).length} request(s)</Button>
+                                                            <hr />
+                                                        </>
+                                                    }
+                                                    {requests.filter(x => x.lootId === item.id).map(req =>
+                                                        <span key={req.id}><strong>{req.mainName}</strong> | {req.characterName} | {req.isAlt ? 'alt' : 'main'} | {classes[req.class as any]} | {req.quantity}<hr /></span>
+                                                    )}
+                                                </Accordion.Body>
+                                            </Accordion.Item>
+                                        )}
+                                    </Accordion>
                                 }
                             </Col>
                         </Row>
                     }
                 </Col>
-                <Col md={{ span: 2, offset: 0 }}>
-                    <Alert variant='secondary'>
-                        Logged in as <strong>{mainName}</strong>
-                        <br />
-                        <Button onClick={logout}>Logout</Button>
-                    </Alert>
-                </Col>
+                {isReady &&
+                    <Col md={{ span: 2, offset: 0 }}>
+                        <Alert variant='secondary'>
+                            Logged in as <strong>{mainName}</strong>
+                            <br />
+                            <Button onClick={logout}>Logout</Button>
+                        </Alert>
+                    </Col>
+                }
             </Row>
         </Container>
     );
@@ -330,6 +336,7 @@ interface ILoot {
     readonly id: number;
     readonly name: string;
     readonly quantity: number;
+    readonly isSpell: boolean;
 }
 interface ILootRequest {
     readonly id: number;
