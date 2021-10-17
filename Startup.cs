@@ -1,6 +1,4 @@
-﻿using LootGod;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -8,12 +6,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace LootGod
@@ -28,6 +22,7 @@ namespace LootGod
 			MainName = model.MainName;
 			CharacterName = model.CharacterName;
 			Class = model.Class;
+			Spell = model.Spell;
 			LootId = model.LootId;
 			Quantity = model.Quantity;
 			IsAlt = model.IsAlt;
@@ -38,6 +33,7 @@ namespace LootGod
 		public string? IP { get; }
 		public string MainName { get; }
 		public string CharacterName { get; }
+		public string? Spell { get; }
 		public EQClass Class { get; }
 		public int LootId { get; }
 		public int Quantity { get; }
@@ -66,9 +62,11 @@ namespace LootGod
 			var db = context.RequestServices.GetRequiredService<LootGodContext>();
 			var loots = await db.Loots.OrderBy(x => x.Name).ToListAsync();
 			var requests = await db.LootRequests.OrderByDescending(x => x.CreatedDate).ToListAsync();
-			var hub = context.RequestServices.GetRequiredService<IHubContext<LootHub>>();
+			var lootLock = await db.LootLocks.OrderByDescending(x => x.CreatedDate).FirstOrDefaultAsync();
 
+			var hub = context.RequestServices.GetRequiredService<IHubContext<LootHub>>();
 			await hub.Clients.All.SendAsync("refresh",
+				lootLock?.Lock ?? false,
 				loots.Select(x => new LootDto(x)),
 				requests.Select(x => new LootRequestDto(x)));
 		}
@@ -99,7 +97,6 @@ namespace LootGod
 		public void Configure(IApplicationBuilder app, LootGodContext db)
 		{
 			db.Database.EnsureCreated();
-			db.Database.ExecuteSqlRaw("CREATE TABLE IF NOT EXISTS LoginAttempts(Id INTEGER PRIMARY KEY AUTOINCREMENT, CreatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP, Name TEXT NOT NULL, IP TEXT NOT NULL)");
 
 			app.UseRouting();
 			app.UseCors();
@@ -213,6 +210,34 @@ namespace LootGod
 					_ = await db.SaveChangesAsync();
 
 					await LootHub.RefreshLoots(context);
+				});
+
+				endpoints.MapPost("EnableLootLock", async (context) =>
+				{
+					var db = context.RequestServices.GetRequiredService<LootGodContext>();
+					var ip = context.Connection.RemoteIpAddress?.ToString();
+					_ = db.LootLocks.Add(new(true, ip));
+					_ = await db.SaveChangesAsync();
+
+					await LootHub.RefreshLoots(context);
+				});
+
+				endpoints.MapPost("DisableLootLock", async (context) =>
+				{
+					var db = context.RequestServices.GetRequiredService<LootGodContext>();
+					var ip = context.Connection.RemoteIpAddress?.ToString();
+					_ = db.LootLocks.Add(new(false, ip));
+					_ = await db.SaveChangesAsync();
+
+					await LootHub.RefreshLoots(context);
+				});
+
+				endpoints.MapGet("GetLootLock", async (context) =>
+				{
+					var db = context.RequestServices.GetRequiredService<LootGodContext>();
+					var lootLock = await db.LootLocks.OrderByDescending(x => x.CreatedDate).FirstOrDefaultAsync();
+
+					await context.Response.WriteAsJsonAsync(lootLock?.Lock ?? false);
 				});
 
 				//app.MapPost("CreatePlayer", async (context) =>

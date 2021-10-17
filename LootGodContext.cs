@@ -16,6 +16,7 @@ namespace LootGod
 		public DbSet<LoginAttempt> LoginAttempts => Set<LoginAttempt>();
 		public DbSet<LootRequest> LootRequests => Set<LootRequest>();
 		public DbSet<Loot> Loots => Set<Loot>();
+		public DbSet<LootLock> LootLocks => Set<LootLock>();
 		//public DbSet<Player> Players => Set<Player>();
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -27,6 +28,11 @@ namespace LootGod
 
 			modelBuilder
 				.Entity<LoginAttempt>()
+				.Property(x => x.CreatedDate)
+				.HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+			modelBuilder
+				.Entity<LootLock>()
 				.Property(x => x.CreatedDate)
 				.HasDefaultValueSql("CURRENT_TIMESTAMP");
 

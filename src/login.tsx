@@ -1,0 +1,33 @@
+﻿import { useState } from 'react';
+import './App.css';
+import { Alert, Button, Form } from 'react-bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import axios from 'axios';
+
+const api = window.location.protocol + '//' + window.location.hostname + ':5000';
+
+export interface ILoginProps {
+    readonly finishLogin: () => void;
+}
+export function Login(props: ILoginProps) {
+
+    const name = localStorage.getItem('name');
+    const [mainName, setMainName] = useState(name || '');
+    const login = async () => {
+        localStorage.setItem('name', mainName);
+        await axios.post(api + "/login", { mainName });
+        props.finishLogin();
+    };
+
+    return (
+        <Alert variant={'primary'}>
+            <Alert.Heading>Let's Get Started!</Alert.Heading>
+            <p>Please enter your <strong>MAIN</strong> character name (<em>not</em> your alt/box or "Mickey Mouse")</p>
+            <Form onSubmit={login}>
+                <Form.Control type="text" value={mainName} onChange={e => setMainName(e.target.value)} />
+            </Form>
+            <br />
+            <Button onClick={login} disabled={mainName === ''} variant="primary">Start</Button>
+        </Alert>
+    );
+}

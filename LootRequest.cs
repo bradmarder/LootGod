@@ -1,16 +1,15 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace LootGod
 {
 	[Index(nameof(IP))]
-	[Index(nameof(CharacterName), nameof(LootId), IsUnique = true)]
+	[Index(nameof(CreatedDate))]
+	[Index(nameof(CharacterName), nameof(LootId), nameof(Spell), IsUnique = true)]
 	public class LootRequest
 	{
 		public LootRequest() { }
@@ -19,7 +18,7 @@ namespace LootGod
 			IP = ip;
 			MainName = dto.MainName;
 			CharacterName = dto.CharacterName;
-			//IsMain = dto.IsMain;
+			Spell = dto.Spell;
 			Class = dto.Class;
 			LootId = dto.LootId;
 			Quantity = dto.Quantity;
@@ -39,6 +38,12 @@ namespace LootGod
 		[Required]
 		[MaxLength(24)]
 		public string CharacterName { get; set; } = null!;
+
+		/// <summary>
+		/// Required only if loot type is a spell
+		/// </summary>
+		[MaxLength(255)]
+		public string? Spell { get; set; }
 
 		//public bool IsMain { get; set; }
 
