@@ -21,6 +21,16 @@ export default function Loots(props: IContext) {
         }
     }
 
+    const grantLootRequest = async (id: number) => {
+        setIsLoading(true);
+        try {
+            await axios.post(api + '/GrantLootRequest?id=' + id);
+        }
+        finally {
+            setIsLoading(false);
+        }
+    }
+
     const items = props.loots.filter(x => props.spell ? x.isSpell : !x.isSpell);
 
     return (
@@ -44,7 +54,12 @@ export default function Loots(props: IContext) {
                                     </>
                                 }
                                 {props.requests.filter(x => x.lootId === item.id).map(req =>
-                                    <span key={req.id}><strong>{req.mainName}</strong> | {req.characterName} | {req.isAlt ? 'alt' : 'main'} | {classes[req.class as any]} | {req.spell || req.quantity}<br /></span>
+                                    <span key={req.id}>
+                                        <strong>{req.mainName}</strong> | {req.characterName} | {req.isAlt ? 'alt' : 'main'} | {classes[req.class as any]} | {req.spell || req.quantity}
+                                        &nbsp;
+                                        <Button variant={'success'} disabled={true} onClick={() => grantLootRequest(item.id)}>Grant</Button>
+                                        <br />
+                                    </span>
                                 )}
                             </Accordion.Body>
                         </Accordion.Item>

@@ -51,6 +51,8 @@ namespace LootGod
 
 		public int LootId { get; set; }
 
+		public bool Granted { get; set; }
+
 		//public int PlayerId { get; set; }
 
 		[Range(1, 255)]

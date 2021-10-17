@@ -26,6 +26,7 @@ namespace LootGod
 			LootId = model.LootId;
 			Quantity = model.Quantity;
 			IsAlt = model.IsAlt;
+			Granted = model.Granted;
 		}
 
 		public int Id { get; }
@@ -38,6 +39,7 @@ namespace LootGod
 		public int LootId { get; }
 		public int Quantity { get; }
 		public bool IsAlt { get; }
+		public bool Granted { get; }
 	}
 	public class LootDto
 	{
@@ -238,6 +240,17 @@ namespace LootGod
 					var lootLock = await db.LootLocks.OrderByDescending(x => x.CreatedDate).FirstOrDefaultAsync();
 
 					await context.Response.WriteAsJsonAsync(lootLock?.Lock ?? false);
+				});
+
+				endpoints.MapPost("GrantLootRequest", async (context) =>
+				{
+					var db = context.RequestServices.GetRequiredService<LootGodContext>();
+					var id = int.Parse(context.Request.Query["id"]);
+					var item = await db.LootRequests.SingleAsync(x => x.Id == id);
+					item.Granted = true;
+					_ = await db.SaveChangesAsync();
+
+					await LootHub.RefreshLoots(context);
 				});
 
 				//app.MapPost("CreatePlayer", async (context) =>
