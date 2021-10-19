@@ -82,7 +82,10 @@ export default function App() {
         setMainName('');
         setIsReady(false);
     };
-    const finishLogin = () => setIsReady(true);
+    const finishLogin = (name: string) => {
+        setMainName(name);
+        setIsReady(true);
+    };
 
     return (
         <Container fluid>

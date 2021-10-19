@@ -7,7 +7,7 @@ import axios from 'axios';
 const api = window.location.protocol + '//' + window.location.hostname + ':5000';
 
 export interface ILoginProps {
-    readonly finishLogin: () => void;
+    readonly finishLogin: (name: string) => void;
 }
 export function Login(props: ILoginProps) {
 
@@ -16,7 +16,7 @@ export function Login(props: ILoginProps) {
     const login = async () => {
         localStorage.setItem('name', mainName);
         await axios.post(api + "/login", { mainName });
-        props.finishLogin();
+        props.finishLogin(mainName);
     };
 
     return (
