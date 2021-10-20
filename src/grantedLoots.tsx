@@ -54,7 +54,7 @@ export function GrantedLoots(props: IContext) {
                     <tbody>
                         {grantedLootRequests.map((item, i) =>
                             <tr key={item.id}>
-                                <td>{item.characterName}</td>
+                                <td><strong>{item.mainName}</strong> - {item.characterName}</td>
                                 <td>{item.isAlt ? 'Alt' : 'Main'}</td>
                                 <td>{classes[item.class as any]}</td>
                                 <td>{props.loots.find(x => x.id === item.lootId)?.name}</td>
