@@ -1,7 +1,7 @@
 ﻿declare interface ILoot {
     readonly id: number;
     readonly name: string;
-    readonly quantity: number;
+    quantity: number;
     readonly isSpell: boolean;
 }
 declare interface ILootRequest {

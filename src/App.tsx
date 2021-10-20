@@ -9,6 +9,7 @@ import { LootRequests } from './lootRequests';
 import { CreateLootRequest } from './createLootRequest';
 import { CreateLoot } from './createLoot';
 import Loots from './loots';
+import { GrantedLoots } from './grantedLoots';
 
 const api = window.location.protocol + '//' + window.location.hostname + ':5000';
 const name = localStorage.getItem('name');
@@ -101,6 +102,10 @@ export default function App() {
                                 <CreateLootRequest requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></CreateLootRequest>
                                 <br />
                                 <LootRequests requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></LootRequests>
+                                <br />
+                                {isAdmin &&
+                                    <GrantedLoots requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></GrantedLoots>
+                                }
                             </Col>
                             <Col>
                                 {isAdmin &&

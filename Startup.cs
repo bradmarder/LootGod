@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -100,6 +101,19 @@ namespace LootGod
 		{
 			db.Database.EnsureCreated();
 
+			app.UseExceptionHandler(opt =>
+			{
+				opt.Run(async context =>
+				{
+					var ex = context.Features.Get<IExceptionHandlerFeature>();
+					if (ex is not null)
+					{
+						var err = $"Error: {ex.Error.Message} {ex.Error.StackTrace } {ex.Error.InnerException?.Message}";
+						await context.Response.WriteAsync(err);
+						await Console.Out.WriteAsync(err);
+					}
+				});
+			});
 			app.UseRouting();
 			app.UseCors();
 			app.UseEndpoints(endpoints =>
@@ -248,6 +262,42 @@ namespace LootGod
 					var id = int.Parse(context.Request.Query["id"]);
 					var item = await db.LootRequests.SingleAsync(x => x.Id == id);
 					item.Granted = true;
+					_ = await db.SaveChangesAsync();
+
+					await LootHub.RefreshLoots(context);
+				});
+
+
+				endpoints.MapPost("UngrantLootRequest", async (context) =>
+				{
+					var db = context.RequestServices.GetRequiredService<LootGodContext>();
+					var id = int.Parse(context.Request.Query["id"]);
+					var item = await db.LootRequests.SingleAsync(x => x.Id == id);
+					item.Granted = false;
+					_ = await db.SaveChangesAsync();
+
+					await LootHub.RefreshLoots(context);
+				});
+
+				endpoints.MapPost("FinishLootRequests", async (context) =>
+				{
+					var db = context.RequestServices.GetRequiredService<LootGodContext>();
+					var items = await db.LootRequests
+						.Include(x => x.Loot)
+						.ToListAsync();
+
+					foreach (var x in items.Where(x => x.Granted))
+					{
+						x.Loot.Quantity -= x.Quantity;
+						if (x.Loot.Quantity == 0)
+						{
+							db.Loots.Remove(x.Loot);
+						}
+					}
+
+					// delete *ALL* loot requests
+					db.LootRequests.RemoveRange(items);
+
 					_ = await db.SaveChangesAsync();
 
 					await LootHub.RefreshLoots(context);

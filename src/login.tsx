@@ -24,7 +24,7 @@ export function Login(props: ILoginProps) {
             <Alert.Heading>Let's Get Started!</Alert.Heading>
             <p>Please enter your <strong>MAIN</strong> character name (<em>not</em> your alt/box or "Mickey Mouse")</p>
             <Form onSubmit={login}>
-                <Form.Control type="text" value={mainName} onChange={e => setMainName(e.target.value)} />
+                <Form.Control type="text" value={mainName} onChange={e => setMainName(e.target.value.trim())} />
             </Form>
             <br />
             <Button onClick={login} disabled={mainName === ''} variant="primary">Start</Button>

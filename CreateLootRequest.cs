@@ -21,8 +21,6 @@ namespace LootGod
 		//public bool IsMain { get; set; }
 		public EQClass Class { get; set; } // Enum.IsDefined
 		public int LootId { get; set; }
-
-		[Range(1, 255)]
-		public int Quantity { get; set; }
+		public byte Quantity { get; set; }
 	}
 }

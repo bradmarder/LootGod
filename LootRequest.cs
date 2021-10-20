@@ -16,8 +16,8 @@ namespace LootGod
 		public LootRequest(CreateLootRequest dto, string? ip)
 		{
 			IP = ip;
-			MainName = dto.MainName;
-			CharacterName = dto.CharacterName;
+			MainName = dto.MainName.Trim();
+			CharacterName = dto.CharacterName.Trim();
 			Spell = dto.Spell;
 			Class = dto.Class;
 			LootId = dto.LootId;
@@ -53,10 +53,10 @@ namespace LootGod
 
 		public bool Granted { get; set; }
 
-		//public int PlayerId { get; set; }
+		//public int PlayerId { get; set; }+
 
 		[Range(1, 255)]
-		public int Quantity { get; set; }
+		public byte Quantity { get; set; }
 
 		[ForeignKey(nameof(LootId))]
 		public virtual Loot Loot { get; set; } = null!;
