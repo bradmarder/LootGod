@@ -89,10 +89,10 @@ export default function Loots(props: IContext) {
                                         <strong>{req.mainName}</strong> | {req.characterName} | {req.isAlt ? 'alt' : 'main'} | {classes[req.class as any]} | {req.spell || req.quantity}
                                         &nbsp;
                                         {props.isAdmin && req.granted &&
-                                            <Button variant={'danger'} disabled={isLoading} onClick={() => ungrantLootRequest(item.id)}>Un-Grant</Button>
+                                            <Button variant={'danger'} disabled={isLoading} onClick={() => ungrantLootRequest(req.id)}>Un-Grant</Button>
                                         }
                                         {props.isAdmin && !req.granted && item.quantity > 0 &&
-                                            <Button variant={'success'} disabled={isLoading} onClick={() => grantLootRequest(item.id)}>Grant</Button>
+                                            <Button variant={'success'} disabled={isLoading} onClick={() => grantLootRequest(req.id)}>Grant</Button>
                                         }
                                         <br />
                                     </span>
