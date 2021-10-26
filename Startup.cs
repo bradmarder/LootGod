@@ -103,6 +103,11 @@ namespace LootGod
 
 		private static readonly HashSet<string> _loots = new HashSet<string>
 		{
+			"Glowing Dragontouched Rune",
+			"Greater Dragontouched Rune",
+			"Lesser Dragontouched Rune",
+			"Median Dragontouched Rune",
+			"Minor Dragontouched Rune",
 			"Ashrin, Last Defense",
 			"Axe of Draconic Legacy",
 			"Blazing Spear",
