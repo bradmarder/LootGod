@@ -64,7 +64,11 @@ namespace LootGod
 		{
 			var db = context.RequestServices.GetRequiredService<LootGodContext>();
 			var loots = await db.Loots.OrderBy(x => x.Name).ToListAsync();
-			var requests = await db.LootRequests.OrderByDescending(x => x.CreatedDate).ToListAsync();
+			var requests = await db.LootRequests
+				.OrderByDescending(x => x.Spell)
+				.ThenBy(x => x.LootId)
+				.ThenByDescending(x => x.CreatedDate)
+				.ToListAsync();
 			var lootLock = await db.LootLocks.OrderByDescending(x => x.CreatedDate).FirstOrDefaultAsync();
 
 			var hub = context.RequestServices.GetRequiredService<IHubContext<LootHub>>();
@@ -97,9 +101,86 @@ namespace LootGod
 			services.AddSignalR(e => e.EnableDetailedErrors = true);
 		}
 
+		private static readonly HashSet<string> _loots = new HashSet<string>
+		{
+			"Ashrin, Last Defense",
+			"Axe of Draconic Legacy",
+			"Blazing Spear",
+			"Bloodied Talisman,Neck",
+			"Bow of Living Frost",
+			"Braided Belt of Dragonshide",
+			"Cloak of Mortality",
+			"Commanding Blade",
+			"Crusaders' Cowl",
+			"Diamondized Restless Ore",
+			"Dragonsfire Staff",
+			"Drakescale Mask",
+			"Drape of Dust,Shoulders",
+			"Dreamweaver's Axe of Banishment",
+			"Drop of Klandicar's Blood",
+			"Faded Hoarfrost Arms Armor",
+			"Faded Hoarfrost Chest Armor",
+			"Faded Hoarfrost Feet Armor",
+			"Faded Hoarfrost Hands Armor",
+			"Faded Hoarfrost Head Armor",
+			"Faded Hoarfrost Legs Armor",
+			"Faded Hoarfrost Wrist Armor",
+			"First Brood Signet Ring",
+			"Flame Touched Velium Slac",
+			"Flametongue, Uiliak's Menace",
+			"Frigid Runic Sword",
+			"Frosted Scale",
+			"Frozen Foil of the New Brood",
+			"Frozen Gutripper",
+			"Ganzito's Crystal Ring",
+			"Glowing Icicle",
+			"Guard of Echoes",
+			"Imbued Hammer of Skyshrine",
+			"Jchan's Threaded Belt of Command",
+			"Klanderso's Stabber of Slaughter",
+			"Linked Belt of Entrapment",
+			"Mace of Crushing Energy",
+			"Mace of Flowing Life",
+			"Mantle of Mortality",
+			"Mastodon Hide Mask",
+			"Morrigan's Trinket of Fate",
+			"Mrtyu's Rod of Disempowerment",
+			"New Brood Talisman",
+			"Niente's Dagger of Knowledge",
+			"Nintal's Intricate Buckler",
+			"Pendant of Whispers",
+			"Pip's Cloak of Trickery",
+			"Polished Ivory Katar",
+			"Quoza's Amulet",
+			"Ratalthor's Earring of Insight",
+			"Redscale Cloak,Back",
+			"Restless Ice Shard",
+			"Ring of True Echoes",
+			"Scale-Plated Crate",
+			"Scepter of the Banished",
+			"Soul Banisher",
+			"Starseed Bow",
+			"Starsight",
+			"Suspended Scale Earring",
+			"Tantor's Eye",
+			"Tears of the Final Stand",
+			"Tusk of Frost",
+			"Twilight, Staff of the Exiled",
+			"Zieri's Shawl of Compassion",
+		};
+
 		public void Configure(IApplicationBuilder app, LootGodContext db)
 		{
 			db.Database.EnsureCreated();
+			if (!db.Loots.Any())
+			{
+				foreach (var foo in _loots)
+				{
+					db.Loots.Add(new Loot(foo));
+				}
+				db.SaveChanges();
+			}
+
 
 			app.UseExceptionHandler(opt =>
 			{

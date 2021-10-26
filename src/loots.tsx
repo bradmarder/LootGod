@@ -42,6 +42,7 @@ export default function Loots(props: IContext) {
     };
 
     const items = props.loots
+        .filter(x => x.quantity > 0)
         .filter(x => props.spell ? x.isSpell : !x.isSpell)
 
         // subtract the granted loot quantity from the total loot quantity

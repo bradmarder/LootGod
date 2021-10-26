@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import './App.css';
 import { Row, Col, Alert, Button, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -11,6 +11,16 @@ export function CreateLoot() {
     const [isLoading, setIsLoading] = useState(false);
     const [createLootName, setCreateLootName] = useState('');
     const [createLootQuantity, setCreateLootQuantity] = useState(1);
+    const [loots, setLoots] = useState<ILoot[]>([]);
+
+    const getLoots = async () => {
+        const res = await axios.get<ILoot[]>(api + '/GetLoots');
+        setLoots(res.data);
+    };
+
+    useEffect(() => {
+        getLoots();
+    });
 
     const createLoot = async () => {
         const data = {
@@ -36,7 +46,12 @@ export function CreateLoot() {
                     <Col>
                         <Form.Group>
                             <Form.Label>Name</Form.Label>
-                            <Form.Control type="text" placeholder="Enter loot name" value={createLootName} onChange={e => setCreateLootName(e.target.value)} />
+                            <Form.Select value={createLootName} onChange={e => setCreateLootName((e.target as any).value)}>
+                                <option>Select Loot</option>
+                                {loots.map((item, i) =>
+                                    <option key={item.id} value={item.name}>{item.name}</option>
+                                )}
+                            </Form.Select>
                         </Form.Group>
                     </Col>
                     <Col>

@@ -32,6 +32,10 @@ namespace LootGod
 			Name = dto.Name;
 			Quantity = dto.Quantity;
 		}
+		public Loot(string name)
+		{
+			Name = name;
+		}
 
 		[Key]
 		public int Id { get; set; }

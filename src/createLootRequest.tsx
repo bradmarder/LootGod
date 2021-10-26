@@ -17,10 +17,12 @@ export function CreateLootRequest(props: IContext) {
     const [eqClass, setClass] = useState('');
     const [lootId, setLootId] = useState(0);
 
+    const hasQtyLoots = props.loots.filter(x => x.quantity > 0);
+
     const spellSelected = lootId > 0 && props.loots.filter(x => x.id === lootId)[0].isSpell;
 
     const isCreateLootDisabled =
-        props.loots.length === 0
+        hasQtyLoots.length === 0
         || isLoading
         || charName === ''
         || lootId === 0
@@ -95,7 +97,7 @@ export function CreateLootRequest(props: IContext) {
                             <Form.Label>Loot</Form.Label>
                             <Form.Select value={lootId} onChange={e => setLootLogic(Number((e.target as any).value))}>
                                 <option value={0}>Select an Item</option>
-                                {props.loots.map(item =>
+                                {hasQtyLoots.map(item =>
                                     <option key={item.id} value={item.id}>{item.name}</option>
                                 )}
                             </Form.Select>

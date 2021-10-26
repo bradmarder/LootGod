@@ -22,15 +22,7 @@ export function GrantedLoots(props: IContext) {
     };
 
     const grantedLootRequests = useMemo(() =>
-        props.requests
-            .filter(x => x.granted)
-            .sort((a, b) => {
-                const nameA = a.characterName.toLowerCase();
-                const nameB = b.characterName.toLowerCase();
-                if (nameA < nameB) { return -1; }
-                if (nameA > nameB) { return 1; }
-                return 0;
-            }),
+        props.requests.filter(x => x.granted),
         [props.requests]);
 
     return (
