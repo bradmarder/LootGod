@@ -20,6 +20,15 @@ export function GrantedLoots(props: IContext) {
             setIsLoading(false);
         }
     };
+    const finishLootGranting = async () => {
+        setIsLoading(true);
+        try {
+            await axios.post(api + '/FinishLootRequests');
+        }
+        finally {
+            setIsLoading(false);
+        }
+    };
 
     const grantedLootRequests = useMemo(() =>
         props.requests.filter(x => x.granted),
@@ -32,32 +41,40 @@ export function GrantedLoots(props: IContext) {
                 <Alert variant='warning'>There are currently zero granted loot requests</Alert>
             }
             {grantedLootRequests.length > 0 &&
-                <Table striped bordered hover size="sm">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Alt/Main</th>
-                            <th>Class</th>
-                            <th>Loot</th>
-                            <th>Quantity</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {grantedLootRequests.map((item, i) =>
-                            <tr key={item.id}>
-                                <td><strong>{item.mainName}</strong> - {item.characterName}</td>
-                                <td>{item.isAlt ? 'Alt' : 'Main'}</td>
-                                <td>{classes[item.class as any]}</td>
-                                <td>{props.loots.find(x => x.id === item.lootId)?.name}</td>
-                                <td>{item.spell || item.quantity}</td>
-                                <td>
-                                    <Button variant='danger' disabled={isLoading} onClick={() => ungrantLootRequest(item.id)}>Ungrant</Button>
-                                </td>
+                <>
+                    <Table striped bordered hover size="sm">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Alt/Main</th>
+                                <th>Class</th>
+                                <th>Loot</th>
+                                <th>Quantity</th>
+                                <th></th>
                             </tr>
-                        )}
-                    </tbody>
-                </Table>
+                        </thead>
+                        <tbody>
+                            {grantedLootRequests.map((item, i) =>
+                                <tr key={item.id}>
+                                    <td><strong>{item.mainName}</strong> - {item.characterName}</td>
+                                    <td>{item.isAlt ? 'Alt' : 'Main'}</td>
+                                    <td>{classes[item.class as any]}</td>
+                                    <td>{props.loots.find(x => x.id === item.lootId)?.name}</td>
+                                    <td>{item.spell || item.quantity}</td>
+                                    <td>
+                                        <Button variant='danger' disabled={isLoading} onClick={() => ungrantLootRequest(item.id)}>Ungrant</Button>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </Table>
+                    <Alert variant={'warning'}>
+                        <strong>WARNING!</strong> This deletes *ALL* loot requests and subtracts granted quantities. Only click this button once you have
+                        granted all loots *AND* have parceled them out.
+                        <br />
+                        <Button variant={'success'} disabled={isLoading} onClick={finishLootGranting}>Finish Granting Loots</Button>
+                    </Alert>
+                </>
             }
         </>
     );

@@ -304,11 +304,8 @@ namespace LootGod
 				{
 					var db = context.RequestServices.GetRequiredService<LootGodContext>();
 					var id = int.Parse(context.Request.Query["id"]);
-					var item = await db.Loots
-						.Include(x => x.LootRequests)
-						.SingleAsync(x => x.Id == id);
-					db.LootRequests.RemoveRange(item.LootRequests);
-					db.Loots.Remove(item);
+					var requests = await db.LootRequests.Where(x => x.LootId == id).ToListAsync();
+					db.LootRequests.RemoveRange(requests);
 					_ = await db.SaveChangesAsync();
 
 					await LootHub.RefreshLoots(context);
@@ -375,10 +372,6 @@ namespace LootGod
 					foreach (var x in items.Where(x => x.Granted))
 					{
 						x.Loot.Quantity -= x.Quantity;
-						if (x.Loot.Quantity == 0)
-						{
-							db.Loots.Remove(x.Loot);
-						}
 					}
 
 					// delete *ALL* loot requests

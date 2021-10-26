@@ -78,8 +78,8 @@ export default function Loots(props: IContext) {
                             <Accordion.Body>
                                 {props.isAdmin &&
                                     <>
-                                        <Button variant='danger' disabled={isLoading} onClick={() => deleteLoot(item.id)}>Delete "{item.name}" and all {props.requests.filter(x => x.lootId === item.id).length} request(s)</Button>
-                                        <hr />
+                                        {/*/<Button variant='danger' disabled={isLoading} onClick={() => deleteLoot(item.id)}>Delete "{item.name}" and all {props.requests.filter(x => x.lootId === item.id).length} request(s)</Button>
+                                        <hr />*/}
                                         {item.quantity === 0 &&
                                             <Alert variant={'warning'}><strong>Grant Disabled</strong> - Already Allotted Maximum Quantity</Alert>
                                         }
