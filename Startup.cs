@@ -111,7 +111,7 @@ namespace LootGod
 			"Ashrin, Last Defense",
 			"Axe of Draconic Legacy",
 			"Blazing Spear",
-			"Bloodied Talisman,Neck",
+			"Bloodied Talisman",
 			"Bow of Living Frost",
 			"Braided Belt of Dragonshide",
 			"Cloak of Mortality",
