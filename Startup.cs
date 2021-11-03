@@ -67,7 +67,7 @@ namespace LootGod
 			var requests = await db.LootRequests
 				.OrderByDescending(x => x.Spell)
 				.ThenBy(x => x.LootId)
-				.ThenByDescending(x => x.CreatedDate)
+				.ThenByDescending(x => x.CharacterName)
 				.ToListAsync();
 			var lootLock = await db.LootLocks.OrderByDescending(x => x.CreatedDate).FirstOrDefaultAsync();
 
@@ -229,7 +229,7 @@ namespace LootGod
 					var requests = (await db.LootRequests
 						.OrderByDescending(x => x.Spell)
 						.ThenBy(x => x.LootId)
-						.ThenByDescending(x => x.CreatedDate)
+						.ThenByDescending(x => x.CharacterName)
 						.ToListAsync())
 						.Select(x => new LootRequestDto(x));
 
