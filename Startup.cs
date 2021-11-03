@@ -178,15 +178,14 @@ namespace LootGod
 		public void Configure(IApplicationBuilder app, LootGodContext db)
 		{
 			db.Database.EnsureCreated();
-			if (!db.Loots.Any())
+			foreach (var item in _loots)
 			{
-				foreach (var foo in _loots)
+				if (!db.Loots.Any(x => x.Name == item))
 				{
-					db.Loots.Add(new Loot(foo));
+					db.Loots.Add(new Loot(item));
 				}
-				db.SaveChanges();
 			}
-
+			db.SaveChanges();
 
 			app.UseExceptionHandler(opt =>
 			{
