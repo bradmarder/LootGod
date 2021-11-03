@@ -106,7 +106,7 @@ export function CreateLootRequest(props: IContext) {
                     <Col>
                         <Form.Group className="mb-3">
                             <Form.Label>Quantity</Form.Label>
-                            <Form.Control type="number" disabled={spellSelected} placeholder="Quantity" min="1" max="255" value={quantity} onChange={e => setQuantity(Number(e.target.value))} />
+                            <Form.Control type="number" disabled={spellSelected || true} placeholder="Quantity" min="1" max="255" value={quantity} onChange={e => setQuantity(Number(e.target.value))} />
                         </Form.Group>
                     </Col>
                 </Row>

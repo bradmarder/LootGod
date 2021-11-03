@@ -103,6 +103,7 @@ namespace LootGod
 
 		private static readonly HashSet<string> _loots = new HashSet<string>
 		{
+			"Captured Essence of Ethernere",
 			"Glowing Dragontouched Rune",
 			"Greater Dragontouched Rune",
 			"Lesser Dragontouched Rune",
@@ -227,7 +228,9 @@ namespace LootGod
 				{
 					var db = context.RequestServices.GetRequiredService<LootGodContext>();
 					var requests = (await db.LootRequests
-						.OrderByDescending(x => x.CreatedDate)
+						.OrderByDescending(x => x.Spell)
+						.ThenBy(x => x.LootId)
+						.ThenByDescending(x => x.CreatedDate)
 						.ToListAsync())
 						.Select(x => new LootRequestDto(x));
 
