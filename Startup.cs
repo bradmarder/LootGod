@@ -384,6 +384,21 @@ namespace LootGod
 					await LootHub.RefreshLoots(context);
 				});
 
+				endpoints.MapGet("GetGrantedLootOutput", async (context) =>
+				{
+					var db = context.RequestServices.GetRequiredService<LootGodContext>();
+					var items = await db.LootRequests
+						.Where(x => x.Granted)
+						.OrderBy(x => x.LootId)
+						.ThenBy(x => x.MainName)
+						.ThenBy(x => x.CharacterName)
+						.Select(x => $"{x.Loot.Name} | {x.MainName} ({x.CharacterName}) | x{x.Quantity}")
+						.ToListAsync();
+					var output = string.Join(Environment.NewLine, items);
+
+					await context.Response.WriteAsync(output);
+				});
+
 				//app.MapPost("CreatePlayer", async (context) =>
 				//{
 				//	var dto = await context.Request.ReadFromJsonAsync<CreatePlayer>();
