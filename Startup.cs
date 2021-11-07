@@ -387,13 +387,19 @@ namespace LootGod
 				endpoints.MapGet("GetGrantedLootOutput", async (context) =>
 				{
 					var db = context.RequestServices.GetRequiredService<LootGodContext>();
-					var items = await db.LootRequests
+					var items = (await db.LootRequests
+						.Include(x => x.Loot)
 						.Where(x => x.Granted)
 						.OrderBy(x => x.LootId)
 						.ThenBy(x => x.MainName)
 						.ThenBy(x => x.CharacterName)
-						.Select(x => $"{x.Loot.Name} | {x.MainName} ({x.CharacterName}) | x{x.Quantity}")
-						.ToListAsync();
+						.ToListAsync())
+						.GroupBy(x => (x.LootId, x.MainName, x.CharacterName))
+						.Select(x =>
+						{
+							var item = x.First();
+							return $"{item.Loot.Name} | {item.MainName} ({item.CharacterName}) | x{x.Sum(y => y.Quantity)}";
+						});
 					var output = string.Join(Environment.NewLine, items);
 
 					await context.Response.WriteAsync(output);
