@@ -24,3 +24,7 @@ declare interface IContext {
     readonly spell?: boolean;
     readonly lootLocked?: boolean;
 }
+declare interface ILootLock {
+    readonly lock: boolean;
+    readonly createdDate: string | null;
+}

@@ -31,7 +31,7 @@ export default function App() {
         setRequests(res.data);
     };
 
-    const isAdmin = mainName === 'Benemage' || mainName === 'Dhau';
+    const isAdmin = mainName === 'Benemage' || mainName === 'Vhau';
 
     const getLootLock = async () => {
         const res = await axios.get<boolean>(api + '/GetLootLock');
@@ -92,7 +92,7 @@ export default function App() {
         <Container fluid>
             <Row>
                 <Col xs={12} md={8}>
-                    <h1>KOI Raid Loot Tool (BETA)</h1>
+                    <h1>KOI Raid Loot Tool</h1>
                     {!isReady &&
                         <Login finishLogin={finishLogin} />
                     }
