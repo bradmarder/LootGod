@@ -4,11 +4,10 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//builder.Host.UseSystemd();
+builder.Host.UseSystemd();
 
 builder.WebHost
-	.UseKestrel()
-	.UseUrls("http://*:5000")
+	.UseUrls("http://[::]:5000")
 	.ConfigureServices(services =>
 	{
 		var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
