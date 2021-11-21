@@ -4,9 +4,10 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.UseSystemd();
+//builder.Host.UseSystemd();
 
 builder.WebHost
+	.UseKestrel()
 	.UseUrls("http://*:5000")
 	.ConfigureServices(services =>
 	{
