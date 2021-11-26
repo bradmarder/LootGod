@@ -8,20 +8,20 @@ namespace LootGod;
 public class Loot
 {
 	private static readonly HashSet<string> _spellPrefixes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-		{
-			"Minor",
-			"Lesser",
-			"Median",
-			"Greater",
-			"Glowing",
-			"Captured",
-		};
+	{
+		"Minor",
+		"Lesser",
+		"Median",
+		"Greater",
+		"Glowing",
+		"Captured",
+	};
 
 	private static readonly HashSet<string> _spellSuffixes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-		{
-			"Rune",
-			"Ethernere",
-		};
+	{
+		"Rune",
+		"Ethernere",
+	};
 
 	public Loot() { }
 	public Loot(CreateLoot dto)

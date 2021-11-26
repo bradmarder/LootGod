@@ -1,28 +1,25 @@
 using LootGod;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSystemd();
 
-builder.WebHost
-	.UseUrls("http://[::]:5000")
-	.ConfigureServices(services =>
-	{
-		var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-		var path = Path.Combine(home, "lootgod.db");
-		services.AddDbContext<LootGodContext>(x => x.UseSqlite($"Data Source={path};"));
+var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+var path = Path.Combine(home, "lootgod.db");
 
-		services.AddCors(options =>
-						options.AddDefaultPolicy(
-							policy =>
-								policy.AllowAnyMethod().AllowAnyHeader().AllowCredentials().SetIsOriginAllowed(x => true)));
-		services.AddRouting();
-		services.AddSignalR(e => e.EnableDetailedErrors = true);
-	});
+builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite($"Data Source={path};"));
+builder.Services.AddCors(options =>
+	options.AddDefaultPolicy(policy =>
+		policy.AllowAnyMethod().AllowAnyHeader().AllowCredentials().SetIsOriginAllowed(x => true)));
+builder.Services.AddRouting();
+builder.Services.AddSignalR(e => e.EnableDetailedErrors = true);
 
-var app = builder.Build();
+//builder.WebHost.UseUrls("http://*:5000") // not working... temp fix dotnet run --urls "http://*:5000"
+
+using var app = builder.Build();
 
 await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateAsyncScope())
 {
@@ -41,6 +38,9 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 	_ = await db.SaveChangesAsync();
 }
 
+// singleton
+var hub = app.Services.GetRequiredService<IHubContext<LootHub>>();
+
 app.UseExceptionHandler(opt =>
 {
 	opt.Run(async context =>
@@ -56,222 +56,188 @@ app.UseExceptionHandler(opt =>
 });
 app.UseRouting();
 app.UseCors();
-app.UseEndpoints(endpoints =>
+app.MapHub<LootHub>("/lootHub");
+app.MapGet("/", () => "Hello World!");
+
+app.MapPost("login", async (CreateLoginAttempt dto, HttpContext context, LootGodContext db) =>
 {
-	endpoints.MapHub<LootHub>("/lootHub");
-	endpoints.MapGet("/", async (context) =>
-	{
-		await context.Response.WriteAsync("Hello World!");
-	});
+	var ip = context.Connection.RemoteIpAddress?.ToString();
+	if (ip is null) { return; }
 
-	endpoints.MapPost("login", async (context) =>
-	{
-		var ip = context.Connection.RemoteIpAddress?.ToString();
-		if (ip is null) { return; }
-
-		var dto = await context.Request.ReadFromJsonAsync<CreateLoginAttempt>();
-		if (dto is null) { throw new ArgumentNullException(nameof(dto)); }
-
-		var db = context.RequestServices.GetRequiredService<LootGodContext>();
-		_ = db.LoginAttempts.Add(new(dto.MainName, ip));
-		_ = await db.SaveChangesAsync();
-	});
-
-	endpoints.MapGet("GetLootRequests", async (context) =>
-	{
-		var db = context.RequestServices.GetRequiredService<LootGodContext>();
-		var requests = (await db.LootRequests
-			.OrderByDescending(x => x.Spell)
-			.ThenBy(x => x.LootId)
-			.ThenByDescending(x => x.CharacterName)
-			.ToListAsync())
-			.Select(x => new LootRequestDto(x));
-
-		await context.Response.WriteAsJsonAsync(requests);
-	});
-
-	endpoints.MapGet("GetLoots", async (context) =>
-	{
-		var db = context.RequestServices.GetRequiredService<LootGodContext>();
-		var requests = (await db.Loots
-			.OrderBy(x => x.Name)
-			.ToListAsync())
-			.Select(x => new LootDto(x));
-
-		await context.Response.WriteAsJsonAsync(requests);
-	});
-
-	endpoints.MapPost("CreateLoot", async (context) =>
-	{
-		var dto = await context.Request.ReadFromJsonAsync<CreateLoot>();
-		//ArgumentNullException.ThrowIfNull(dto);
-		if (dto is null) { throw new Exception(); }
-		var db = context.RequestServices.GetRequiredService<LootGodContext>();
-		var loot = await db.Loots.SingleOrDefaultAsync(x => x.Name == dto.Name) ?? new(dto);
-		if (loot.Id == 0)
-		{
-			_ = db.Loots.Add(loot);
-		}
-		else
-		{
-			loot.Quantity = dto.Quantity;
-		}
-		_ = await db.SaveChangesAsync();
-
-		await LootHub.RefreshLoots(context);
-	});
-
-	endpoints.MapPost("CreateLootRequest", async (context) =>
-	{
-		var dto = await context.Request.ReadFromJsonAsync<CreateLootRequest>();
-		//ArgumentNullException.ThrowIfNull(dto);=
-		if (dto is null) { throw new Exception(); }
-		//var exists = context.Request.Headers.TryGetValue("key", out var key);
-
-		//if (!exists) { throw new UnauthorizedAccessException(); }
-
-		var db = context.RequestServices.GetRequiredService<LootGodContext>();
-		//var player = await db.Players.SingleAsync(x => x.Key == key);
-		var ip = context.Connection.RemoteIpAddress?.ToString();
-
-		var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
-		var requestCount = await db.LootRequests.CountAsync(x => x.IP == ip && x.CreatedDate > oneWeekAgo);
-		if (requestCount > 100) { throw new Exception("Limit Break - More than 100 requests per week from single IP"); }
-
-		var item = new LootRequest(dto, ip);
-		_ = db.LootRequests.Add(item);
-		_ = await db.SaveChangesAsync();
-
-		await LootHub.RefreshLoots(context);
-	});
-
-	endpoints.MapPost("DeleteLootRequest", async (context) =>
-	{
-		var db = context.RequestServices.GetRequiredService<LootGodContext>();
-		var id = int.Parse(context.Request.Query["id"]);
-		var item = await db.LootRequests.SingleAsync(x => x.Id == id);
-		db.LootRequests.Remove(item);
-		_ = await db.SaveChangesAsync();
-
-		await LootHub.RefreshLoots(context);
-	});
-
-	endpoints.MapPost("DeleteLoot", async (context) =>
-	{
-		var db = context.RequestServices.GetRequiredService<LootGodContext>();
-		var id = int.Parse(context.Request.Query["id"]);
-		var requests = await db.LootRequests.Where(x => x.LootId == id).ToListAsync();
-		db.LootRequests.RemoveRange(requests);
-		_ = await db.SaveChangesAsync();
-
-		await LootHub.RefreshLoots(context);
-	});
-
-	endpoints.MapPost("EnableLootLock", async (context) =>
-	{
-		var db = context.RequestServices.GetRequiredService<LootGodContext>();
-		var ip = context.Connection.RemoteIpAddress?.ToString();
-		_ = db.LootLocks.Add(new(true, ip));
-		_ = await db.SaveChangesAsync();
-
-		await LootHub.RefreshLoots(context);
-	});
-
-	endpoints.MapPost("DisableLootLock", async (context) =>
-	{
-		var db = context.RequestServices.GetRequiredService<LootGodContext>();
-		var ip = context.Connection.RemoteIpAddress?.ToString();
-		_ = db.LootLocks.Add(new(false, ip));
-		_ = await db.SaveChangesAsync();
-
-		await LootHub.RefreshLoots(context);
-	});
-
-	endpoints.MapGet("GetLootLock", async (context) =>
-	{
-		var db = context.RequestServices.GetRequiredService<LootGodContext>();
-		var lootLock = await db.LootLocks.OrderByDescending(x => x.CreatedDate).FirstOrDefaultAsync();
-
-		await context.Response.WriteAsJsonAsync(lootLock?.Lock ?? false);
-	});
-
-	endpoints.MapPost("GrantLootRequest", async (context) =>
-	{
-		var db = context.RequestServices.GetRequiredService<LootGodContext>();
-		var id = int.Parse(context.Request.Query["id"]);
-		var item = await db.LootRequests.SingleAsync(x => x.Id == id);
-		item.Granted = true;
-		_ = await db.SaveChangesAsync();
-
-		await LootHub.RefreshLoots(context);
-	});
-
-	endpoints.MapPost("UngrantLootRequest", async (context) =>
-	{
-		var db = context.RequestServices.GetRequiredService<LootGodContext>();
-		var id = int.Parse(context.Request.Query["id"]);
-		var item = await db.LootRequests.SingleAsync(x => x.Id == id);
-		item.Granted = false;
-		_ = await db.SaveChangesAsync();
-
-		await LootHub.RefreshLoots(context);
-	});
-
-	endpoints.MapPost("FinishLootRequests", async (context) =>
-	{
-		var db = context.RequestServices.GetRequiredService<LootGodContext>();
-		var items = await db.LootRequests
-			.Include(x => x.Loot)
-			.ToListAsync();
-
-		foreach (var x in items.Where(x => x.Granted))
-		{
-			x.Loot.Quantity -= x.Quantity;
-		}
-
-		// delete *ALL* loot requests
-		db.LootRequests.RemoveRange(items);
-
-		_ = await db.SaveChangesAsync();
-
-		await LootHub.RefreshLoots(context);
-	});
-
-	endpoints.MapGet("GetGrantedLootOutput", async (context) =>
-	{
-		var db = context.RequestServices.GetRequiredService<LootGodContext>();
-		var items = (await db.LootRequests
-			.Include(x => x.Loot)
-			.Where(x => x.Granted)
-			.OrderBy(x => x.LootId)
-			.ThenBy(x => x.MainName)
-			.ThenBy(x => x.CharacterName)
-			.ToListAsync())
-			.GroupBy(x => (x.LootId, x.MainName, x.CharacterName))
-			.Select(x =>
-			{
-				var item = x.First();
-				return $"{item.Loot.Name} | {item.MainName} ({item.CharacterName}) | x{x.Sum(y => y.Quantity)}";
-			});
-		var output = string.Join(Environment.NewLine, items);
-
-		await context.Response.WriteAsync(output);
-	});
-
-	//app.MapPost("CreatePlayer", async (context) =>
-	//{
-	//	var dto = await context.Request.ReadFromJsonAsync<CreatePlayer>();
-	//	ArgumentNullException.ThrowIfNull(dto);
-	//	var db = context.RequestServices.GetRequiredService<LootGodContext>();
-	//	var player = new Player(dto);
-	//	_ = db.Players.Add(player);
-	//	_ = await db.SaveChangesAsync();
-
-	//	await context.Response.WriteAsync(player.Key);
-	//});
+	_ = db.LoginAttempts.Add(new(dto.MainName, ip));
+	_ = await db.SaveChangesAsync();
 });
 
-app.Run();
+app.MapGet("GetLootRequests", async (LootGodContext db) =>
+{
+	return (await db.LootRequests
+		.OrderByDescending(x => x.Spell != null)
+		.ThenBy(x => x.LootId)
+		.ThenByDescending(x => x.CharacterName)
+		.ToListAsync())
+		.Select(x => new LootRequestDto(x));
+});
+
+app.MapGet("GetLoots", async (LootGodContext db) =>
+{
+	return (await db.Loots
+		.OrderBy(x => x.Name)
+		.ToListAsync())
+		.Select(x => new LootDto(x));
+});
+
+app.MapPost("CreateLoot", async (CreateLoot dto, LootGodContext db, HttpContext context) =>
+{
+	var loot = await db.Loots.SingleOrDefaultAsync(x => x.Name == dto.Name) ?? new(dto);
+	if (loot.Id == 0)
+	{
+		_ = db.Loots.Add(loot);
+	}
+	else
+	{
+		loot.Quantity = dto.Quantity;
+	}
+	_ = await db.SaveChangesAsync();
+
+	await LootHub.RefreshLoots(db, hub);
+});
+
+app.MapPost("CreateLootRequest", async (CreateLootRequest dto, LootGodContext db, HttpContext context) =>
+{
+	//var exists = context.Request.Headers.TryGetValue("key", out var key);
+
+	//if (!exists) { throw new UnauthorizedAccessException(); }
+
+	//var player = await db.Players.SingleAsync(x => x.Key == key);
+	var ip = context.Connection.RemoteIpAddress?.ToString();
+
+	var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
+	var requestCount = await db.LootRequests.CountAsync(x => x.IP == ip && x.CreatedDate > oneWeekAgo);
+	if (requestCount > 100) { throw new Exception("Limit Break - More than 100 requests per week from single IP"); }
+
+	var item = new LootRequest(dto, ip);
+	_ = db.LootRequests.Add(item);
+	_ = await db.SaveChangesAsync();
+
+	await LootHub.RefreshLoots(db, hub);
+});
+
+app.MapPost("DeleteLootRequest", async (LootGodContext db, HttpContext context) =>
+{
+	var id = int.Parse(context.Request.Query["id"]);
+	var item = await db.LootRequests.SingleAsync(x => x.Id == id);
+	db.LootRequests.Remove(item);
+	_ = await db.SaveChangesAsync();
+
+	await LootHub.RefreshLoots(db, hub);
+});
+
+app.MapPost("DeleteLoot", async (LootGodContext db, HttpContext context) =>
+{
+	var id = int.Parse(context.Request.Query["id"]);
+	var requests = await db.LootRequests.Where(x => x.LootId == id).ToListAsync();
+	db.LootRequests.RemoveRange(requests);
+	_ = await db.SaveChangesAsync();
+
+	await LootHub.RefreshLoots(db, hub);
+});
+
+app.MapPost("EnableLootLock", async (LootGodContext db, HttpContext context) =>
+{
+	var ip = context.Connection.RemoteIpAddress?.ToString();
+	_ = db.LootLocks.Add(new(true, ip));
+	_ = await db.SaveChangesAsync();
+
+	await LootHub.RefreshLoots(db, hub);
+});
+
+app.MapPost("DisableLootLock", async (LootGodContext db, HttpContext context) =>
+{
+	var ip = context.Connection.RemoteIpAddress?.ToString();
+	_ = db.LootLocks.Add(new(false, ip));
+	_ = await db.SaveChangesAsync();
+
+	await LootHub.RefreshLoots(db, hub);
+});
+
+app.MapGet("GetLootLock", async (LootGodContext db) =>
+{
+	var lootLock = await db.LootLocks.OrderByDescending(x => x.CreatedDate).FirstOrDefaultAsync();
+
+	return lootLock?.Lock ?? false;
+});
+
+app.MapPost("GrantLootRequest", async (LootGodContext db, HttpContext context) =>
+{
+	var id = int.Parse(context.Request.Query["id"]);
+	var item = await db.LootRequests.SingleAsync(x => x.Id == id);
+	item.Granted = true;
+	_ = await db.SaveChangesAsync();
+
+	await LootHub.RefreshLoots(db, hub);
+});
+
+app.MapPost("UngrantLootRequest", async (LootGodContext db, HttpContext context) =>
+{
+	var id = int.Parse(context.Request.Query["id"]);
+	var item = await db.LootRequests.SingleAsync(x => x.Id == id);
+	item.Granted = false;
+	_ = await db.SaveChangesAsync();
+
+	await LootHub.RefreshLoots(db, hub);
+});
+
+app.MapPost("FinishLootRequests", async (LootGodContext db) =>
+{
+	var items = await db.LootRequests
+		.Include(x => x.Loot)
+		.ToListAsync();
+
+	foreach (var x in items.Where(x => x.Granted))
+	{
+		x.Loot.Quantity -= x.Quantity;
+	}
+
+	// delete *ALL* loot requests
+	db.LootRequests.RemoveRange(items);
+
+	_ = await db.SaveChangesAsync();
+
+	await LootHub.RefreshLoots(db, hub);
+});
+
+app.MapGet("GetGrantedLootOutput", async (LootGodContext db) =>
+{
+	var items = (await db.LootRequests
+		.Include(x => x.Loot)
+		.Where(x => x.Granted)
+		.OrderBy(x => x.LootId)
+		.ThenBy(x => x.MainName)
+		.ThenBy(x => x.CharacterName)
+		.ToListAsync())
+		.GroupBy(x => (x.LootId, x.MainName, x.CharacterName))
+		.Select(x =>
+		{
+			var item = x.First();
+			return $"{item.Loot.Name} | {item.MainName} ({item.CharacterName}) | x{x.Sum(y => y.Quantity)}";
+		});
+
+	return string.Join(Environment.NewLine, items);
+});
+
+//app.MapPost("CreatePlayer", async (context) =>
+//{
+//	var dto = await context.Request.ReadFromJsonAsync<CreatePlayer>();
+//	ArgumentNullException.ThrowIfNull(dto);
+//	var db = context.RequestServices.GetRequiredService<LootGodContext>();
+//	var player = new Player(dto);
+//	_ = db.Players.Add(player);
+//	_ = await db.SaveChangesAsync();
+
+//	await context.Response.WriteAsync(player.Key);
+//});
+
+await app.RunAsync();
 
 public class CreateLoginAttempt
 {
