@@ -4,7 +4,7 @@ import { Row, Col, Alert, Button, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios, { AxiosPromise } from 'axios';
 
-const api = process.env.API_PATH
+const api = process.env.REACT_APP_API_PATH;
 
 export function CreateLoot() {
 

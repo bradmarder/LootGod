@@ -6,7 +6,7 @@ import axios, { AxiosPromise } from 'axios';
 import classes from './eqClasses';
 import { EQClass } from './eqClass';
 
-const api = process.env.API_PATH
+const api = process.env.REACT_APP_API_PATH;
 
 export function CreateLootRequest(props: IContext) {
 

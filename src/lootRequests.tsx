@@ -5,7 +5,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import classes from './eqClasses';
 
-const api = process.env.API_PATH
+const api = process.env.REACT_APP_API_PATH;
 
 export function LootRequests(props: IContext) {
 

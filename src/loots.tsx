@@ -5,21 +5,11 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import classes from './eqClasses';
 
-const api = process.env.API_PATH
+const api = process.env.REACT_APP_API_PATH;
 
 export default function Loots(props: IContext) {
 
     const [isLoading, setIsLoading] = useState(false);
-
-    const deleteLoot = async (id: number) => {
-        setIsLoading(true);
-        try {
-            await axios.post(api + '/DeleteLoot?id=' + id);
-        }
-        finally {
-            setIsLoading(false);
-        }
-    }
 
     const grantLootRequest = async (id: number) => {
         setIsLoading(true);
