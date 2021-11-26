@@ -5,7 +5,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import classes from './eqClasses';
 
-const api = window.location.protocol + '//' + window.location.hostname + ':5000';
+const api = process.env.API_PATH
 
 export function GrantedLoots(props: IContext) {
 

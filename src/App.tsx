@@ -11,7 +11,7 @@ import { CreateLoot } from './createLoot';
 import Loots from './loots';
 import { GrantedLoots } from './grantedLoots';
 
-const api = window.location.protocol + '//' + window.location.hostname + ':5000';
+const api = process.env.API_PATH
 const name = localStorage.getItem('name');
 
 export default function App() {

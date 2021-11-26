@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+﻿import { useState } from 'react';
 import './App.css';
 import { Row, Col, Alert, Button, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -6,7 +6,7 @@ import axios, { AxiosPromise } from 'axios';
 import classes from './eqClasses';
 import { EQClass } from './eqClass';
 
-const api = window.location.protocol + '//' + window.location.hostname + ':5000';
+const api = process.env.API_PATH
 
 export function CreateLootRequest(props: IContext) {
 
