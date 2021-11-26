@@ -17,7 +17,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddRouting();
 builder.Services.AddSignalR(e => e.EnableDetailedErrors = true);
 
-//builder.WebHost.UseUrls("http://*:5000") // not working... temp fix dotnet run --urls "http://*:5000"
+builder.WebHost.UseKestrel(x => x.ListenAnyIP(5000));
 
 using var app = builder.Build();
 
