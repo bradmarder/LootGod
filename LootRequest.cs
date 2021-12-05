@@ -15,7 +15,7 @@ public class LootRequest
 		IP = ip;
 		MainName = dto.MainName.Trim();
 		CharacterName = dto.CharacterName.Trim();
-		Spell = dto.Spell;
+		Spell = dto.Spell?.Trim();
 		Class = dto.Class;
 		LootId = dto.LootId;
 		Quantity = dto.Quantity;
@@ -37,7 +37,7 @@ public class LootRequest
 	public string CharacterName { get; set; } = null!;
 
 	/// <summary>
-	/// Required only if loot type is a spell
+	/// Required only if loot type is a spell or nugget
 	/// </summary>
 	[MaxLength(255)]
 	public string? Spell { get; set; }

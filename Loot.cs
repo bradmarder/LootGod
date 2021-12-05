@@ -23,6 +23,11 @@ public class Loot
 		"Ethernere",
 	};
 
+	private static readonly HashSet<string> _nuggets = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+	{
+		"Diamondized Restless Ore",
+	};
+
 	public Loot() { }
 	public Loot(CreateLoot dto)
 	{
@@ -47,6 +52,7 @@ public class Loot
 	public virtual ICollection<LootRequest> LootRequests { get; } = null!;
 
 	public virtual bool IsSpell =>
-		_spellPrefixes.Any(x => Name.StartsWith(x, StringComparison.OrdinalIgnoreCase))
-		&& _spellSuffixes.Any(x => Name.EndsWith(x, StringComparison.OrdinalIgnoreCase));
+		_nuggets.Contains(Name)
+		|| (_spellPrefixes.Any(x => Name.StartsWith(x, StringComparison.OrdinalIgnoreCase))
+		&& _spellSuffixes.Any(x => Name.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
 }

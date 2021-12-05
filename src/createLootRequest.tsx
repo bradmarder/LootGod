@@ -114,7 +114,7 @@ export function CreateLootRequest(props: IContext) {
                     <Row>
                         <Col>
                             <Form.Group className="mb-3">
-                                <Form.Label>Looks like you've selected a spell rune. You are <strong className={'text-danger'}>*required*</strong> to name the spell you want with this rune.</Form.Label>
+                                <Form.Label>Looks like you've selected a spell rune/nugget. You are <strong className={'text-danger'}>*required*</strong> to name the spell/item you want with this rune/nugget.</Form.Label>
                                 <Form.Control type="text" placeholder="Spell name" value={spell} onChange={e => setSpell(e.target.value)} />
                             </Form.Group>
                         </Col>
