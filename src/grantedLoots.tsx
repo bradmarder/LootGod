@@ -42,7 +42,7 @@ export function GrantedLoots(props: IContext) {
             }
             {grantedLootRequests.length > 0 &&
                 <>
-                    <a target="_blank" href={api + "/GetGrantedLootOutput"}>View Granted Loot Output Text (for discord)</a>
+                    <a target="_blank" rel="noreferrer" href={api + "/GetGrantedLootOutput"}>View Granted Loot Output Text (for discord)</a>
                     <Table striped bordered hover size="sm">
                         <thead>
                             <tr>
