@@ -4,6 +4,10 @@ public class StaticData
 {
 	public static readonly HashSet<string> ToLLoots = new(StringComparer.OrdinalIgnoreCase)
 	{
+		"Suit of Eclipsed Light Cloth",
+		"Suit of Eclipsed Light Leather",
+		"Suit of Eclipses Light Chain",
+		"Suit of Eclipsed Light Plate",
 		"Eclipsed Light Cloth Hands Ornament",
 		"Eclipsed Light Cloth Arms Ornament",
 		"Eclipsed Light Cloth Chest Ornament",
