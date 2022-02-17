@@ -27,11 +27,11 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 
 	await db.Database.EnsureCreatedAsync();
 
-	foreach (var item in StaticData.Loots)
+	foreach (var item in StaticData.Loots.Concat(StaticData.ToLLoots))
 	{
 		if (!db.Loots.Any(x => x.Name == item))
 		{
-			db.Loots.Add(new Loot(item));
+			db.Loots.Add(new(item));
 		}
 	}
 
