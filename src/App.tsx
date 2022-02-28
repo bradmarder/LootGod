@@ -31,7 +31,7 @@ export default function App() {
         setRequests(res.data);
     };
 
-    const isAdmin = mainName === 'Benemage' || mainName === 'Vhau';
+    const isAdmin = ['Benemage', 'Vhau', 'Lainea'].includes(mainName);
 
     const getLootLock = async () => {
         const res = await axios.get<boolean>(api + '/GetLootLock');
