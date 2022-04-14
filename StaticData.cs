@@ -4,6 +4,27 @@ public class StaticData
 {
 	public static readonly HashSet<string> ToLLoots = new(StringComparer.OrdinalIgnoreCase)
 	{
+		// anni raid loots
+		"Arch Convoker's Pantaloons",
+		"Blood Cinder Greaves",
+		"Cobalt-Reinforced Greaves",
+		"Collar of Drolvarg Loyalty",
+		"Drusella's Wedding Ring",
+		"Eldest Spiritist's Greaves",
+		"Kly Skinned Pantaloons",
+		"Leggings of Wrathfulness",
+		"Leggings of the Whistling Fists",
+		"Necklace of the United Tribes",
+		"Sathir Dagger of Sacrifice",
+		"Sathir Staff of Conflict",
+		"Sathir Staff of Forbidden Magic",
+		"Sathir Staff of Leadership",
+		"Sathir's Ring of Eternal Life",
+		"Spellsung Steel Greaves",
+		"Tolan's Brightwood Greaves",
+		"Venril's Wedding Ring",
+		"Wilderness Lord's Trousers",
+
 		"Suit of Eclipsed Light Cloth",
 		"Suit of Eclipsed Light Leather",
 		"Suit of Eclipses Light Chain",
