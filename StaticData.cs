@@ -14,6 +14,7 @@ public class StaticData
 		"Kly Skinned Pantaloons",
 		"Leggings of Wrathfulness",
 		"Leggings of the Whistling Fists",
+		"Mrylokar's Insidious Greaves",
 		"Necklace of the United Tribes",
 		"Sathir Dagger of Sacrifice",
 		"Sathir Staff of Conflict",
