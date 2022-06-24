@@ -4,6 +4,14 @@ public class StaticData
 {
 	public static readonly HashSet<string> ToLLoots = new(StringComparer.OrdinalIgnoreCase)
 	{
+		// rank 3 spells
+		"Minor Shadowscribed Parchment",
+		"Lesser Shadowscribed Parchment",
+		"Median Shadowscribed Parchment",
+		"Greater Shadowscribed Parchment",
+		"Glowing Shadowscribed Parchment",
+		"Captured Shadowscribed Parchment",
+
 		// anni raid loots
 		"Arch Convoker's Pantaloons",
 		"Blood Cinder Greaves",

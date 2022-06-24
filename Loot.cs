@@ -21,6 +21,7 @@ public class Loot
 	{
 		"Rune",
 		"Ethernere",
+		"Shadowscribed Parchment",
 	};
 
 	private static readonly HashSet<string> _nuggets = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
