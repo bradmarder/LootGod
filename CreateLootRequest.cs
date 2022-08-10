@@ -17,4 +17,7 @@ public class CreateLootRequest
 	public EQClass Class { get; set; } // Enum.IsDefined
 	public int LootId { get; set; }
 	public byte Quantity { get; set; }
+
+	[StringLength(255)]
+	public string CurrentItem { get; set; } = null!;
 }

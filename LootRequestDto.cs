@@ -15,6 +15,7 @@ public class LootRequestDto
 		Quantity = model.Quantity;
 		IsAlt = model.IsAlt;
 		Granted = model.Granted;
+		CurrentItem = model.CurrentItem;
 	}
 
 	public int Id { get; }
@@ -28,4 +29,5 @@ public class LootRequestDto
 	public int Quantity { get; }
 	public bool IsAlt { get; }
 	public bool Granted { get; }
+	public string CurrentItem { get; }
 }

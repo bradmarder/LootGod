@@ -2,6 +2,7 @@ using LootGod;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using System.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -61,16 +62,31 @@ app.MapGet("/", () => "Hello World!");
 
 app.MapPost("login", async (CreateLoginAttempt dto, HttpContext context, LootGodContext db) =>
 {
-	var ip = context.Connection.RemoteIpAddress?.ToString();
-	if (ip is null) { return; }
+	var ip = context.Connection.RemoteIpAddress?.ToString() ?? "";
 
 	_ = db.LoginAttempts.Add(new(dto.MainName, ip));
 	_ = await db.SaveChangesAsync();
+
+	return dto.Password == "test";
 });
 
 app.MapGet("GetLootRequests", async (LootGodContext db) =>
 {
 	return (await db.LootRequests
+		.Where(x => !x.Archived)
+		.OrderByDescending(x => x.Spell != null)
+		.ThenBy(x => x.LootId)
+		.ThenByDescending(x => x.CharacterName)
+		.ToListAsync())
+		.Select(x => new LootRequestDto(x));
+});
+
+app.MapGet("GetArchivedLootRequests", async (LootGodContext db, string? name, int? lootId) =>
+{
+	return (await db.LootRequests
+		.Where(x => x.Archived)
+		.Where(x => name == null || EF.Functions.Like(x.CharacterName, name))
+		.Where(x => lootId == null || x.LootId == lootId)
 		.OrderByDescending(x => x.Spell != null)
 		.ThenBy(x => x.LootId)
 		.ThenByDescending(x => x.CharacterName)
@@ -191,15 +207,17 @@ app.MapPost("FinishLootRequests", async (LootGodContext db) =>
 {
 	var items = await db.LootRequests
 		.Include(x => x.Loot)
+		.Where(x => !x.Archived)
 		.ToListAsync();
 
+	foreach (var x in items)
+	{
+		x.Archived = true;
+	}
 	foreach (var x in items.Where(x => x.Granted))
 	{
 		x.Loot.Quantity -= x.Quantity;
 	}
-
-	// delete *ALL* loot requests
-	db.LootRequests.RemoveRange(items);
 
 	_ = await db.SaveChangesAsync();
 
@@ -242,6 +260,7 @@ await app.RunAsync();
 public class CreateLoginAttempt
 {
 	public string MainName { get; set; } = null!;
+	public string Password { get; set; } = null!;
 }
 public class CreatePlayer
 {

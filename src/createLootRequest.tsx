@@ -12,7 +12,8 @@ export function CreateLootRequest(props: IContext) {
 
     const [isLoading, setIsLoading] = useState(false);
     const [charName, setCharName] = useState('');
-    const [spell, setSpell] = useState<string>('');
+    const [spell, setSpell] = useState('');
+    const [currentItem, setCurrentItem] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [eqClass, setClass] = useState('');
     const [lootId, setLootId] = useState(0);
@@ -40,6 +41,7 @@ export function CreateLootRequest(props: IContext) {
             LootId: lootId,
             Quantity: spellSelected ? 1 : quantity,
             Spell: spellSelected ? spell : null,
+            CurrentItem: currentItem,
         };
         setIsLoading(true);
         try {
@@ -120,6 +122,14 @@ export function CreateLootRequest(props: IContext) {
                         </Col>
                     </Row>
                 }
+                <Row>
+                    <Col>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Upgrading From (your current item) <strong className={'text-danger'}>Required for raid-night loot (not rot drops).</strong></Form.Label>
+                            <Form.Control type="text" placeholder="Current Item" value={currentItem} onChange={e => setCurrentItem(e.target.value)} />
+                        </Form.Group>
+                    </Col>
+                </Row>
                 {props.lootLocked &&
                     <Alert variant={'danger'}>
                         Loot requests are currently locked/disabled. Please check back later!

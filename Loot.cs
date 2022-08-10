@@ -27,6 +27,7 @@ public class Loot
 	private static readonly HashSet<string> _nuggets = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
 		"Diamondized Restless Ore",
+		"Calcified Bloodied Ore",
 	};
 
 	public Loot() { }

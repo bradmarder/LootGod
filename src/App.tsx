@@ -10,12 +10,15 @@ import { CreateLootRequest } from './createLootRequest';
 import { CreateLoot } from './createLoot';
 import Loots from './loots';
 import { GrantedLoots } from './grantedLoots';
+import { ArchivedLoot } from './archivedLoot';
 
 const api = process.env.REACT_APP_API_PATH;
 const name = localStorage.getItem('name');
+const admin = localStorage.getItem('admin');
 
 export default function App() {
     const [loading, setLoading] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(admin == 'true');
     const [isReady, setIsReady] = useState(name != null);
     const [lootLock, setLootLock] = useState(false);
     const [mainName, setMainName] = useState(name || '');
@@ -30,9 +33,6 @@ export default function App() {
         const res = await axios.get<ILootRequest[]>(api + '/GetLootRequests');
         setRequests(res.data);
     };
-
-    const isAdmin = ['Benemage', 'Vhau', 'Lainea'].includes(mainName);
-
     const getLootLock = async () => {
         const res = await axios.get<boolean>(api + '/GetLootLock');
         setLootLock(res.data);
@@ -83,8 +83,9 @@ export default function App() {
         setMainName('');
         setIsReady(false);
     };
-    const finishLogin = (name: string) => {
+    const finishLogin = (name: string, admin: boolean) => {
         setMainName(name);
+        setIsAdmin(admin);
         setIsReady(true);
     };
 
@@ -105,6 +106,9 @@ export default function App() {
                                 <br />
                                 {isAdmin &&
                                     <GrantedLoots requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></GrantedLoots>
+                                }
+                                {isAdmin &&
+                                    <ArchivedLoot requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></ArchivedLoot>
                                 }
                             </Col>
                             <Col>

@@ -70,8 +70,7 @@ export function GrantedLoots(props: IContext) {
                         </tbody>
                     </Table>
                     <Alert variant={'warning'}>
-                        <strong>WARNING!</strong> This deletes *ALL* loot requests and subtracts granted quantities. Only click this button once you have
-                        granted all loots *AND* have parceled them out.
+                        <strong>WARNING!</strong> This archives *ALL* loot requests and subtracts granted quantities.
                         <br />
                         <Button variant={'success'} disabled={isLoading} onClick={finishLootGranting}>Finish Granting Loots</Button>
                     </Alert>

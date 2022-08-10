@@ -4,9 +4,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LootGod;
 
-[Index(nameof(IP))]
+[Index(nameof(IP), nameof(CreatedDate))]
 [Index(nameof(CreatedDate))]
-[Index(nameof(CharacterName), nameof(LootId), nameof(Spell), IsUnique = true)]
+[Index(nameof(Archived))]
+
+// multiple requests allowed (could be granted/rejected)
+//[Index(nameof(CharacterName), nameof(LootId), nameof(Spell), IsUnique = true)]
+
 public class LootRequest
 {
 	public LootRequest() { }
@@ -19,6 +23,7 @@ public class LootRequest
 		Class = dto.Class;
 		LootId = dto.LootId;
 		Quantity = dto.Quantity;
+		CurrentItem = dto.CurrentItem;
 	}
 
 	[Key]
@@ -50,10 +55,15 @@ public class LootRequest
 
 	public bool Granted { get; set; }
 
+	public bool Archived { get; set; }
+
 	//public int PlayerId { get; set; }+
 
 	[Range(1, 255)]
 	public byte Quantity { get; set; }
+
+	[MaxLength(255)]
+	public string CurrentItem { get; set; } = null!;
 
 	[ForeignKey(nameof(LootId))]
 	public virtual Loot Loot { get; set; } = null!;

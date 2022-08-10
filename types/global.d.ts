@@ -15,6 +15,7 @@ declare interface ILootRequest {
     readonly quantity: number;
     readonly isAlt: boolean;
     readonly granted: boolean;
+    readonly currentItem: string;
 }
 declare interface IContext {
     readonly mainName: string;

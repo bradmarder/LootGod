@@ -9,6 +9,7 @@ public class LootHub : Hub
 	{
 		var loots = await db.Loots.OrderBy(x => x.Name).ToListAsync();
 		var requests = await db.LootRequests
+			.Where(x => !x.Archived)
 			.OrderByDescending(x => x.Spell)
 			.ThenBy(x => x.LootId)
 			.ThenByDescending(x => x.CharacterName)

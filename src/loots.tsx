@@ -49,9 +49,6 @@ export default function Loots(props: IContext) {
             return ref;
         });
 
-    // if the quantity is <= 0, we don't display the loot anymore
-    //.filter(x => x.quantity > 0);
-
     return (
         <>
             <h3>Available {(props.spell ? 'Spells/Nuggets' : 'Loots')}</h3>
@@ -68,26 +65,25 @@ export default function Loots(props: IContext) {
                             <Accordion.Body>
                                 {props.isAdmin &&
                                     <>
-                                        {/*/<Button variant='danger' disabled={isLoading} onClick={() => deleteLoot(item.id)}>Delete "{item.name}" and all {props.requests.filter(x => x.lootId === item.id).length} request(s)</Button>
-                                        <hr />*/}
                                         {item.quantity === 0 &&
                                             <Alert variant={'warning'}><strong>Grant Disabled</strong> - Already Allotted Maximum Quantity</Alert>
                                         }
+                                        {props.requests.filter(x => x.lootId === item.id).map(req =>
+                                            <span key={req.id}>
+                                                <strong>{req.mainName}</strong> | {req.characterName} | {req.isAlt ? 'alt' : 'main'} | {classes[req.class as any]} | {req.spell || req.quantity}
+                                                | {req.currentItem}
+                                                &nbsp;
+                                                {props.isAdmin && req.granted &&
+                                                    <Button variant={'danger'} disabled={isLoading} onClick={() => ungrantLootRequest(req.id)}>Un-Grant</Button>
+                                                }
+                                                {props.isAdmin && !req.granted && item.quantity > 0 &&
+                                                    <Button variant={'success'} disabled={isLoading} onClick={() => grantLootRequest(req.id)}>Grant</Button>
+                                                }
+                                                <br />
+                                            </span>
+                                        )}
                                     </>
                                 }
-                                {props.requests.filter(x => x.lootId === item.id).map(req =>
-                                    <span key={req.id}>
-                                        <strong>{req.mainName}</strong> | {req.characterName} | {req.isAlt ? 'alt' : 'main'} | {classes[req.class as any]} | {req.spell || req.quantity}
-                                        &nbsp;
-                                        {props.isAdmin && req.granted &&
-                                            <Button variant={'danger'} disabled={isLoading} onClick={() => ungrantLootRequest(req.id)}>Un-Grant</Button>
-                                        }
-                                        {props.isAdmin && !req.granted && item.quantity > 0 &&
-                                            <Button variant={'success'} disabled={isLoading} onClick={() => grantLootRequest(req.id)}>Grant</Button>
-                                        }
-                                        <br />
-                                    </span>
-                                )}
                             </Accordion.Body>
                         </Accordion.Item>
                     )}
