@@ -1,0 +1,13 @@
+﻿services:
+  client:
+    build:
+      context: ./client
+      args:
+        REACT_APP_API_PATH: http://localhost:5000
+    ports:
+      - "80:80"
+  server:
+    build:
+        context: ./server
+    ports:
+      - "5000:5000"

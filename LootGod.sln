@@ -3,11 +3,57 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LootGod", "LootGod.csproj", "{4CACB3D4-3358-458B-84B2-6080E8B71925}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D31AF743-0F30-4975-A06A-CD4165B8EDB6}"
 	ProjectSection(SolutionItems) = preProject
-		.env = .env
+		.dockerignore = .dockerignore
+		.gitignore = .gitignore
+		docker-compose.yml = docker-compose.yml
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LootGod", "server\LootGod.csproj", "{54F9205B-3F59-4F59-A86F-AC4808F264E1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "client", "client", "{A92F583A-1225-4F90-8267-2C3C2D9AE182}"
+	ProjectSection(SolutionItems) = preProject
+		client\Dockerfile = client\Dockerfile
+		client\logo.svg = client\logo.svg
+		client\package.json = client\package.json
+		client\tsconfig.json = client\tsconfig.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "public", "public", "{5316D9C9-C562-420B-B763-2335F247E3B3}"
+	ProjectSection(SolutionItems) = preProject
+		client\public\favicon.ico = client\public\favicon.ico
+		client\public\index.html = client\public\index.html
+		client\public\logo192.png = client\public\logo192.png
+		client\public\logo512.png = client\public\logo512.png
+		client\public\manifest.json = client\public\manifest.json
+		client\public\robots.txt = client\public\robots.txt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "types", "types", "{A8CDCFBC-81DD-4422-BF7C-21F542BC6286}"
+	ProjectSection(SolutionItems) = preProject
+		client\types\global.d.ts = client\types\global.d.ts
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B35EB5A2-4963-4D0A-8FB1-E746B4EE9648}"
+	ProjectSection(SolutionItems) = preProject
+		client\src\App.css = client\src\App.css
+		client\src\App.test.tsx = client\src\App.test.tsx
+		client\src\App.tsx = client\src\App.tsx
+		client\src\archivedLoot.tsx = client\src\archivedLoot.tsx
+		client\src\createLoot.tsx = client\src\createLoot.tsx
+		client\src\createLootRequest.tsx = client\src\createLootRequest.tsx
+		client\src\eqClass.ts = client\src\eqClass.ts
+		client\src\eqClasses.ts = client\src\eqClasses.ts
+		client\src\grantedLoots.tsx = client\src\grantedLoots.tsx
+		client\src\index.css = client\src\index.css
+		client\src\index.tsx = client\src\index.tsx
+		client\src\login.tsx = client\src\login.tsx
+		client\src\lootRequests.tsx = client\src\lootRequests.tsx
+		client\src\loots.tsx = client\src\loots.tsx
+		client\src\reportWebVitals.ts = client\src\reportWebVitals.ts
+		client\src\setupTests.ts = client\src\setupTests.ts
 	EndProjectSection
 EndProject
 Global
@@ -16,13 +62,18 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{4CACB3D4-3358-458B-84B2-6080E8B71925}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4CACB3D4-3358-458B-84B2-6080E8B71925}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4CACB3D4-3358-458B-84B2-6080E8B71925}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4CACB3D4-3358-458B-84B2-6080E8B71925}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54F9205B-3F59-4F59-A86F-AC4808F264E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54F9205B-3F59-4F59-A86F-AC4808F264E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54F9205B-3F59-4F59-A86F-AC4808F264E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54F9205B-3F59-4F59-A86F-AC4808F264E1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5316D9C9-C562-420B-B763-2335F247E3B3} = {A92F583A-1225-4F90-8267-2C3C2D9AE182}
+		{A8CDCFBC-81DD-4422-BF7C-21F542BC6286} = {A92F583A-1225-4F90-8267-2C3C2D9AE182}
+		{B35EB5A2-4963-4D0A-8FB1-E746B4EE9648} = {A92F583A-1225-4F90-8267-2C3C2D9AE182}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3D2B2E76-5A65-4E0B-ABDE-7269B5628256}
