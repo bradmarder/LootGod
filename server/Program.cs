@@ -17,7 +17,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddRouting();
 builder.Services.AddSignalR(e => e.EnableDetailedErrors = true);
 
-builder.WebHost.UseKestrel(x => x.ListenAnyIP(5000));
+builder.WebHost.UseKestrel();
 
 using var app = builder.Build();
 
