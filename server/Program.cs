@@ -2,14 +2,13 @@ using LootGod;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using System.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSystemd();
 
 var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-var path = Path.Combine(home, "lootgod.db");
+var path = Path.Combine(home, "raidloot.db");
 
 builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite($"Data Source={path};"));
 builder.Services.AddCors(options =>
