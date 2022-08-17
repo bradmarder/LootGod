@@ -75,13 +75,13 @@ export function CreateLootRequest(props: IContext) {
             <h4>Create Loot Request</h4>
             <Form onSubmit={e => { e.preventDefault(); }}>
                 <Row>
-                    <Col>
+                    <Col xs={12} md={6}>
                         <Form.Group className="mb-3">
                             <Form.Label>Character requesting loot (MAIN or ALT name)</Form.Label>
                             <Form.Control type="text" placeholder="Enter name" value={charName} onChange={e => setCharName(e.target.value)} />
                         </Form.Group>
                     </Col>
-                    <Col>
+                    <Col xs={12} md={6}>
                         <Form.Group className="mb-3">
                             <Form.Label>Class</Form.Label>
                             <Form.Select value={eqClass} onChange={e => setClass((e.target as any).value)}>
@@ -94,7 +94,7 @@ export function CreateLootRequest(props: IContext) {
                     </Col>
                 </Row>
                 <Row>
-                    <Col>
+                <Col xs={12} md={6}>
                         <Form.Group className="mb-3">
                             <Form.Label>Loot</Form.Label>
                             <Form.Select value={lootId} onChange={e => setLootLogic(Number((e.target as any).value))}>
@@ -105,7 +105,7 @@ export function CreateLootRequest(props: IContext) {
                             </Form.Select>
                         </Form.Group>
                     </Col>
-                    <Col>
+                    <Col xs={12} md={6}>
                         <Form.Group className="mb-3">
                             <Form.Label>Quantity</Form.Label>
                             <Form.Control type="number" disabled={spellSelected || true} placeholder="Quantity" min="1" max="255" value={quantity} onChange={e => setQuantity(Number(e.target.value))} />

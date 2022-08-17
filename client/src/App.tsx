@@ -99,7 +99,7 @@ export default function App() {
                     }
                     {isReady &&
                         <Row>
-                            <Col>
+                            <Col xs={12} md={6}>
                                 <CreateLootRequest requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></CreateLootRequest>
                                 <br />
                                 <LootRequests requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></LootRequests>
@@ -111,7 +111,7 @@ export default function App() {
                                     <ArchivedLoot requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></ArchivedLoot>
                                 }
                             </Col>
-                            <Col>
+                            <Col xs={12} md={6}>
                                 {isAdmin &&
                                     <>
                                         <CreateLoot></CreateLoot>

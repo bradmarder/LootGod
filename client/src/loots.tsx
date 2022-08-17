@@ -70,8 +70,12 @@ export default function Loots(props: IContext) {
                                         }
                                         {props.requests.filter(x => x.lootId === item.id).map(req =>
                                             <span key={req.id}>
-                                                <strong>{req.mainName}</strong> | {req.characterName} | {req.isAlt ? 'alt' : 'main'} | {classes[req.class as any]} | {req.spell || req.quantity}
-                                                | {req.currentItem}
+                                                <strong>{req.mainName}</strong>
+                                                 | {req.characterName}
+                                                 | {req.isAlt ? 'alt' : 'main'}
+                                                 | {classes[req.class as any]}
+                                                 | {req.spell || req.quantity}
+                                                 | {req.currentItem}
                                                 &nbsp;
                                                 {props.isAdmin && req.granted &&
                                                     <Button variant={'danger'} disabled={isLoading} onClick={() => ungrantLootRequest(req.id)}>Un-Grant</Button>
