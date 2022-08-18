@@ -1,4 +1,4 @@
-﻿import { EQClass } from "./eqClass";
+import { EQClass } from "./eqClass";
 
 const classes = Object.values(EQClass)
 

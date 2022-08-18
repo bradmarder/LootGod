@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import './App.css';
 import { Alert, Button, Accordion } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';

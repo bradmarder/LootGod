@@ -1,4 +1,4 @@
-﻿export enum EQClass {
+export enum EQClass {
     Bard = 'Bard',
     Beastlord = 'Beastlord',
     Beserker = 'Beserker',
