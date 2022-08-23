@@ -21,6 +21,26 @@ export default function Loots(props: IContext) {
         }
     }
 
+    const incrementLoot = async (id: number) => {
+        setIsLoading(true);
+        try {
+            await axios.post(api + '/IncrementLootQuantity?id=' + id);
+        }
+        finally {
+            setIsLoading(false);
+        }
+    }
+
+    const decrementLoot = async (id: number) => {
+        setIsLoading(true);
+        try {
+            await axios.post(api + '/DecrementLootQuantity?id=' + id);
+        }
+        finally {
+            setIsLoading(false);
+        }
+    }
+
     const ungrantLootRequest = async (id: number) => {
         setIsLoading(true);
         try {
@@ -49,6 +69,15 @@ export default function Loots(props: IContext) {
             return ref;
         });
 
+    const getText = (req: ILootRequest) =>
+        [
+            req.characterName,
+            req.isAlt ? 'alt' : 'main',
+            classes[req.class as any],
+            req.spell || req.quantity,
+            req.currentItem,
+        ].join('|');
+
     return (
         <>
             <h3>Available {(props.spell ? 'Spells/Nuggets' : 'Loots')}</h3>
@@ -68,14 +97,13 @@ export default function Loots(props: IContext) {
                                         {item.quantity === 0 &&
                                             <Alert variant={'warning'}><strong>Grant Disabled</strong> - Already Allotted Maximum Quantity</Alert>
                                         }
+                                        <Button variant={'warning'} disabled={isLoading} onClick={() => incrementLoot(item.id)}>Increment Quantity</Button>
+                                        <Button variant={'danger'} disabled={isLoading || item.quantity === 0} onClick={() => decrementLoot(item.id)}>Decrement Quantity</Button>
+                                        <br />
                                         {props.requests.filter(x => x.lootId === item.id).map(req =>
                                             <span key={req.id}>
                                                 <strong>{req.mainName}</strong>
-                                                 | {req.characterName}
-                                                 | {req.isAlt ? 'alt' : 'main'}
-                                                 | {classes[req.class as any]}
-                                                 | {req.spell || req.quantity}
-                                                 | {req.currentItem}
+                                                {getText(req)}
                                                 &nbsp;
                                                 {props.isAdmin && req.granted &&
                                                     <Button variant={'danger'} disabled={isLoading} onClick={() => ungrantLootRequest(req.id)}>Un-Grant</Button>

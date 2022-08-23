@@ -157,6 +157,25 @@ app.MapPost("DeleteLoot", async (LootGodContext db, HttpContext context) =>
 	await LootHub.RefreshLoots(db, hub);
 });
 
+app.MapPost("IncrementLootQuantity", async (LootGodContext db, int id) =>
+{
+	var loot = await db.Loots.SingleAsync(x => x.Id == id);
+	loot.Quantity++;
+	_ = await db.SaveChangesAsync();
+
+	await LootHub.RefreshLoots(db, hub);
+});
+
+app.MapPost("DecrementLootQuantity", async (LootGodContext db, int id) =>
+{
+	var loot = await db.Loots.SingleAsync(x => x.Id == id);
+	loot.Quantity--;
+	loot.Quantity = Math.Max(byte.MinValue, loot.Quantity);
+	_ = await db.SaveChangesAsync();
+
+	await LootHub.RefreshLoots(db, hub);
+});
+
 app.MapPost("EnableLootLock", async (LootGodContext db, HttpContext context) =>
 {
 	var ip = context.Connection.RemoteIpAddress?.ToString();
