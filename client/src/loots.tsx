@@ -76,7 +76,7 @@ export default function Loots(props: IContext) {
             classes[req.class as any],
             req.spell || req.quantity,
             req.currentItem,
-        ].join('|');
+        ].join(' | ');
 
     return (
         <>
@@ -97,9 +97,9 @@ export default function Loots(props: IContext) {
                                         {item.quantity === 0 &&
                                             <Alert variant={'warning'}><strong>Grant Disabled</strong> - Already Allotted Maximum Quantity</Alert>
                                         }
-                                        <Button variant={'warning'} disabled={isLoading} onClick={() => incrementLoot(item.id)}>Increment Quantity</Button>
-                                        <Button variant={'danger'} disabled={isLoading || item.quantity === 0} onClick={() => decrementLoot(item.id)}>Decrement Quantity</Button>
-                                        <br />
+                                        <Button variant={'warning'} size={'sm'} disabled={isLoading} onClick={() => incrementLoot(item.id)}>Increment Quantity</Button>
+                                        <Button variant={'danger'} size={'sm'} disabled={isLoading || item.quantity === 0} onClick={() => decrementLoot(item.id)}>Decrement Quantity</Button>
+                                        <br /><br />
                                         {props.requests.filter(x => x.lootId === item.id).map(req =>
                                             <span key={req.id}>
                                                 <strong>{req.mainName}</strong>

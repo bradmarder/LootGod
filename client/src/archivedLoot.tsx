@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState } from 'react';
 import './App.css';
-import { Row, Col, Alert, Button, Form, Table } from 'react-bootstrap';
+import { Row, Col, Button, Form, Table } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import classes from './eqClasses';
