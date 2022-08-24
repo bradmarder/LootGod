@@ -71,6 +71,7 @@ export default function Loots(props: IContext) {
 
     const getText = (req: ILootRequest) =>
         [
+            req.mainName,
             req.characterName,
             req.isAlt ? 'alt' : 'main',
             classes[req.class as any],
@@ -102,7 +103,6 @@ export default function Loots(props: IContext) {
                                         <br /><br />
                                         {props.requests.filter(x => x.lootId === item.id).map(req =>
                                             <span key={req.id}>
-                                                <strong>{req.mainName}</strong>
                                                 {getText(req)}
                                                 &nbsp;
                                                 {props.isAdmin && req.granted &&
