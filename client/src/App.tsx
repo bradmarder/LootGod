@@ -58,9 +58,7 @@ export default function App() {
 
     useEffect(() => {
         (async () => {
-            await getLootLock();
-            await getLoots();
-            await getLootRequests();
+            await Promise.all([getLootLock(), getLoots(), getLootRequests()]);
         })();
     }, []);
 
@@ -69,9 +67,13 @@ export default function App() {
             .withUrl(api + "/lootHub")
             .build();
 
-        connection.on("refresh", (lootLock: boolean, loots: ILoot[], requests: ILootRequest[]) => {
+        connection.on("lock", (lootLock: boolean) => {
             setLootLock(lootLock);
+        });
+        connection.on("loots", (loots: ILoot[]) => {
             setLoots(loots);
+        });
+        connection.on("requests", (requests: ILootRequest[]) => {
             setRequests(requests);
         });
 
