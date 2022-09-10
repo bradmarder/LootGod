@@ -19,8 +19,10 @@ builder.Services.AddSignalR(e => e.EnableDetailedErrors = true);
 
 builder.WebHost.UseKestrel(x => x.ListenAnyIP(7000));
 builder.Services.AddScoped<LootService>();
+builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
 
 using var app = builder.Build();
+app.UseResponseCompression();
 
 await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateAsyncScope())
 {
@@ -239,13 +241,12 @@ app.MapGet("GetGrantedLootOutput", async (LootGodContext db) =>
 		.Where(x => x.Granted)
 		.OrderBy(x => x.LootId)
 		.ThenBy(x => x.MainName)
-		.ThenBy(x => x.CharacterName)
 		.ToListAsync())
-		.GroupBy(x => (x.LootId, x.MainName, x.CharacterName))
+		.GroupBy(x => (x.LootId, x.MainName))
 		.Select(x =>
 		{
 			var item = x.First();
-			return $"{item.Loot.Name} | {item.MainName} ({item.CharacterName}) | x{x.Sum(y => y.Quantity)}";
+			return $"{item.Loot.Name} | {item.MainName} | x{x.Sum(y => y.Quantity)}";
 		});
 
 	return string.Join(Environment.NewLine, items);
