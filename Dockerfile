@@ -27,14 +27,17 @@ WORKDIR /app
 
 # Copy csproj and restore as distinct layers
 COPY server/*.csproj ./
-RUN dotnet restore
+RUN dotnet restore --runtime alpine-x64
 
 # Copy everything else and build
 COPY server/. ./
-RUN dotnet publish -c Release -o out
+RUN dotnet publish -c Release -o out \
+	--runtime alpine-x64 \
+	--self-contained true \
+	/p:PublishSingleFile=true
 
 # Build runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:7.0-alpine
+FROM mcr.microsoft.com/dotnet/runtime-deps:7.0-alpine
 WORKDIR /app
 COPY --from=build-env /app/out .
 COPY --from=node-build-env /app/build wwwroot
@@ -43,4 +46,4 @@ COPY --from=node-build-env /app/build wwwroot
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "LootGod.dll"]
+ENTRYPOINT ["./LootGod"]

@@ -1,19 +1,23 @@
-# fly.toml file generated for lootgod on 2022-09-10T23:00:38-04:00
+# fly.toml file generated for rotloot
 
-app = "lootgod"
+app = "rotloot"
 kill_signal = "SIGINT"
 kill_timeout = 5
 processes = []
 
 [env]
-
-[mounts]
-  source="loot"
-  destination="/mnt/loot"
+  DATABASE_URL = "/mnt/loot.sqlite"
 
 [experimental]
   allowed_public_ports = []
   auto_rollback = true
+
+[mounts]
+  destination = "/mnt"
+  source = "loot"
+
+[build.args]
+  REACT_APP_API_PATH = ""
 
 [[services]]
   http_checks = []
