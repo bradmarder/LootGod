@@ -1,7 +1,7 @@
 export enum EQClass {
 	Bard = 'Bard',
 	Beastlord = 'Beastlord',
-	Beserker = 'Beserker',
+	Berserker = 'Berserker',
 	Cleric = 'Cleric',
 	Druid = 'Druid',
 	Enchanter = 'Enchanter',

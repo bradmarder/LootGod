@@ -3,7 +3,7 @@ import './App.css';
 import { Container, Row, Col, Alert, Button } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
-import signalR, { HubConnectionBuilder } from '@microsoft/signalr';
+import { HubConnectionBuilder } from '@microsoft/signalr';
 import { Login } from './login';
 import { LootRequests } from './lootRequests';
 import { CreateLootRequest } from './createLootRequest';
@@ -65,7 +65,7 @@ export default function App() {
 	useEffect(() => {
 		const connection = new HubConnectionBuilder()
 			.withUrl(api + "/lootHub")
-			.configureLogging(signalR.LogLevel.Information)
+			.configureLogging(2) // signalR.LogLevel.Information
 			.withAutomaticReconnect()
 			.build();
 
@@ -83,6 +83,8 @@ export default function App() {
 		});
 
 		connection.start();
+
+		return () => { connection.stop(); }
 	}, []);
 
 	const logout = () => {

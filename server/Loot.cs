@@ -4,6 +4,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LootGod;
 
+public enum Expansion : byte
+{
+	CoV = 0,
+	ToL = 1,
+	NoS = 3,
+}
+
 [Index(nameof(Name), IsUnique = true)]
 public class Loot
 {
@@ -31,18 +38,16 @@ public class Loot
 	};
 
 	public Loot() { }
-	public Loot(CreateLoot dto)
-	{
-		Name = dto.Name;
-		Quantity = dto.Quantity;
-	}
-	public Loot(string name)
+	public Loot(string name, Expansion expansion)
 	{
 		Name = name;
+		Expansion = expansion;
 	}
 
 	[Key]
 	public int Id { get; set; }
+
+	public Expansion Expansion { get; set; }
 
 	public byte Quantity { get; set; }
 

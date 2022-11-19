@@ -1,10 +1,10 @@
 ﻿namespace LootGod;
 
-public enum EQClass
+public enum EQClass : byte
 {
 	Bard = 0,
 	Beastlord = 1,
-	Beserker = 2,
+	Berserker = 2,
 	Cleric = 3,
 	Druid = 4,
 	Enchanter = 5,

@@ -29,7 +29,7 @@ export function CreateLoot() {
 		};
 		setIsLoading(true);
 		try {
-			await axios.post<{}, AxiosPromise<ILoot>>(api + '/CreateLoot', data);
+			await axios.post<{}, AxiosPromise<ILoot>>(api + '/UpdateLootQuantity', data);
 		}
 		finally {
 			setIsLoading(false);

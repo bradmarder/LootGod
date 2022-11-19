@@ -22,6 +22,7 @@ public class LootService
 	public async Task RefreshLoots()
 	{
 		var loots = (await _db.Loots
+			.Where(x => x.Expansion == Expansion.ToL)
 			.OrderBy(x => x.Name)
 			.ToListAsync())
 			.Select(x => new LootDto(x))

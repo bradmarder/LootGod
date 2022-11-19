@@ -132,7 +132,7 @@ public class StaticData
 		"Wrath, Lancia of the Blood Beast",
 		"Zelnithak's Pristine Molar",
 	};
-	public static readonly HashSet<string> Loots = new(StringComparer.OrdinalIgnoreCase)
+	public static readonly HashSet<string> CoVLoots = new(StringComparer.OrdinalIgnoreCase)
 	{
 		"Captured Essence of Ethernere",
 		"Glowing Dragontouched Rune",

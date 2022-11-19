@@ -1,37 +1,48 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace LootGod
+namespace LootGod;
+
+public class Player
 {
-	//public class Player
-	//{
-	//	private static string GenerateRandomKey()
-	//	{
-	//		Span<byte> bytes = stackalloc byte[16];
-	//		RandomNumberGenerator.Fill(bytes);
-	//		return new Guid(bytes).ToString("n").Substring(0, 12);
-	//	}
+	public static readonly IReadOnlyDictionary<string, EQClass> ClassNameToEnumMap = new Dictionary<string, EQClass>
+	{
+		["Bard"] = EQClass.Bard,
+		["Beastlord"] = EQClass.Beastlord,
+		["Berserker"] = EQClass.Berserker,
+		["Cleric"] = EQClass.Cleric,
+		["Druid"] = EQClass.Druid,
+		["Enchanter"] = EQClass.Enchanter,
+		["Magician"] = EQClass.Magician,
+		["Monk"] = EQClass.Monk,
+		["Necromancer"] = EQClass.Necromancer,
+		["Paladin"] = EQClass.Paladin,
+		["Ranger"] = EQClass.Ranger,
+		["Rogue"] = EQClass.Rogue,
+		["Shadow"] = EQClass.Shadowknight,
+		["Shaman"] = EQClass.Shaman,
+		["Warrior"] = EQClass.Warrior,
+		["Wizard"] = EQClass.Wizard,
+	};
 
-	//	public Player(CreatePlayer dto)
-	//	{
-	//		CharacterName = dto.Name;
-	//		Key = GenerateRandomKey();
-	//	}
+	public Player() { }
+	public Player(string name, string eqClass)
+	{
+		Name = name;
+		Class = ClassNameToEnumMap[eqClass];
+	}
 
-	//	[Key]
-	//	public int Id { get; set; }
+	[Key]
+	public int Id { get; set; }
 
-	//	public DateTime CreatedDate { get; set; }
+	public DateTime CreatedDate { get; set; }
 
-	//	[MaxLength(12)]
-	//	public string Key { get; set; }
+	[Required]
+	[MaxLength(24)]
+	public string Name { get; set; } = null!;
 
-	//	[MaxLength(24)]
-	//	public string CharacterName { get; set; }
+	public EQClass Class { get; set; }
 
-	//	[InverseProperty(nameof(LootRequest.Player))]
-	//	public virtual ICollection<LootRequest> LootRequests { get; } = null!;
-	//}
+	[InverseProperty(nameof(RaidDump.Player))]
+	public virtual ICollection<RaidDump> RaidDumps { get; } = null!;
 }

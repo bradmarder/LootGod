@@ -74,7 +74,7 @@ export function ArchivedLoot(props: IContext) {
 								<td>{item.spell || item.quantity}</td>
 								<td>{item.currentItem}</td>
 								<td>{item.granted ? "yes" : "no"}</td>
-								<td>{new Date(item.createdDate).toLocaleDateString()}</td>
+								<td>{new Date(item.createdDate + '+00:00').toLocaleDateString()}</td>
 							</tr>
 						)}
 					</tbody>
