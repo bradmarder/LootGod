@@ -11,6 +11,7 @@ public enum Expansion : byte
 	NoS = 3,
 }
 
+[Index(nameof(Expansion))]
 [Index(nameof(Name), IsUnique = true)]
 public class Loot
 {
