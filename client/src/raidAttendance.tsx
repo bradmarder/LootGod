@@ -35,6 +35,7 @@ export function RaidAttendance() {
 					<thead>
 						<tr>
 							<th>Name</th>
+							<th>Rank</th>
 							<th>30 Days</th>
 							<th>90 Days</th>
 							<th>180 Days</th>
@@ -44,6 +45,7 @@ export function RaidAttendance() {
 						{ra.map((item, i) =>
 							<tr key={item.name}>
 								<td>{item.name}</td>
+								<td>{item.rank}</td>
 								<td className={getTextColor(item._30)}>{item._30}%</td>
 								<td className={getTextColor(item._90)}>{item._90}%</td>
 								<td className={getTextColor(item._180)}>{item._180}%</td>

@@ -25,7 +25,7 @@ if (builder.Environment.IsDevelopment())
 		options.AddDefaultPolicy(policy =>
 			policy.AllowAnyMethod().AllowAnyHeader().AllowCredentials().SetIsOriginAllowed(x => true)));
 }
-
+builder.Services.AddOutputCache();
 builder.Services.AddSignalR(e => e.EnableDetailedErrors = true);
 builder.Services.AddScoped<LootService>();
 builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
@@ -79,6 +79,7 @@ if (app.Environment.IsDevelopment())
 app.UseSwagger();
 app.UseSwaggerUI();
 app.MapHub<LootHub>("/lootHub");
+app.UseOutputCache();
 app.MapGet("/test", () => "Hello World!");
 
 app.MapPost("login", async (CreateLoginAttempt dto, HttpContext context, LootGodContext db) =>
@@ -299,6 +300,32 @@ app.MapPost("ImportRaidLoot", async (LootGodContext db, LootService lootService,
 	await lootService.RefreshLoots();
 });
 
+app.MapPost("ImportPlayerRanks", async (LootGodContext db, IFormFile file) =>
+{
+	await using var stream = file.OpenReadStream();
+	using var sr = new StreamReader(stream);
+	var output = await sr.ReadToEndAsync();
+	var nameToClassMap = output
+		.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
+		.Select(x => x.Split(null))
+
+		// "Shadow Knight" breaks space-separated files
+		.ToDictionary(x => x[0], x => x[2] == "Shadow" ? x[4] : x[3]);
+
+	var players = await db.Players.ToArrayAsync();
+	foreach (var player in players)
+	{
+		if (nameToClassMap.TryGetValue(player.Name, out var val))
+		{
+			if (Enum.TryParse<Rank>(val, true, out var rank))
+			{
+				player.Rank = rank;
+			}
+		}
+	}
+	await db.SaveChangesAsync();
+});
+
 app.MapPost("ImportRaidDump", async (LootGodContext db, IFormFile file) =>
 {
 	// read the raid dump output file
@@ -366,7 +393,7 @@ app.MapGet("GetPlayerAttendance", async (LootGodContext db) =>
 	var ninety = DateOnly.FromDateTime(ninetyDaysAgo);
 	var thirty = DateOnly.FromDateTime(thirtyDaysAgo);
 
-	var playerIdToNameMap = await db.Players.ToDictionaryAsync(x => x.Id, x => x.Name);
+	var playerMap = await db.Players.ToDictionaryAsync(x => x.Id, x => (x.Name, x.Rank, x.Hidden));
 	var dumps = await db.RaidDumps
 		.Where(x => x.Timestamp > oneHundredEightyDaysAgo)
 		.ToListAsync();
@@ -382,14 +409,16 @@ app.MapGet("GetPlayerAttendance", async (LootGodContext db) =>
 		.ToDictionary(x => x.Key, x => x.Select(y => DateOnly.FromDateTime(y.Timestamp)).ToHashSet())
 		.Select(x => new
 		{
-			Name = playerIdToNameMap[x.Key],
+			Name = playerMap[x.Key].Name,
+			Rank = playerMap[x.Key].Rank.ToString(),
+			Hidden = playerMap[x.Key].Hidden,
 			_30 = Math.Round(100.0 * x.Value.Count(y => y > thirty) / thirtyDayMaxCount, 0, MidpointRounding.AwayFromZero),
 			_90 = Math.Round(100.0 * x.Value.Count(y => y > ninety) / ninetyDayMaxCount, 0, MidpointRounding.AwayFromZero),
 			_180 = Math.Round(100.0 * x.Value.Count() / oneHundredEightDayMaxCount, 0, MidpointRounding.AwayFromZero),
 		})
 		.OrderBy(x => x.Name)
 		.ToArray();
-});
+}).CacheOutput();
 
 app.MapGet("GetTestPlayerAttendance", async (LootGodContext db) =>
 {
@@ -397,7 +426,7 @@ app.MapGet("GetTestPlayerAttendance", async (LootGodContext db) =>
 	var ninetyDaysAgo = DateTime.UtcNow.AddDays(-90);
 	var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
 
-	var playerIdToNameMap = await db.Players.ToDictionaryAsync(x => x.Id, x => x.Name);
+	var playerMap = await db.Players.ToDictionaryAsync(x => x.Id, x => (x.Name, x.Rank, x.Hidden));
 	var dumps = await db.RaidDumps
 		.Where(x => x.Timestamp > oneHundredEightyDaysAgo)
 		.ToListAsync();
@@ -412,24 +441,16 @@ app.MapGet("GetTestPlayerAttendance", async (LootGodContext db) =>
 		.GroupBy(x => x.PlayerId)
 		.Select(x => new
 		{
-			Name = playerIdToNameMap[x.Key],
+			Name = playerMap[x.Key].Name,
+			Rank = playerMap[x.Key].Rank.ToString(),
+			Hidden = playerMap[x.Key].Hidden,
 			_30 = Math.Round(100.0 * x.Count(y => y.Timestamp > thirtyDaysAgo) / thirtyDayMaxCount, 0, MidpointRounding.AwayFromZero),
 			_90 = Math.Round(100.0 * x.Count(y => y.Timestamp > ninetyDaysAgo) / ninetyDayMaxCount, 0, MidpointRounding.AwayFromZero),
 			_180 = Math.Round(100.0 * x.Count(y => y.Timestamp > oneHundredEightyDaysAgo) / oneHundredEightDayMaxCount, 0, MidpointRounding.AwayFromZero),
 		})
 		.OrderBy(x => x.Name)
 		.ToArray();
-});
-
-app.MapGet("GetRaidDumps", async (LootGodContext db) =>
-{
-	return await db.RaidDumps.ToListAsync();
-});
-
-app.MapGet("GetPlayers", async (LootGodContext db) =>
-{
-	return await db.Players.ToListAsync();
-});
+}).CacheOutput();
 
 app.MapGet("GetGrantedLootOutput", async (LootGodContext db) =>
 {

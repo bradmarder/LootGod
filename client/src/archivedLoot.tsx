@@ -58,7 +58,7 @@ export function ArchivedLoot(props: IContext) {
 							<th>Alt/Main</th>
 							<th>Class</th>
 							<th>Loot</th>
-							<th>Quantity</th>
+							<th>Quantity/Upgrading To</th>
 							<th>Upgrading From</th>
 							<th>Granted?</th>
 							<th>Date</th>
@@ -70,10 +70,10 @@ export function ArchivedLoot(props: IContext) {
 								<td>{item.characterName}</td>
 								<td>{item.isAlt ? 'Alt' : 'Main'}</td>
 								<td>{classes[item.class as any]}</td>
-								<td>{props.loots.find(x => x.id === item.lootId)?.name}</td>
+								<td>{props.loots.find(x => x.id === item.lootId)?.name ?? 'old xpac loot'}</td>
 								<td>{item.spell || item.quantity}</td>
 								<td>{item.currentItem}</td>
-								<td>{item.granted ? "yes" : "no"}</td>
+								<td className={item.granted ? 'text-success' : 'text-danger'}>{item.granted ? "yes" : "no"}</td>
 								<td>{new Date(item.createdDate + '+00:00').toLocaleDateString()}</td>
 							</tr>
 						)}

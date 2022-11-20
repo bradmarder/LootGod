@@ -31,6 +31,7 @@ declare interface ILootLock {
 }
 declare interface IRaidAttendance {
 	readonly name: string;
+	readonly rank: string;
 	readonly _30: number;
 	readonly _90: number;
 	readonly _180: number;
