@@ -54,6 +54,21 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 	}
 
 	_ = await db.SaveChangesAsync();
+
+	try
+	{
+		await db.Database.ExecuteSqlRawAsync(
+"""
+CREATE TABLE "Ranks" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_Ranks" PRIMARY KEY AUTOINCREMENT,
+    "CreatedDate" TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+    "Name" TEXT NOT NULL
+);
+""");
+		await db.Database.ExecuteSqlRawAsync("ALTER TABLE Players ADD RankId INTEGER NULL;");
+		await db.Database.ExecuteSqlRawAsync("ALTER TABLE Players ADD Hidden INTEGER NOT NULL default 0;");
+	}
+	catch { }
 }
 
 app.UseExceptionHandler(opt =>
@@ -148,6 +163,13 @@ app.MapPost("UpdateLootQuantity", async (CreateLoot dto, LootGodContext db, Loot
 		.ExecuteUpdateAsync(x => x.SetProperty(y => y.Quantity, dto.Quantity));
 
 	await lootService.RefreshLoots();
+});
+
+app.MapPost("ToggleHiddenPlayer", async (string playerName, LootGodContext db) =>
+{
+	await db.Players
+		.Where(x => x.Name == playerName)
+		.ExecuteUpdateAsync(x => x.SetProperty(y => y.Hidden, y => !y.Hidden));
 });
 
 app.MapPost("CreateLootRequest", async (CreateLootRequest dto, LootGodContext db, HttpContext context, LootService lootService) =>
@@ -302,24 +324,35 @@ app.MapPost("ImportRaidLoot", async (LootGodContext db, LootService lootService,
 
 app.MapPost("ImportPlayerRanks", async (LootGodContext db, IFormFile file) =>
 {
+	// parse the player name -> rank map
 	await using var stream = file.OpenReadStream();
 	using var sr = new StreamReader(stream);
 	var output = await sr.ReadToEndAsync();
-	var nameToClassMap = output
+	var nameToRankMap = output
 		.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
 		.Select(x => x.Split(null))
 
 		// "Shadow Knight" breaks space-separated files
 		.ToDictionary(x => x[0], x => x[2] == "Shadow" ? x[4] : x[3]);
 
+	// create the new ranks
+	var rankNames = await db.Ranks.Select(x => x.Name).ToListAsync();
+	foreach (var rank in nameToRankMap.Values.Distinct(StringComparer.OrdinalIgnoreCase).Except(rankNames))
+	{
+		db.Ranks.Add(new(rank));
+	}
+	await db.SaveChangesAsync();
+
+	// load all players/ranks, then set the player rankIds
+	var rankNameToIdMap = await db.Ranks.ToDictionaryAsync(x => x.Name, x => x.Id);
 	var players = await db.Players.ToArrayAsync();
 	foreach (var player in players)
 	{
-		if (nameToClassMap.TryGetValue(player.Name, out var val))
+		if (nameToRankMap.TryGetValue(player.Name, out var val))
 		{
-			if (Enum.TryParse<Rank>(val, true, out var rank))
+			if (rankNameToIdMap.TryGetValue(val, out var rankId))
 			{
-				player.Rank = rank;
+				player.RankId = rankId;
 			}
 		}
 	}
@@ -393,7 +426,8 @@ app.MapGet("GetPlayerAttendance", async (LootGodContext db) =>
 	var ninety = DateOnly.FromDateTime(ninetyDaysAgo);
 	var thirty = DateOnly.FromDateTime(thirtyDaysAgo);
 
-	var playerMap = await db.Players.ToDictionaryAsync(x => x.Id, x => (x.Name, x.Rank, x.Hidden));
+	var playerMap = await db.Players.ToDictionaryAsync(x => x.Id, x => (x.Name, x.RankId, x.Hidden));
+	var rankIdToNameMap = await db.Ranks.ToDictionaryAsync(x => x.Id, x => x.Name);
 	var dumps = await db.RaidDumps
 		.Where(x => x.Timestamp > oneHundredEightyDaysAgo)
 		.ToListAsync();
@@ -406,19 +440,20 @@ app.MapGet("GetPlayerAttendance", async (LootGodContext db) =>
 
 	return dumps
 		.GroupBy(x => x.PlayerId)
-		.ToDictionary(x => x.Key, x => x.Select(y => DateOnly.FromDateTime(y.Timestamp)).ToHashSet())
+		.ToDictionary(x => playerMap[x.Key], x => x.Select(y => DateOnly.FromDateTime(y.Timestamp)).ToHashSet())
 		.Select(x => new
 		{
-			Name = playerMap[x.Key].Name,
-			Rank = playerMap[x.Key].Rank.ToString(),
-			Hidden = playerMap[x.Key].Hidden,
+			Name = x.Key.Name,
+			Hidden = x.Key.Hidden,
+			Rank = x.Key.RankId is null ? "unknown" : rankIdToNameMap[x.Key.RankId.Value],
+
 			_30 = Math.Round(100.0 * x.Value.Count(y => y > thirty) / thirtyDayMaxCount, 0, MidpointRounding.AwayFromZero),
 			_90 = Math.Round(100.0 * x.Value.Count(y => y > ninety) / ninetyDayMaxCount, 0, MidpointRounding.AwayFromZero),
 			_180 = Math.Round(100.0 * x.Value.Count() / oneHundredEightDayMaxCount, 0, MidpointRounding.AwayFromZero),
 		})
 		.OrderBy(x => x.Name)
 		.ToArray();
-}).CacheOutput();
+});
 
 app.MapGet("GetTestPlayerAttendance", async (LootGodContext db) =>
 {
@@ -426,7 +461,8 @@ app.MapGet("GetTestPlayerAttendance", async (LootGodContext db) =>
 	var ninetyDaysAgo = DateTime.UtcNow.AddDays(-90);
 	var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
 
-	var playerMap = await db.Players.ToDictionaryAsync(x => x.Id, x => (x.Name, x.Rank, x.Hidden));
+	var playerMap = await db.Players.ToDictionaryAsync(x => x.Id, x => (x.Name, x.RankId, x.Hidden));
+	var rankIdToNameMap = await db.Ranks.ToDictionaryAsync(x => x.Id, x => x.Name);
 	var dumps = await db.RaidDumps
 		.Where(x => x.Timestamp > oneHundredEightyDaysAgo)
 		.ToListAsync();
@@ -436,21 +472,23 @@ app.MapGet("GetTestPlayerAttendance", async (LootGodContext db) =>
 	var oneHundredEightDayMaxCount = uniqueTimestamps.Count;
 	var ninetyDayMaxCount = uniqueTimestamps.Count(x => x > ninetyDaysAgo);
 	var thirtyDayMaxCount = uniqueTimestamps.Count(x => x > thirtyDaysAgo);
-	
+
 	return dumps
 		.GroupBy(x => x.PlayerId)
+		.ToDictionary(x => playerMap[x.Key], x => x)
 		.Select(x => new
 		{
-			Name = playerMap[x.Key].Name,
-			Rank = playerMap[x.Key].Rank.ToString(),
-			Hidden = playerMap[x.Key].Hidden,
-			_30 = Math.Round(100.0 * x.Count(y => y.Timestamp > thirtyDaysAgo) / thirtyDayMaxCount, 0, MidpointRounding.AwayFromZero),
-			_90 = Math.Round(100.0 * x.Count(y => y.Timestamp > ninetyDaysAgo) / ninetyDayMaxCount, 0, MidpointRounding.AwayFromZero),
-			_180 = Math.Round(100.0 * x.Count(y => y.Timestamp > oneHundredEightyDaysAgo) / oneHundredEightDayMaxCount, 0, MidpointRounding.AwayFromZero),
+			Name = x.Key.Name,
+			Hidden = x.Key.Hidden,
+			Rank = x.Key.RankId is null ? "unknown" : rankIdToNameMap[x.Key.RankId.Value],
+
+			_30 = Math.Round(100.0 * x.Value.Count(y => y.Timestamp > thirtyDaysAgo) / thirtyDayMaxCount, 0, MidpointRounding.AwayFromZero),
+			_90 = Math.Round(100.0 * x.Value.Count(y => y.Timestamp > ninetyDaysAgo) / ninetyDayMaxCount, 0, MidpointRounding.AwayFromZero),
+			_180 = Math.Round(100.0 * x.Value.Count(y => y.Timestamp > oneHundredEightyDaysAgo) / oneHundredEightDayMaxCount, 0, MidpointRounding.AwayFromZero),
 		})
 		.OrderBy(x => x.Name)
 		.ToArray();
-}).CacheOutput();
+});
 
 app.MapGet("GetGrantedLootOutput", async (LootGodContext db) =>
 {

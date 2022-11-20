@@ -15,6 +15,7 @@ public class LootGodContext : DbContext
 	public DbSet<LootLock> LootLocks => Set<LootLock>();
 	public DbSet<Player> Players => Set<Player>();
 	public DbSet<RaidDump> RaidDumps => Set<RaidDump>();
+	public DbSet<Rank> Ranks => Set<Rank>();
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
@@ -35,6 +36,11 @@ public class LootGodContext : DbContext
 
 		modelBuilder
 			.Entity<Player>()
+			.Property(x => x.CreatedDate)
+			.HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+		modelBuilder
+			.Entity<Rank>()
 			.Property(x => x.CreatedDate)
 			.HasDefaultValueSql("CURRENT_TIMESTAMP");
 

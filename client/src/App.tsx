@@ -138,7 +138,7 @@ export default function App() {
 								<br />
 								<Loots requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} spell={false}></Loots>
 								<br />
-								<RaidAttendance></RaidAttendance>
+								<RaidAttendance isAdmin={isAdmin}></RaidAttendance>
 							</Col>
 						</Row>
 					}

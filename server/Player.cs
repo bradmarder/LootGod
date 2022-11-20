@@ -4,14 +4,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LootGod;
 
-public enum Rank : byte
-{
-	Squire = 0,
-	Knight = 1,
-	Recruit = 2,
-	Leader = 3,
-}
-
 [Index(nameof(Name), IsUnique = true)]
 public class Player
 {
@@ -56,12 +48,15 @@ public class Player
 	/// <summary>
 	/// Nullable by default, because this is not known at the time when entered into the DB
 	/// </summary>
-	public Rank? Rank { get; set; }
+	public int? RankId { get; set; }
 
 	/// <summary>
 	/// Only admins may see hidden players in the Raid Attendance table
 	/// </summary>
 	public bool Hidden { get; set; }
+
+	[ForeignKey(nameof(RankId))]
+	public virtual Rank? Rank { get; set; } = null!;
 
 	[InverseProperty(nameof(RaidDump.Player))]
 	public virtual ICollection<RaidDump> RaidDumps { get; } = null!;
