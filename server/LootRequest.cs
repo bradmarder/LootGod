@@ -6,7 +6,7 @@ namespace LootGod;
 
 [Index(nameof(IP), nameof(CreatedDate))]
 [Index(nameof(CreatedDate))]
-[Index(nameof(Archived))]
+[Index(nameof(Archived), nameof(Granted))]
 
 // multiple requests allowed (could be granted/rejected)
 //[Index(nameof(CharacterName), nameof(LootId), nameof(Spell), IsUnique = true)]

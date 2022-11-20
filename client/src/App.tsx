@@ -11,6 +11,7 @@ import { CreateLoot } from './createLoot';
 import Loots from './loots';
 import { GrantedLoots } from './grantedLoots';
 import { ArchivedLoot } from './archivedLoot';
+import { RaidAttendance } from './raidAttendance';
 
 const api = process.env.REACT_APP_API_PATH;
 const name = localStorage.getItem('name');
@@ -136,6 +137,8 @@ export default function App() {
 								<Loots requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} spell={true}></Loots>
 								<br />
 								<Loots requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} spell={false}></Loots>
+								<br />
+								<RaidAttendance></RaidAttendance>
 							</Col>
 						</Row>
 					}

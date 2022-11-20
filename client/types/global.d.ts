@@ -29,3 +29,9 @@ declare interface ILootLock {
 	readonly lock: boolean;
 	readonly createdDate: string | null;
 }
+declare interface IRaidAttendance {
+	readonly name: string;
+	readonly _30: number;
+	readonly _90: number;
+	readonly _180: number;
+}

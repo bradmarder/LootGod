@@ -10,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 var source = Environment.GetEnvironmentVariable("DATABASE_URL");
 var rotLootUrl = Environment.GetEnvironmentVariable("ROT_LOOT_URL");
 var aspnetcore_urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+var password = Environment.GetEnvironmentVariable("PASSWORD");
 using var httpClient = new HttpClient();
 
 // temporary link to old loot database file
@@ -87,7 +88,7 @@ app.MapPost("login", async (CreateLoginAttempt dto, HttpContext context, LootGod
 	_ = db.LoginAttempts.Add(new(dto.MainName, ip));
 	_ = await db.SaveChangesAsync();
 
-	return dto.Password == "Benetank";
+	return dto.Password == password;
 });
 
 var swapComplete = false;
@@ -357,7 +358,7 @@ app.MapPost("BulkImportRaidDump", async (LootGodContext db, IFormFile file) =>
 	}
 });
 
-app.MapGet("GetPlayerRaidDumps", async (LootGodContext db) =>
+app.MapGet("GetPlayerAttendance", async (LootGodContext db) =>
 {
 	var oneHundredEightyDaysAgo = DateTime.UtcNow.AddDays(-180);
 	var ninetyDaysAgo = DateTime.UtcNow.AddDays(-90);
@@ -379,15 +380,18 @@ app.MapGet("GetPlayerRaidDumps", async (LootGodContext db) =>
 	return dumps
 		.GroupBy(x => x.PlayerId)
 		.ToDictionary(x => x.Key, x => x.Select(y => DateOnly.FromDateTime(y.Timestamp)).ToHashSet())
-		.ToDictionary(x => playerIdToNameMap[x.Key], x => new
+		.Select(x => new
 		{
-			_30 = Math.Round(100.0 * x.Value.Count(y => y > thirty) / thirtyDayMaxCount, 2),
-			_90 = Math.Round(100.0 * x.Value.Count(y => y > ninety) / ninetyDayMaxCount, 2),
-			_180 = Math.Round(100.0 * x.Value.Count() / oneHundredEightDayMaxCount, 2),
-		});
+			Name = playerIdToNameMap[x.Key],
+			_30 = Math.Round(100.0 * x.Value.Count(y => y > thirty) / thirtyDayMaxCount, 0, MidpointRounding.AwayFromZero),
+			_90 = Math.Round(100.0 * x.Value.Count(y => y > ninety) / ninetyDayMaxCount, 0, MidpointRounding.AwayFromZero),
+			_180 = Math.Round(100.0 * x.Value.Count() / oneHundredEightDayMaxCount, 0, MidpointRounding.AwayFromZero),
+		})
+		.OrderBy(x => x.Name)
+		.ToArray();
 });
 
-app.MapGet("GetTruePlayerRaidDumps", async (LootGodContext db) =>
+app.MapGet("GetTestPlayerAttendance", async (LootGodContext db) =>
 {
 	var oneHundredEightyDaysAgo = DateTime.UtcNow.AddDays(-180);
 	var ninetyDaysAgo = DateTime.UtcNow.AddDays(-90);
@@ -406,12 +410,15 @@ app.MapGet("GetTruePlayerRaidDumps", async (LootGodContext db) =>
 	
 	return dumps
 		.GroupBy(x => x.PlayerId)
-		.ToDictionary(x => playerIdToNameMap[x.Key], x => new
+		.Select(x => new
 		{
-			_30 = Math.Round(100.0 * x.Count(y => y.Timestamp > thirtyDaysAgo) / thirtyDayMaxCount, 2),
-			_90 = Math.Round(100.0 * x.Count(y => y.Timestamp > ninetyDaysAgo) / ninetyDayMaxCount, 2),
-			_180 = Math.Round(100.0 * x.Count(y => y.Timestamp > oneHundredEightyDaysAgo) / oneHundredEightDayMaxCount, 2),
-		});
+			Name = playerIdToNameMap[x.Key],
+			_30 = Math.Round(100.0 * x.Count(y => y.Timestamp > thirtyDaysAgo) / thirtyDayMaxCount, 0, MidpointRounding.AwayFromZero),
+			_90 = Math.Round(100.0 * x.Count(y => y.Timestamp > ninetyDaysAgo) / ninetyDayMaxCount, 0, MidpointRounding.AwayFromZero),
+			_180 = Math.Round(100.0 * x.Count(y => y.Timestamp > oneHundredEightyDaysAgo) / oneHundredEightDayMaxCount, 0, MidpointRounding.AwayFromZero),
+		})
+		.OrderBy(x => x.Name)
+		.ToArray();
 });
 
 app.MapGet("GetRaidDumps", async (LootGodContext db) =>
@@ -427,9 +434,8 @@ app.MapGet("GetPlayers", async (LootGodContext db) =>
 app.MapGet("GetGrantedLootOutput", async (LootGodContext db) =>
 {
 	var items = (await db.LootRequests
-		.Where(x => !x.Archived)
+		.Where(x => x.Granted && !x.Archived)
 		.Include(x => x.Loot)
-		.Where(x => x.Granted)
 		.OrderBy(x => x.LootId)
 		.ThenBy(x => x.MainName)
 		.ToListAsync())
