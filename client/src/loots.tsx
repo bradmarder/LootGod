@@ -91,7 +91,12 @@ export default function Loots(props: IContext) {
 				<Accordion>
 					{items.map((item, i) =>
 						<Accordion.Item key={item.id} eventKey={i.toString()}>
-							<Accordion.Header>{item.name} | {item.quantity} available | {props.requests.filter(x => x.lootId === item.id).length} request(s)</Accordion.Header>
+							<Accordion.Header>
+								{!props.spell &&
+									<a href={'https://www.raidloot.com/items?view=List&name=' + item.name} target='_blank'>{item.name}</a>
+								}
+								{props.spell && item.name}
+								&nbsp;| {item.quantity} available | {props.requests.filter(x => x.lootId === item.id).length} request(s)</Accordion.Header>
 							<Accordion.Body>
 								{props.isAdmin &&
 									<>
