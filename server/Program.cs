@@ -14,7 +14,7 @@ var password = Environment.GetEnvironmentVariable("PASSWORD");
 using var httpClient = new HttpClient();
 
 // temporary link to old loot database file
-builder.Services.AddDbContext<OldContext>(x => x.UseSqlite($"Data Source=/mnt/loot.sqlite;"));
+//builder.Services.AddDbContext<OldContext>(x => x.UseSqlite($"Data Source=/mnt/loot.sqlite;"));
 
 builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite($"Data Source={source};"));
 builder.Services.AddEndpointsApiExplorer();
@@ -97,9 +97,14 @@ app.MapHub<LootHub>("/lootHub");
 app.UseOutputCache();
 app.MapGet("/test", () => "Hello World!");
 
+string? GetIPAddress(HttpContext context) =>
+	context.Request.Headers.TryGetValue("Fly-Client-IP", out var val)
+		? val
+		: context.Connection.RemoteIpAddress?.ToString();
+
 app.MapPost("login", async (CreateLoginAttempt dto, HttpContext context, LootGodContext db) =>
 {
-	var ip = context.Connection.RemoteIpAddress?.ToString() ?? "";
+	var ip = GetIPAddress(context) ?? "";
 
 	_ = db.LoginAttempts.Add(new(dto.MainName, ip));
 	_ = await db.SaveChangesAsync();
@@ -107,20 +112,20 @@ app.MapPost("login", async (CreateLoginAttempt dto, HttpContext context, LootGod
 	return dto.Password == password;
 });
 
-var swapComplete = false;
-app.MapGet("SwapDB", async (LootGodContext newDb, OldContext oldDb) =>
-{
-	if (swapComplete) { return; }
+// var swapComplete = false;
+// app.MapGet("SwapDB", async (LootGodContext newDb, OldContext oldDb) =>
+// {
+// 	if (swapComplete) { return; }
 	
-	var req = await oldDb.LootRequests.ToListAsync();
-	var login = await oldDb.LoginAttempts.ToListAsync();
+// 	var req = await oldDb.LootRequests.ToListAsync();
+// 	var login = await oldDb.LoginAttempts.ToListAsync();
 
-	newDb.LootRequests.AddRange(req);
-	newDb.LoginAttempts.AddRange(login);
+// 	newDb.LootRequests.AddRange(req);
+// 	newDb.LoginAttempts.AddRange(login);
 
-	await newDb.SaveChangesAsync();
-	swapComplete = true;
-});
+// 	await newDb.SaveChangesAsync();
+// 	swapComplete = true;
+// });
 
 app.MapGet("GetLootRequests", async (LootGodContext db) =>
 {
@@ -174,11 +179,11 @@ app.MapPost("ToggleHiddenPlayer", async (string playerName, LootGodContext db) =
 
 app.MapPost("CreateLootRequest", async (CreateLootRequest dto, LootGodContext db, HttpContext context, LootService lootService) =>
 {
-	var ip = context.Connection.RemoteIpAddress?.ToString();
+	var ip = GetIPAddress(context);
 
-	var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
-	var requestCount = await db.LootRequests.CountAsync(x => x.IP == ip && x.CreatedDate > oneWeekAgo);
-	if (requestCount > 100) { throw new Exception("Limit Break - More than 100 requests per week from single IP"); }
+	//var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
+	//var requestCount = await db.LootRequests.CountAsync(x => x.IP == ip && x.CreatedDate > oneWeekAgo);
+	//if (requestCount > 100) { throw new Exception("Limit Break - More than 100 requests per week from single IP"); }
 
 	var item = new LootRequest(dto, ip);
 	_ = db.LootRequests.Add(item);
@@ -226,7 +231,7 @@ app.MapPost("DecrementLootQuantity", async (LootGodContext db, int id, LootServi
 
 app.MapPost("EnableLootLock", async (LootGodContext db, HttpContext context, LootService lootService) =>
 {
-	var ip = context.Connection.RemoteIpAddress?.ToString();
+	var ip = GetIPAddress(context);
 	_ = db.LootLocks.Add(new(true, ip));
 	_ = await db.SaveChangesAsync();
 
@@ -235,7 +240,7 @@ app.MapPost("EnableLootLock", async (LootGodContext db, HttpContext context, Loo
 
 app.MapPost("DisableLootLock", async (LootGodContext db, HttpContext context, LootService lootService) =>
 {
-	var ip = context.Connection.RemoteIpAddress?.ToString();
+	var ip = GetIPAddress(context);
 	_ = db.LootLocks.Add(new(false, ip));
 	_ = await db.SaveChangesAsync();
 
