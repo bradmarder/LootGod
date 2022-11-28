@@ -74,7 +74,7 @@ export default function Loots(props: IContext) {
 			req.mainName,
 			req.characterName,
 			req.isAlt ? 'alt' : 'main',
-			classes[req.class as any],
+			classes[req.class],
 			req.spell || req.quantity,
 			req.currentItem,
 		].join(' | ');

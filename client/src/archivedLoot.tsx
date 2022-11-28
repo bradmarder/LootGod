@@ -39,7 +39,7 @@ export function ArchivedLoot(props: IContext) {
 					<Col>
 						<Form.Group>
 							<Form.Label>Name</Form.Label>
-							<Form.Select value={lootId} onChange={e => setLootId((e.target as any).value)}>
+							<Form.Select value={lootId} onChange={e => setLootId(e.target.value)}>
 								<option value=''>Select Loot</option>
 								{props.loots.map((item, i) =>
 									<option key={item.id} value={item.id}>{item.name}</option>
@@ -69,7 +69,7 @@ export function ArchivedLoot(props: IContext) {
 							<tr key={item.id}>
 								<td>{item.characterName}</td>
 								<td>{item.isAlt ? 'Alt' : 'Main'}</td>
-								<td>{classes[item.class as any]}</td>
+								<td>{classes[item.class]}</td>
 								<td>{props.loots.find(x => x.id === item.lootId)?.name ?? 'old xpac loot'}</td>
 								<td>{item.spell || item.quantity}</td>
 								<td>{item.currentItem}</td>

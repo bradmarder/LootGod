@@ -84,7 +84,7 @@ export function CreateLootRequest(props: IContext) {
 					<Col xs={12} md={6}>
 						<Form.Group className="mb-3">
 							<Form.Label>Class</Form.Label>
-							<Form.Select value={eqClass} onChange={e => setClass((e.target as any).value)}>
+							<Form.Select value={eqClass} onChange={e => setClass(e.target.value)}>
 								<option>Select Class</option>
 								{classes.map((item, i) =>
 									<option key={item} value={item}>{item}</option>
@@ -97,7 +97,7 @@ export function CreateLootRequest(props: IContext) {
 				<Col xs={12} md={6}>
 						<Form.Group className="mb-3">
 							<Form.Label>Loot</Form.Label>
-							<Form.Select value={lootId} onChange={e => setLootLogic(Number((e.target as any).value))}>
+							<Form.Select value={lootId} onChange={e => setLootLogic(Number(e.target.value))}>
 								<option value={0}>Select an Item</option>
 								{hasQtyLoots.map(item =>
 									<option key={item.id} value={item.id}>{item.name}</option>

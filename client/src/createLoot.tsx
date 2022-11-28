@@ -6,21 +6,11 @@ import axios, { AxiosPromise } from 'axios';
 
 const api = process.env.REACT_APP_API_PATH;
 
-export function CreateLoot() {
+export function CreateLoot(props: { loots: ILoot[] }) {
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [createLootName, setCreateLootName] = useState('');
 	const [createLootQuantity, setCreateLootQuantity] = useState(1);
-	const [loots, setLoots] = useState<ILoot[]>([]);
-
-	const getLoots = async () => {
-		const res = await axios.get<ILoot[]>(api + '/GetLoots');
-		setLoots(res.data);
-	};
-
-	useEffect(() => {
-		getLoots();
-	}, []);
 
 	const createLoot = async () => {
 		const data = {
@@ -46,9 +36,9 @@ export function CreateLoot() {
 					<Col>
 						<Form.Group>
 							<Form.Label>Name</Form.Label>
-							<Form.Select value={createLootName} onChange={e => setCreateLootName((e.target as any).value)}>
+							<Form.Select value={createLootName} onChange={e => setCreateLootName(e.target.value)}>
 								<option>Select Loot</option>
-								{loots.map((item, i) =>
+								{props.loots.map((item, i) =>
 									<option key={item.id} value={item.name}>{item.name}</option>
 								)}
 							</Form.Select>

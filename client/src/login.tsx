@@ -15,13 +15,12 @@ export function Login(props: ILoginProps) {
 	const [mainName, setMainName] = useState(name || '');
 	const [password, setPassword] = useState('');
 	const login = async () => {
-		const res = await axios.post(api + "/login", { mainName, password });
-		const admin = res.data as any as boolean;
+		const res = await axios.post<boolean>(api + "/login", { mainName, password });
 
 		localStorage.setItem('name', mainName);
-		localStorage.setItem('admin', admin + '');
+		localStorage.setItem('admin', res.data + '');
 
-		props.finishLogin(mainName, admin);
+		props.finishLogin(mainName, res.data);
 	};
 
 	return (

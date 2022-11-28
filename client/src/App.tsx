@@ -26,16 +26,16 @@ export default function App() {
 	const [requests, setRequests] = useState<ILootRequest[]>([]);
 	const [loots, setLoots] = useState<ILoot[]>([]);
 
-	const getLoots = async () => {
-		const res = await axios.get<ILoot[]>(api + '/GetLoots');
+	const getLoots = async (signal: AbortSignal) => {
+		const res = await axios.get<ILoot[]>(api + '/GetLoots', { signal });
 		setLoots(res.data);
 	};
-	const getLootRequests = async () => {
-		const res = await axios.get<ILootRequest[]>(api + '/GetLootRequests');
+	const getLootRequests = async (signal: AbortSignal) => {
+		const res = await axios.get<ILootRequest[]>(api + '/GetLootRequests', { signal });
 		setRequests(res.data);
 	};
-	const getLootLock = async () => {
-		const res = await axios.get<boolean>(api + '/GetLootLock');
+	const getLootLock = async (signal: AbortSignal) => {
+		const res = await axios.get<boolean>(api + '/GetLootLock', { signal });
 		setLootLock(res.data);
 	};
 	const enableLootLock = async () => {
@@ -58,9 +58,13 @@ export default function App() {
 	};
 
 	useEffect(() => {
-		(async () => {
-			await Promise.all([getLootLock(), getLoots(), getLootRequests()]);
-		})();
+		const controller = new AbortController();
+
+		getLoots(controller.signal);
+		getLootLock(controller.signal);
+		getLootRequests(controller.signal);
+
+		return () => controller.abort();
 	}, []);
 
 	useEffect(() => {
@@ -103,7 +107,7 @@ export default function App() {
 		<Container fluid>
 			<Row>
 				<Col xs={12} md={8}>
-					<h1>KOI Raid Loot Tool</h1>
+					<h1>{process.env.REACT_APP_TITLE}</h1>
 					{!isReady &&
 						<Login finishLogin={finishLogin} />
 					}
@@ -124,7 +128,7 @@ export default function App() {
 							<Col xs={12} md={6}>
 								{isAdmin &&
 									<>
-										<CreateLoot></CreateLoot>
+										<CreateLoot loots={loots}></CreateLoot>
 										{lootLock &&
 											<Button variant={'success'} onClick={disableLootLock} disabled={loading}>Unlock/Enable Loot Requests</Button>
 										}

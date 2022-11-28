@@ -327,7 +327,7 @@ app.MapPost("ImportRaidLoot", async (LootGodContext db, LootService lootService,
 	await lootService.RefreshLoots();
 });
 
-app.MapPost("ImportPlayerRanks", async (LootGodContext db, IFormFile file) =>
+app.MapPost("ImportGuildDump", async (LootGodContext db, IFormFile file) =>
 {
 	// parse the player name -> rank map
 	await using var stream = file.OpenReadStream();
@@ -506,8 +506,8 @@ app.MapGet("GetGrantedLootOutput", async (LootGodContext db) =>
 		.GroupBy(x => (x.LootId, x.MainName))
 		.Select(x =>
 		{
-			var item = x.First();
-			return $"{item.Loot.Name} | {item.MainName} | x{x.Sum(y => y.Quantity)}";
+			var request = x.First();
+			return $"{request.Loot.Name} | {(request.IsAlt ? request.CharacterName : request.MainName)} | x{x.Sum(y => y.Quantity)}";
 		});
 
 	return string.Join(Environment.NewLine, items);

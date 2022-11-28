@@ -48,7 +48,7 @@ export function LootRequests(props: IContext) {
 							<tr key={item.id}>
 								<td>{item.characterName}</td>
 								<td>{item.isAlt ? 'Alt' : 'Main'}</td>
-								<td>{classes[item.class as any]}</td>
+								<td>{classes[item.class]}</td>
 								<td>{props.loots.find(x => x.id === item.lootId)?.name}</td>
 								<td>{item.spell || item.quantity}</td>
 								<td>
