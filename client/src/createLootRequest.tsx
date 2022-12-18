@@ -58,6 +58,7 @@ export function CreateLootRequest(props: IContext) {
 		setLootId(0);
 		setQuantity(1);
 		setClass('');
+		setSpell('');
 	};
 	const setLootLogic = (lootId: number) => {
 

@@ -6,7 +6,6 @@ public class LootRequestDto
 	{
 		Id = model.Id;
 		CreatedDate = model.CreatedDate;
-		IP = model.IP;
 		MainName = model.MainName;
 		CharacterName = model.CharacterName;
 		Class = model.Class;
@@ -20,7 +19,6 @@ public class LootRequestDto
 
 	public int Id { get; }
 	public DateTime CreatedDate { get; }
-	public string? IP { get; }
 	public string MainName { get; }
 	public string CharacterName { get; }
 	public string? Spell { get; }
