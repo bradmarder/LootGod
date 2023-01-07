@@ -9,7 +9,8 @@ public class LootGodContext : DbContext
 		ChangeTracker.LazyLoadingEnabled = false;
 	}
 
-	public DbSet<LoginAttempt> LoginAttempts => Set<LoginAttempt>();
+	public DbSet<Guild> Guilds => Set<Guild>();
+	//public DbSet<LoginAttempt> LoginAttempts => Set<LoginAttempt>();
 	public DbSet<LootRequest> LootRequests => Set<LootRequest>();
 	public DbSet<Loot> Loots => Set<Loot>();
 	public DbSet<LootLock> LootLocks => Set<LootLock>();
@@ -19,6 +20,11 @@ public class LootGodContext : DbContext
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
+		modelBuilder
+			.Entity<Guild>()
+			.Property(x => x.CreatedDate)
+			.HasDefaultValueSql("CURRENT_TIMESTAMP");
+
 		modelBuilder
 			.Entity<LootRequest>()
 			.Property(x => x.CreatedDate)
@@ -43,10 +49,5 @@ public class LootGodContext : DbContext
 			.Entity<Rank>()
 			.Property(x => x.CreatedDate)
 			.HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-		//modelBuilder.Entity<Player>(entity =>
-		//{
-		//	entity.HasIndex(e => e.Key).IsUnique();
-		//});
 	}
 }

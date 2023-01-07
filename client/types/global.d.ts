@@ -13,6 +13,7 @@ declare interface ILootRequest {
 	readonly class: EQClass;
 	readonly lootId: number;
 	readonly quantity: number;
+	readonly raidNight: boolean;
 	readonly isAlt: boolean;
 	readonly granted: boolean;
 	readonly currentItem: string;

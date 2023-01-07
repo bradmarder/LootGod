@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LootGod;
 
@@ -16,9 +17,14 @@ public class LootLock
 	[Key]
 	public int Id { get; set; }
 
+	public int GuildId { get; set; }
+
 	public DateTime CreatedDate { get; set; }
 
 	public string? IP { get; set; }
 
 	public bool Lock { get; set; }
+
+	[ForeignKey(nameof(GuildId))]
+	public virtual Guild? Guild { get; set; } = null!;
 }

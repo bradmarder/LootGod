@@ -5,7 +5,7 @@ public class LootDto
 	public LootDto(Loot model)
 	{
 		Id = model.Id;
-		Quantity = model.Quantity;
+		Quantity = model.RaidQuantity;
 		Name = model.Name;
 		IsSpell = model.IsSpell;
 	}

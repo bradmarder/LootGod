@@ -7,6 +7,7 @@ processes = []
 
 [env]
   DATABASE_URL = "/mnt/loot.db"
+  PASSWORD = "Orrnoo"
 
 [experimental]
   allowed_public_ports = []
@@ -18,6 +19,7 @@ processes = []
 
 [build.args]
   REACT_APP_API_PATH = ""
+  REACT_APP_TITLE = "Rot Loot"
 
 [[services]]
   http_checks = []

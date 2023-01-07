@@ -35,8 +35,7 @@ export function CreateLootRequest(props: IContext) {
 
 	const createLootRequest = async () => {
 		const data = {
-			MainName: props.mainName,
-			CharacterName: charName,
+			AltName: charName,
 			Class: classes.indexOf(eqClass as EQClass),
 			LootId: lootId,
 			Quantity: spellSelected ? 1 : quantity,

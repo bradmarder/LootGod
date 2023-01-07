@@ -105,58 +105,50 @@ export default function App() {
 
 	return (
 		<Container fluid>
-			<Row>
-				<Col xs={12} md={8}>
-					<h1>{process.env.REACT_APP_TITLE}</h1>
-					{!isReady &&
-						<Login finishLogin={finishLogin} />
-					}
-					{isReady &&
-						<Row>
-							<Col xs={12} md={6}>
-								<CreateLootRequest requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></CreateLootRequest>
-								<br />
-								<LootRequests requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></LootRequests>
-								<br />
-								{isAdmin &&
-									<GrantedLoots requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></GrantedLoots>
-								}
-								{isAdmin &&
-									<ArchivedLoot requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></ArchivedLoot>
-								}
-							</Col>
-							<Col xs={12} md={6}>
-								{isAdmin &&
-									<>
-										<CreateLoot loots={loots}></CreateLoot>
-										{lootLock &&
-											<Button variant={'success'} onClick={disableLootLock} disabled={loading}>Unlock/Enable Loot Requests</Button>
-										}
-										{!lootLock &&
-											<Button variant={'danger'} onClick={enableLootLock} disabled={loading}>Lock/Disable Loot Requests</Button>
-										}
-										<br /><br />
-									</>
-								}
-								<Loots requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} spell={true}></Loots>
-								<br />
-								<Loots requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} spell={false}></Loots>
-								<br />
-								<RaidAttendance isAdmin={isAdmin}></RaidAttendance>
-							</Col>
-						</Row>
-					}
-				</Col>
-				{isReady &&
-					<Col md={{ span: 2, offset: 0 }}>
+			<h1>{process.env.REACT_APP_TITLE}</h1>
+			{!isReady &&
+				<Login finishLogin={finishLogin} />
+			}
+			{isReady &&
+				<Row>
+					<Col xs={12} xl={6}>
+						<CreateLootRequest requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></CreateLootRequest>
+						<br />
+						<LootRequests requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></LootRequests>
+						<br />
+						{isAdmin &&
+							<GrantedLoots requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></GrantedLoots>
+						}
+						{isAdmin &&
+							<ArchivedLoot requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></ArchivedLoot>
+						}
+					</Col>
+					<Col xs={12} xl={6}>
 						<Alert variant='secondary'>
 							Logged in as <strong>{mainName}</strong>
 							<br />
 							<Button onClick={logout}>Logout</Button>
 						</Alert>
+						{isAdmin &&
+							<>
+								<CreateLoot loots={loots}></CreateLoot>
+								{lootLock &&
+									<Button variant={'success'} onClick={disableLootLock} disabled={loading}>Unlock/Enable Loot Requests</Button>
+								}
+								{!lootLock &&
+									<Button variant={'danger'} onClick={enableLootLock} disabled={loading}>Lock/Disable Loot Requests</Button>
+								}
+								<br /><br />
+							</>
+						}
+						<Loots requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} spell={true}></Loots>
+						<br />
+						<Loots requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} spell={false}></Loots>
+						<br />
+						<RaidAttendance isAdmin={isAdmin}></RaidAttendance>
 					</Col>
-				}
-			</Row>
+				</Row>
+			}
 		</Container>
 	);
 }

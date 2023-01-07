@@ -11,8 +11,8 @@ public enum Expansion : byte
 	NoS = 3,
 }
 
-[Index(nameof(Expansion))]
-[Index(nameof(Name), IsUnique = true)]
+[Index(nameof(Expansion), nameof(GuildId))]
+[Index(nameof(Name), nameof(GuildId), IsUnique = true)]
 public class Loot
 {
 	private static readonly HashSet<string> _spellPrefixes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -50,11 +50,18 @@ public class Loot
 
 	public Expansion Expansion { get; set; }
 
-	public byte Quantity { get; set; }
+	public byte RaidQuantity { get; set; }
+
+	public byte RotQuantity { get; set; }
+
+	public int GuildId { get; set; }
 
 	[Required]
 	[MaxLength(255)]
 	public string Name { get; set; } = null!;
+
+	[ForeignKey(nameof(GuildId))]
+	public virtual Guild? Guild { get; set; } = null!;
 
 	[InverseProperty(nameof(LootRequest.Loot))]
 	public virtual ICollection<LootRequest> LootRequests { get; } = null!;

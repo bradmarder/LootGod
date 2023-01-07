@@ -7,18 +7,14 @@ namespace LootGod;
 [Index(nameof(IP), nameof(CreatedDate))]
 [Index(nameof(CreatedDate))]
 [Index(nameof(Archived), nameof(Granted))]
-
-// multiple requests allowed (could be granted/rejected)
-//[Index(nameof(CharacterName), nameof(LootId), nameof(Spell), IsUnique = true)]
-
 public class LootRequest
 {
 	public LootRequest() { }
-	public LootRequest(CreateLootRequest dto, string? ip)
+	public LootRequest(CreateLootRequest dto, string? ip, int playerId)
 	{
 		IP = ip;
-		MainName = dto.MainName.Trim();
-		CharacterName = dto.CharacterName.Trim();
+		PlayerId = playerId;
+		AltName = dto.AltName?.Trim();
 		Spell = dto.Spell?.Trim();
 		Class = dto.Class;
 		LootId = dto.LootId;
@@ -33,13 +29,13 @@ public class LootRequest
 
 	public string? IP { get; set; }
 
-	[Required]
-	[MaxLength(24)]
-	public string MainName { get; set; } = null!;
+	//[Required]
+	//[MaxLength(24)]
+	//public string MainName { get; set; } = null!;
 
-	[Required]
-	[MaxLength(24)]
-	public string CharacterName { get; set; } = null!;
+	//[Required]
+	//[MaxLength(24)]
+	public string? AltName { get; set; } = null!;
 
 	/// <summary>
 	/// Required only if loot type is a spell or nugget
@@ -47,17 +43,17 @@ public class LootRequest
 	[MaxLength(255)]
 	public string? Spell { get; set; }
 
-	//public bool IsMain { get; set; }
-
 	public EQClass Class { get; set; }
-
 	public int LootId { get; set; }
 
+	/// <summary>
+	/// True for "raid night" loots, false for "Rot Loot"
+	/// </summary>
+	public bool RaidNight { get; set; }
+
 	public bool Granted { get; set; }
-
 	public bool Archived { get; set; }
-
-	//public int PlayerId { get; set; }+
+	public int? PlayerId { get; set; }
 
 	[Range(1, 255)]
 	public byte Quantity { get; set; }
@@ -65,11 +61,11 @@ public class LootRequest
 	[MaxLength(255)]
 	public string CurrentItem { get; set; } = null!;
 
+	public virtual bool IsAlt => AltName is not null;
+
 	[ForeignKey(nameof(LootId))]
 	public virtual Loot Loot { get; set; } = null!;
 
-	public virtual bool IsAlt => !string.Equals(MainName, CharacterName, StringComparison.OrdinalIgnoreCase);
-
-	//[ForeignKey(nameof(PlayerId))]
-	//public virtual Player Player { get; set; } = null!;
+	[ForeignKey(nameof(PlayerId))]
+	public virtual Player Player { get; set; } = null!;
 }
