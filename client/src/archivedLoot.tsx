@@ -67,7 +67,7 @@ export function ArchivedLoot(props: IContext) {
 					<tbody>
 						{requests.map((item) =>
 							<tr key={item.id}>
-								<td>{item.characterName}</td>
+								<td>{item.altName || item.mainName}</td>
 								<td>{item.isAlt ? 'Alt' : 'Main'}</td>
 								<td>{classes[item.class]}</td>
 								<td>{props.loots.find(x => x.id === item.lootId)?.name ?? 'old xpac loot'}</td>

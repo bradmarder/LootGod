@@ -36,9 +36,10 @@ public class Player
 		Name = name;
 		Class = ClassNameToEnumMap[eqClass];
 	}
-	public Player(GuildDumpPlayerOutput dump)
+	public Player(GuildDumpPlayerOutput dump, int guildId)
 	{
-		IsActive = true;
+		GuildId = guildId;
+		Active = true;
 		Name = dump.Name;
 		Class = ClassNameToEnumMap[dump.Class];
 		Alt = dump.Alt;
@@ -56,8 +57,10 @@ public class Player
 	[Key]
 	public int Id { get; set; }
 
+	public bool Admin { get; set; }
+
 	[StringLength(255)]
-	public string Email { get; set; } = null!;
+	public string? Email { get; set; }
 
 	/// <summary>
 	/// Alts are never given keys
@@ -70,7 +73,7 @@ public class Player
 	/// <summary>
 	/// default true, set to false if guild dump with no player
 	/// </summary>
-	public bool? IsActive { get; set; }
+	public bool? Active { get; set; }
 	public DateOnly? LastOnDate { get; set; }
 
 	public int GuildId { get; set; }
@@ -101,7 +104,7 @@ public class Player
 	public virtual Rank? Rank { get; set; } = null!;
 
 	[ForeignKey(nameof(GuildId))]
-	public virtual Guild? Guild { get; set; } = null!;
+	public virtual Guild Guild { get; set; } = null!;
 
 	[InverseProperty(nameof(RaidDump.Player))]
 	public virtual ICollection<RaidDump> RaidDumps { get; } = null!;

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import './App.css';
 import { Alert, Button, Table } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -10,6 +10,13 @@ const api = process.env.REACT_APP_API_PATH;
 export function LootRequests(props: IContext) {
 
 	const [isLoading, setIsLoading] = useState(false);
+	const [playerId, setPlayerId] = useState(0);
+
+	useEffect(() => {
+		axios
+			.get<number>(api + '/GetPlayerId')
+			.then(x => setPlayerId(x.data));
+	}, []);
 
 	const deleteLootRequest = async (id: number) => {
 		setIsLoading(true);
@@ -22,8 +29,8 @@ export function LootRequests(props: IContext) {
 	};
 
 	const myLootRequests = useMemo(() =>
-		props.requests.filter(x => x.mainName.toLowerCase() === props.mainName.toLowerCase()),
-		[props.mainName, props.requests]);
+		props.requests.filter(x => x.playerId === playerId),
+		[playerId, props.requests]);
 
 	return (
 		<>
@@ -46,7 +53,7 @@ export function LootRequests(props: IContext) {
 					<tbody>
 						{myLootRequests.map((item, i) =>
 							<tr key={item.id}>
-								<td>{item.characterName}</td>
+								<td>{item.altName || item.mainName}</td>
 								<td>{item.isAlt ? 'Alt' : 'Main'}</td>
 								<td>{classes[item.class]}</td>
 								<td>{props.loots.find(x => x.id === item.lootId)?.name}</td>

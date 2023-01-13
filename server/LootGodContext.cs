@@ -13,7 +13,6 @@ public class LootGodContext : DbContext
 	//public DbSet<LoginAttempt> LoginAttempts => Set<LoginAttempt>();
 	public DbSet<LootRequest> LootRequests => Set<LootRequest>();
 	public DbSet<Loot> Loots => Set<Loot>();
-	public DbSet<LootLock> LootLocks => Set<LootLock>();
 	public DbSet<Player> Players => Set<Player>();
 	public DbSet<RaidDump> RaidDumps => Set<RaidDump>();
 	public DbSet<Rank> Ranks => Set<Rank>();
@@ -32,11 +31,6 @@ public class LootGodContext : DbContext
 
 		modelBuilder
 			.Entity<LoginAttempt>()
-			.Property(x => x.CreatedDate)
-			.HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-		modelBuilder
-			.Entity<LootLock>()
 			.Property(x => x.CreatedDate)
 			.HasDefaultValueSql("CURRENT_TIMESTAMP");
 

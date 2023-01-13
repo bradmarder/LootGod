@@ -4,7 +4,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LootGod;
 
-[Index(nameof(IP), nameof(CreatedDate))]
 [Index(nameof(CreatedDate))]
 [Index(nameof(Archived), nameof(Granted))]
 public class LootRequest
@@ -30,11 +29,7 @@ public class LootRequest
 	public string? IP { get; set; }
 
 	//[Required]
-	//[MaxLength(24)]
-	//public string MainName { get; set; } = null!;
-
-	//[Required]
-	//[MaxLength(24)]
+	[MaxLength(24)]
 	public string? AltName { get; set; } = null!;
 
 	/// <summary>
@@ -43,7 +38,7 @@ public class LootRequest
 	[MaxLength(255)]
 	public string? Spell { get; set; }
 
-	public EQClass Class { get; set; }
+	public EQClass? Class { get; set; }
 	public int LootId { get; set; }
 
 	/// <summary>
@@ -53,7 +48,7 @@ public class LootRequest
 
 	public bool Granted { get; set; }
 	public bool Archived { get; set; }
-	public int? PlayerId { get; set; }
+	public int PlayerId { get; set; }
 
 	[Range(1, 255)]
 	public byte Quantity { get; set; }

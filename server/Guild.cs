@@ -15,6 +15,10 @@ public class Guild
 
 	public DateTime CreatedDate { get; set; }
 
+	public bool RaidLootLocked { get; set; }
+
+	public bool RotLootLocked { get; set; }
+
 	public int? LeaderId { get; set; }
 
 	[ForeignKey(nameof(LeaderId))]
@@ -26,6 +30,6 @@ public class Guild
 	[InverseProperty(nameof(Loot.Guild))]
 	public virtual ICollection<Loot> Loots { get; } = null!;
 
-	[InverseProperty(nameof(LootLock.Guild))]
-	public virtual ICollection<LootLock> LootLocks { get; } = null!;
+	[InverseProperty(nameof(Rank.Guild))]
+	public virtual ICollection<Rank> Ranks { get; } = null!;
 }

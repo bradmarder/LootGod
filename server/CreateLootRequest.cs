@@ -10,7 +10,7 @@ public class CreateLootRequest
 	[StringLength(255)]
 	public string? Spell { get; set; }
 
-	public EQClass Class { get; set; } // Enum.IsDefined
+	public EQClass? Class { get; set; } // Enum.IsDefined
 	public int LootId { get; set; }
 	public byte Quantity { get; set; }
 

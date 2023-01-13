@@ -46,6 +46,43 @@ public class LootService
 			.FirstOrDefaultAsync();
 	}
 
+	public async Task<bool> GetAdminStatus()
+	{
+		var key = GetPlayerKey();
+
+		return await _db.Players
+			.Where(x => x.Key == key)
+			.Where(x => x.Active == true)
+			.Select(x => x.Admin)
+			.FirstOrDefaultAsync();
+	}
+
+	public async Task<bool> GetRaidLootLock()
+	{
+		var key = GetPlayerKey();
+
+		return await _db.Players
+			.Where(x => x.Key == key)
+			.Select(x => x.Guild!.RaidLootLocked)
+			.FirstOrDefaultAsync();
+	}
+
+	public async Task EnsureAdminStatus()
+	{
+		if (!await GetAdminStatus())
+		{
+			throw new UnauthorizedAccessException(GetPlayerKey().ToString());
+		}
+	}
+
+	public async Task EnsureRaidLootUnlocked()
+	{
+		if (await GetRaidLootLock())
+		{
+			throw new Exception(GetPlayerKey().ToString());
+		}
+	}
+
 	public async Task RefreshLock(bool locked)
 	{
 		await _hub.Clients.All.SendAsync("lock", locked);
@@ -54,6 +91,7 @@ public class LootService
 	public async Task RefreshLoots()
 	{
 		var loots = (await _db.Loots
+			.AsNoTracking()
 			.Where(x => x.Expansion == Expansion.ToL)
 			.OrderBy(x => x.Name)
 			.ToListAsync())
@@ -66,6 +104,7 @@ public class LootService
 	public async Task RefreshRequests()
 	{
 		var requests = (await _db.LootRequests
+			.AsNoTracking()
 			.Include(x => x.Player)
 			.Where(x => !x.Archived)
 			.OrderByDescending(x => x.Spell)

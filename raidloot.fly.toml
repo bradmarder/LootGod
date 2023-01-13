@@ -6,9 +6,8 @@ kill_timeout = 5
 processes = []
 
 [env]
-  DATABASE_URL = "/mnt/loot.db"
+  DATABASE_URL = "/mnt/guildLoot.db"
   ROT_LOOT_URL = "https://rotloot.fly.dev"
-  PASSWORD = "Knights4ever!"
 
 [experimental]
   allowed_public_ports = []

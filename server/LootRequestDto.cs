@@ -5,10 +5,11 @@ public class LootRequestDto
 	public LootRequestDto(LootRequest model)
 	{
 		Id = model.Id;
+		PlayerId = model.PlayerId;
 		CreatedDate = model.CreatedDate;
+		AltName = model.AltName;
 		MainName = model.Player.Name;
-		CharacterName = model.AltName;
-		Class = model.Class;
+		Class = model.Class ?? model.Player.Class;
 		Spell = model.Spell;
 		LootId = model.LootId;
 		Quantity = model.Quantity;
@@ -19,9 +20,10 @@ public class LootRequestDto
 	}
 
 	public int Id { get; }
+	public int PlayerId { get; }
 	public DateTime CreatedDate { get; }
 	public string MainName { get; }
-	public string? CharacterName { get; }
+	public string? AltName { get; }
 	public string? Spell { get; }
 	public EQClass Class { get; }
 	public int LootId { get; }

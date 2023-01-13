@@ -1,12 +1,14 @@
 using LootGod;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
 
 // using (var reader = File.OpenRead("C:\\Users\\bmarder\\Desktop\\itemlist.txt.gz"))
 // using (var zip = new GZipStream(reader, CompressionMode.Decompress, true))
@@ -21,9 +23,6 @@ var rotLootUrl = Environment.GetEnvironmentVariable("ROT_LOOT_URL");
 var aspnetcore_urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
 var password = Environment.GetEnvironmentVariable("PASSWORD");
 using var httpClient = new HttpClient();
-
-// temporary link to old loot database file
-//builder.Services.AddDbContext<OldContext>(x => x.UseSqlite($"Data Source=/mnt/loot.sqlite;"));
 
 builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite($"Data Source={source};"));
 builder.Services.AddEndpointsApiExplorer();
@@ -48,37 +47,28 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 
 	await db.Database.EnsureCreatedAsync();
 
-	foreach (var item in StaticData.CoVLoots)
-	{
-		if (!db.Loots.Any(x => x.Name == item))
-		{
-			db.Loots.Add(new(item, Expansion.CoV));
-		}
-	}
-	foreach (var item in StaticData.ToLLoots)
-	{
-		if (!db.Loots.Any(x => x.Name == item))
-		{
-			db.Loots.Add(new(item, Expansion.ToL));
-		}
-	}
+	//foreach (var item in StaticData.CoVLoots)
+	//{
+	//	if (!db.Loots.Any(x => x.Name == item))
+	//	{
+	//		db.Loots.Add(new(item, Expansion.CoV));
+	//	}
+	//}
+	//foreach (var item in StaticData.ToLLoots)
+	//{
+	//	if (!db.Loots.Any(x => x.Name == item))
+	//	{
+	//		db.Loots.Add(new(item, Expansion.ToL));
+	//	}
+	//}
 
-	_ = await db.SaveChangesAsync();
+	//_ = await db.SaveChangesAsync();
 
-	try
-	{
-		await db.Database.ExecuteSqlRawAsync(
-"""
-CREATE TABLE "Ranks" (
-    "Id" INTEGER NOT NULL CONSTRAINT "PK_Ranks" PRIMARY KEY AUTOINCREMENT,
-    "CreatedDate" TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    "Name" TEXT NOT NULL
-);
-""");
-		await db.Database.ExecuteSqlRawAsync("ALTER TABLE Players ADD RankId INTEGER NULL;");
-		await db.Database.ExecuteSqlRawAsync("ALTER TABLE Players ADD Hidden INTEGER NOT NULL default 0;");
-	}
-	catch { }
+	//try
+	//{
+	//	await db.Database.ExecuteSqlRawAsync("ALTER TABLE Players ADD Hidden INTEGER NOT NULL default 0;");
+	//}
+	//catch { }
 }
 
 app.UseExceptionHandler(opt =>
@@ -88,7 +78,7 @@ app.UseExceptionHandler(opt =>
 		var ex = context.Features.Get<IExceptionHandlerFeature>();
 		if (ex is not null)
 		{
-			var err = $"Error: {ex.Error.Message} {ex.Error.StackTrace } {ex.Error.InnerException?.Message}";
+			var err = $"Error: {ex.Error.Message} {ex.Error.StackTrace} {ex.Error.InnerException?.Message}";
 			await context.Response.WriteAsync(err);
 			await Console.Out.WriteAsync(err);
 		}
@@ -107,34 +97,10 @@ app.MapHub<LootHub>("/lootHub");
 app.UseOutputCache();
 app.MapGet("/test", () => "Hello World!");
 
-//app.MapPost("login", async (CreateLoginAttempt dto, HttpContext context, LootGodContext db) =>
-//{
-//	var ip = GetIPAddress(context) ?? "";
-
-//	_ = db.LoginAttempts.Add(new(dto.MainName, ip));
-//	_ = await db.SaveChangesAsync();
-
-//	return dto.Password == password;
-//});
-
-// var swapComplete = false;
-// app.MapGet("SwapDB", async (LootGodContext newDb, OldContext oldDb) =>
-// {
-// 	if (swapComplete) { return; }
-	
-// 	var req = await oldDb.LootRequests.ToListAsync();
-// 	var login = await oldDb.LoginAttempts.ToListAsync();
-
-// 	newDb.LootRequests.AddRange(req);
-// 	newDb.LoginAttempts.AddRange(login);
-
-// 	await newDb.SaveChangesAsync();
-// 	swapComplete = true;
-// });
-
 app.MapGet("GetLootRequests", async (LootGodContext db) =>
 {
 	return (await db.LootRequests
+		.AsNoTracking()
 		.Include(x => x.Player)
 		.Where(x => !x.Archived)
 		.OrderByDescending(x => x.Spell != null)
@@ -144,12 +110,15 @@ app.MapGet("GetLootRequests", async (LootGodContext db) =>
 		.Select(x => new LootRequestDto(x));
 });
 
-app.MapGet("GetArchivedLootRequests", async (LootGodContext db, string? name, int? lootId) =>
+app.MapGet("GetArchivedLootRequests", async (LootGodContext db, LootService lootService, string? name, int? lootId) =>
 {
+	await lootService.EnsureAdminStatus();
+
 	return (await db.LootRequests
+		.AsNoTracking()
 		.Include(x => x.Player)
 		.Where(x => x.Archived)
-		.Where(x => name == null || EF.Functions.Like(x.AltName!, name) || EF.Functions.Like(x.Player.Name, name) )
+		.Where(x => name == null || EF.Functions.Like(x.AltName!, name) || EF.Functions.Like(x.Player.Name, name))
 		.Where(x => lootId == null || x.LootId == lootId)
 		.OrderByDescending(x => x.Spell != null)
 		.ThenBy(x => x.LootId)
@@ -161,24 +130,17 @@ app.MapGet("GetArchivedLootRequests", async (LootGodContext db, string? name, in
 app.MapGet("GetLoots", async (LootGodContext db) =>
 {
 	return (await db.Loots
+		.AsNoTracking()
 		.Where(x => x.Expansion == Expansion.ToL)
 		.OrderBy(x => x.Name)
 		.ToListAsync())
 		.Select(x => new LootDto(x));
 });
 
-// TODO: this should take lootId
-app.MapPost("UpdateLootQuantity", async (CreateLoot dto, LootGodContext db, LootService lootService) =>
+app.MapPost("ToggleHiddenPlayer", async (string playerName, LootGodContext db, LootService lootService) =>
 {
-	await db.Loots
-		.Where(x => x.Name == dto.Name)
-		.ExecuteUpdateAsync(x => x.SetProperty(y => y.RaidQuantity, dto.Quantity));
+	await lootService.EnsureAdminStatus();
 
-	await lootService.RefreshLoots();
-});
-
-app.MapPost("ToggleHiddenPlayer", async (string playerName, LootGodContext db) =>
-{
 	await db.Players
 		.Where(x => x.Name == playerName)
 		.ExecuteUpdateAsync(x => x.SetProperty(y => y.Hidden, y => !y.Hidden));
@@ -186,6 +148,8 @@ app.MapPost("ToggleHiddenPlayer", async (string playerName, LootGodContext db) =
 
 app.MapPost("CreateLootRequest", async (CreateLootRequest dto, LootGodContext db, LootService lootService) =>
 {
+	await lootService.EnsureRaidLootUnlocked();
+
 	//var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
 	//var requestCount = await db.LootRequests.CountAsync(x => x.IP == ip && x.CreatedDate > oneWeekAgo);
 	//if (requestCount > 100) { throw new Exception("Limit Break - More than 100 requests per week from single IP"); }
@@ -201,7 +165,20 @@ app.MapPost("CreateLootRequest", async (CreateLootRequest dto, LootGodContext db
 
 app.MapPost("DeleteLootRequest", async (LootGodContext db, HttpContext context, LootService lootService) =>
 {
+	await lootService.EnsureRaidLootUnlocked();
+
 	var id = int.Parse(context.Request.Query["id"]!);
+	var request = await db.LootRequests.FirstOrDefaultAsync(x => x.Id == id);
+	var playerId = await lootService.GetPlayerId();
+	if (request?.PlayerId != playerId)
+	{
+		throw new UnauthorizedAccessException($"PlayerId {playerId} does not have access to loot id {id}");
+	}
+	if (request.Archived)
+	{
+		throw new Exception("Cannot delete archived loot requests");
+	}
+
 	await db.LootRequests
 		.Where(x => x.Id == id)
 		.ExecuteDeleteAsync();
@@ -209,8 +186,22 @@ app.MapPost("DeleteLootRequest", async (LootGodContext db, HttpContext context, 
 	await lootService.RefreshRequests();
 });
 
+// TODO: this should take lootId
+app.MapPost("UpdateLootQuantity", async (CreateLoot dto, LootGodContext db, LootService lootService) =>
+{
+	await lootService.EnsureAdminStatus();
+
+	await db.Loots
+		.Where(x => x.Name == dto.Name)
+		.ExecuteUpdateAsync(x => x.SetProperty(y => y.RaidQuantity, dto.Quantity));
+
+	await lootService.RefreshLoots();
+});
+
 app.MapPost("IncrementLootQuantity", async (LootGodContext db, int id, LootService lootService) =>
 {
+	await lootService.EnsureAdminStatus();
+
 	await db.Loots
 		.Where(x => x.Id == id)
 		.ExecuteUpdateAsync(x => x.SetProperty(y => y.RaidQuantity, y => y.RaidQuantity + 1));
@@ -228,6 +219,9 @@ app.MapPost("DecrementLootQuantity", async (LootGodContext db, int id, LootServi
 	//{
 	//	return;
 	//}
+	// TODO: RotQuantity
+
+	await lootService.EnsureAdminStatus();
 
 	await db.Loots
 		.Where(x => x.Id == id)
@@ -236,10 +230,14 @@ app.MapPost("DecrementLootQuantity", async (LootGodContext db, int id, LootServi
 	await lootService.RefreshLoots();
 });
 
+// TODO: raid/rot loot locking, merge lock api
 app.MapPost("EnableLootLock", async (LootGodContext db, LootService lootService) =>
 {
-	var ip = lootService.GetIPAddress();
-	_ = db.LootLocks.Add(new(true, ip));
+	await lootService.EnsureAdminStatus();
+
+	var guildId = await lootService.GetGuildId();
+	var guild = await db.Guilds.FirstOrDefaultAsync(x => x.Id == guildId);
+	guild!.RaidLootLocked = true;
 	_ = await db.SaveChangesAsync();
 
 	await lootService.RefreshLock(true);
@@ -247,22 +245,35 @@ app.MapPost("EnableLootLock", async (LootGodContext db, LootService lootService)
 
 app.MapPost("DisableLootLock", async (LootGodContext db, LootService lootService) =>
 {
-	var ip = lootService.GetIPAddress();
-	_ = db.LootLocks.Add(new(false, ip));
+	await lootService.EnsureAdminStatus();
+
+	var guildId = await lootService.GetGuildId();
+	var guild = await db.Guilds.FirstOrDefaultAsync(x => x.Id == guildId);
+	guild!.RaidLootLocked = false;
 	_ = await db.SaveChangesAsync();
 
 	await lootService.RefreshLock(false);
 });
 
-app.MapGet("GetLootLock", async (LootGodContext db) =>
+app.MapGet("GetLootLock", async (LootGodContext db, LootService lootService) =>
 {
-	var lootLock = await db.LootLocks.OrderByDescending(x => x.CreatedDate).FirstOrDefaultAsync();
+	return await lootService.GetRaidLootLock();
+});
 
-	return lootLock?.Lock ?? false;
+app.MapGet("GetPlayerId", async (LootService lootService) =>
+{
+	return await lootService.GetPlayerId();
+});
+
+app.MapGet("GetAdminStatus", async (LootService lootService) =>
+{
+	return await lootService.GetAdminStatus();
 });
 
 app.MapPost("GrantLootRequest", async (LootGodContext db, HttpContext context, LootService lootService) =>
 {
+	await lootService.EnsureAdminStatus();
+
 	var id = int.Parse(context.Request.Query["id"]!);
 	await db.LootRequests
 		.Where(x => x.Id == id)
@@ -273,6 +284,8 @@ app.MapPost("GrantLootRequest", async (LootGodContext db, HttpContext context, L
 
 app.MapPost("UngrantLootRequest", async (LootGodContext db, HttpContext context, LootService lootService) =>
 {
+	await lootService.EnsureAdminStatus();
+
 	var id = int.Parse(context.Request.Query["id"]!);
 	await db.LootRequests
 		.Where(x => x.Id == id)
@@ -283,6 +296,8 @@ app.MapPost("UngrantLootRequest", async (LootGodContext db, HttpContext context,
 
 app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootService) =>
 {
+	await lootService.EnsureAdminStatus();
+
 	var items = await db.LootRequests
 		.Include(x => x.Loot)
 		.Where(x => !x.Archived)
@@ -336,6 +351,9 @@ app.MapPost("ImportRaidLoot", async (LootGodContext db, LootService lootService,
 
 app.MapPost("ImportGuildDump", async (LootGodContext db, IFormFile file) =>
 {
+	// TODO: get guildId
+	var guildId = 1;
+
 	// parse the guild dump player output
 	await using var stream = file.OpenReadStream();
 	using var sr = new StreamReader(stream);
@@ -354,7 +372,7 @@ app.MapPost("ImportGuildDump", async (LootGodContext db, IFormFile file) =>
 		.Except(existingRankNames);
 	foreach (var rank in ranks)
 	{
-		db.Ranks.Add(new(rank));
+		db.Ranks.Add(new(rank, guildId));
 	}
 	await db.SaveChangesAsync();
 
@@ -368,7 +386,7 @@ app.MapPost("ImportGuildDump", async (LootGodContext db, IFormFile file) =>
 		var dump = dumps.SingleOrDefault(x => x.Name == player.Name);
 		if (dump is not null)
 		{
-			player.IsActive = true;
+			player.Active = true;
 			player.RankId = rankNameToIdMap[dump.Rank];
 			player.LastOnDate = dump.LastOnDate;
 			player.Level = dump.Level;
@@ -377,7 +395,7 @@ app.MapPost("ImportGuildDump", async (LootGodContext db, IFormFile file) =>
 		else
 		{
 			// if a player no longer appears in a guild dump output, we assert them inactive
-			player.IsActive = false;
+			player.Active = false;
 		}
 	}
 	await db.SaveChangesAsync();
@@ -388,7 +406,7 @@ app.MapPost("ImportGuildDump", async (LootGodContext db, IFormFile file) =>
 		.ToHashSet();
 	var dumpPlayers = dumps
 		.Where(x => !existingNames.Contains(x.Name))
-		.Select(x => new Player(x))
+		.Select(x => new Player(x, guildId))
 		.ToList();
 	db.Players.AddRange(dumpPlayers);
 	await db.SaveChangesAsync();
@@ -453,18 +471,25 @@ app.MapPost("BulkImportRaidDump", async (LootGodContext db, IFormFile file) =>
 	}
 });
 
-app.MapGet("GetPlayerAttendance", async (LootGodContext db) =>
+app.MapGet("GetPlayerAttendance", async (LootGodContext db, LootService lootService) =>
 {
+	var guildId = await lootService.GetGuildId();
 	var oneHundredEightyDaysAgo = DateTime.UtcNow.AddDays(-180);
 	var ninetyDaysAgo = DateTime.UtcNow.AddDays(-90);
 	var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
 	var ninety = DateOnly.FromDateTime(ninetyDaysAgo);
 	var thirty = DateOnly.FromDateTime(thirtyDaysAgo);
 
-	var playerMap = await db.Players.ToDictionaryAsync(x => x.Id, x => (x.Name, x.RankId, x.Hidden));
-	var rankIdToNameMap = await db.Ranks.ToDictionaryAsync(x => x.Id, x => x.Name);
+	var playerMap = await db.Players
+		.Where(x => x.GuildId == guildId)
+		.ToDictionaryAsync(x => x.Id, x => (x.Name, x.RankId, x.Hidden));
+	var rankIdToNameMap = await db.Ranks
+		.Where(x => x.GuildId == guildId)
+		.ToDictionaryAsync(x => x.Id, x => x.Name);
 	var dumps = await db.RaidDumps
+		.Where(x => x.Player.GuildId == guildId)
 		.Where(x => x.Timestamp > oneHundredEightyDaysAgo)
+		.Where(x => x.Player.Active == true)
 		.ToListAsync();
 	var uniqueDates = dumps
 		.Select(x => DateOnly.FromDateTime(x.Timestamp))
@@ -500,6 +525,7 @@ app.MapGet("GetTestPlayerAttendance", async (LootGodContext db) =>
 	var rankIdToNameMap = await db.Ranks.ToDictionaryAsync(x => x.Id, x => x.Name);
 	var dumps = await db.RaidDumps
 		.Where(x => x.Timestamp > oneHundredEightyDaysAgo)
+		.Where(x => x.Player.Active == true)
 		.ToListAsync();
 	var uniqueTimestamps = dumps
 		.Select(x => x.Timestamp)

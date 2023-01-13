@@ -11,7 +11,7 @@ const api = process.env.REACT_APP_API_PATH;
 export function CreateLootRequest(props: IContext) {
 
 	const [isLoading, setIsLoading] = useState(false);
-	const [charName, setCharName] = useState('');
+	const [altName, setAltName] = useState('');
 	const [spell, setSpell] = useState('');
 	const [currentItem, setCurrentItem] = useState('');
 	const [quantity, setQuantity] = useState(1);
@@ -25,7 +25,6 @@ export function CreateLootRequest(props: IContext) {
 	const isCreateLootDisabled =
 		hasQtyLoots.length === 0
 		|| isLoading
-		|| charName === ''
 		|| lootId === 0
 		|| eqClass === ''
 		|| quantity < 1
@@ -35,8 +34,8 @@ export function CreateLootRequest(props: IContext) {
 
 	const createLootRequest = async () => {
 		const data = {
-			AltName: charName,
-			Class: classes.indexOf(eqClass as EQClass),
+			AltName: altName || null,
+			Class: altName === '' ? null : classes.indexOf(eqClass as EQClass),
 			LootId: lootId,
 			Quantity: spellSelected ? 1 : quantity,
 			Spell: spellSelected ? spell : null,
@@ -53,11 +52,12 @@ export function CreateLootRequest(props: IContext) {
 		finally {
 			setIsLoading(false);
 		}
-		setCharName('');
+		setAltName('');
 		setLootId(0);
 		setQuantity(1);
 		setClass('');
 		setSpell('');
+		setCurrentItem('');
 	};
 	const setLootLogic = (lootId: number) => {
 
@@ -77,8 +77,8 @@ export function CreateLootRequest(props: IContext) {
 				<Row>
 					<Col xs={12} md={6}>
 						<Form.Group className="mb-3">
-							<Form.Label>Character requesting loot (MAIN or ALT name)</Form.Label>
-							<Form.Control type="text" placeholder="Enter name" value={charName} onChange={e => setCharName(e.target.value)} />
+							<Form.Label>ALT name (Leave blank if for main)</Form.Label>
+							<Form.Control type="text" placeholder="Enter name" value={altName} onChange={e => setAltName(e.target.value)} />
 						</Form.Group>
 					</Col>
 					<Col xs={12} md={6}>

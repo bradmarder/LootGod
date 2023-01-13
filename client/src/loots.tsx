@@ -72,7 +72,7 @@ export default function Loots(props: IContext) {
 	const getText = (req: ILootRequest) =>
 		[
 			req.mainName,
-			req.characterName,
+			req.altName,
 			req.isAlt ? 'alt' : 'main',
 			classes[req.class],
 			req.spell || req.quantity,

@@ -4,7 +4,7 @@ import { Container, Row, Col, Alert, Button } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import { HubConnectionBuilder } from '@microsoft/signalr';
-import { Login } from './login';
+//import { Login } from './login';
 import { LootRequests } from './lootRequests';
 import { CreateLootRequest } from './createLootRequest';
 import { CreateLoot } from './createLoot';
@@ -14,18 +14,30 @@ import { ArchivedLoot } from './archivedLoot';
 import { RaidAttendance } from './raidAttendance';
 
 const api = process.env.REACT_APP_API_PATH;
-const name = localStorage.getItem('name');
-const admin = localStorage.getItem('admin');
+
+const params = new Proxy(new URLSearchParams(window.location.search), {
+	get: (searchParams, prop) => searchParams.get(prop as string),
+});
+const key = (params as any).key || localStorage.getItem('key');
+if (key == null || key === '') {
+	alert('Must have a player key. Ask your guild for one.');
+	throw new Error();
+}
+localStorage.setItem('key', key);
+axios.defaults.headers.common['Player-Key'] = key;
 
 export default function App() {
 	const [loading, setLoading] = useState(false);
-	const [isAdmin, setIsAdmin] = useState(admin == 'true');
-	const [isReady, setIsReady] = useState(name != null);
+	const [isAdmin, setIsAdmin] = useState(false);
+	const [isReady, setIsReady] = useState(true);
 	const [lootLock, setLootLock] = useState(false);
-	const [mainName, setMainName] = useState(name || '');
 	const [requests, setRequests] = useState<ILootRequest[]>([]);
 	const [loots, setLoots] = useState<ILoot[]>([]);
 
+	const getAdminStatus = async (signal: AbortSignal) => {
+		const res = await axios.get<boolean>(api + '/GetAdminStatus', { signal });
+		setIsAdmin(res.data);
+	};
 	const getLoots = async (signal: AbortSignal) => {
 		const res = await axios.get<ILoot[]>(api + '/GetLoots', { signal });
 		setLoots(res.data);
@@ -60,6 +72,7 @@ export default function App() {
 	useEffect(() => {
 		const controller = new AbortController();
 
+		getAdminStatus(controller.signal);
 		getLoots(controller.signal);
 		getLootLock(controller.signal);
 		getLootRequests(controller.signal);
@@ -92,43 +105,43 @@ export default function App() {
 		return () => { connection.stop(); }
 	}, []);
 
-	const logout = () => {
-		localStorage.removeItem('name');
-		setMainName('');
-		setIsReady(false);
-	};
-	const finishLogin = (name: string, admin: boolean) => {
-		setMainName(name);
-		setIsAdmin(admin);
-		setIsReady(true);
-	};
+	// const logout = () => {
+	// 	localStorage.removeItem('name');
+	// 	setMainName('');
+	// 	setIsReady(false);
+	// };
+	// const finishLogin = (name: string, admin: boolean) => {
+	// 	setMainName(name);
+	// 	setIsAdmin(admin);
+	// 	setIsReady(true);
+	// };
 
 	return (
 		<Container fluid>
 			<h1>{process.env.REACT_APP_TITLE}</h1>
-			{!isReady &&
+			{/* {!isReady &&
 				<Login finishLogin={finishLogin} />
-			}
+			} */}
 			{isReady &&
 				<Row>
 					<Col xs={12} xl={6}>
-						<CreateLootRequest requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></CreateLootRequest>
+						<CreateLootRequest requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock}></CreateLootRequest>
 						<br />
-						<LootRequests requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></LootRequests>
+						<LootRequests requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock}></LootRequests>
 						<br />
 						{isAdmin &&
-							<GrantedLoots requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></GrantedLoots>
+							<GrantedLoots requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock}></GrantedLoots>
 						}
 						{isAdmin &&
-							<ArchivedLoot requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} lootLocked={lootLock}></ArchivedLoot>
+							<ArchivedLoot requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock}></ArchivedLoot>
 						}
 					</Col>
 					<Col xs={12} xl={6}>
-						<Alert variant='secondary'>
+						{/* <Alert variant='secondary'>
 							Logged in as <strong>{mainName}</strong>
 							<br />
 							<Button onClick={logout}>Logout</Button>
-						</Alert>
+						</Alert> */}
 						{isAdmin &&
 							<>
 								<CreateLoot loots={loots}></CreateLoot>
@@ -141,9 +154,9 @@ export default function App() {
 								<br /><br />
 							</>
 						}
-						<Loots requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} spell={true}></Loots>
+						<Loots requests={requests} loots={loots} isAdmin={isAdmin} spell={true}></Loots>
 						<br />
-						<Loots requests={requests} loots={loots} mainName={mainName} isAdmin={isAdmin} spell={false}></Loots>
+						<Loots requests={requests} loots={loots} isAdmin={isAdmin} spell={false}></Loots>
 						<br />
 						<RaidAttendance isAdmin={isAdmin}></RaidAttendance>
 					</Col>
