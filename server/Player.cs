@@ -31,10 +31,11 @@ public class Player
 	};
 
 	public Player() { }
-	public Player(string name, string eqClass)
+	public Player(string name, string eqClass, int guildId)
 	{
 		Name = name;
 		Class = ClassNameToEnumMap[eqClass];
+		GuildId = guildId;
 	}
 	public Player(GuildDumpPlayerOutput dump, int guildId)
 	{
@@ -85,7 +86,7 @@ public class Player
 	public DateTime CreatedDate { get; set; }
 
 	[Required]
-	[MaxLength(24)]
+	[StringLength(24, MinimumLength = 4)]
 	public string Name { get; set; } = null!;
 
 	public EQClass Class { get; set; }

@@ -4,7 +4,7 @@ namespace LootGod;
 
 public class CreateLootRequest
 {
-	[StringLength(24)]
+	[StringLength(24, MinimumLength = 4)]
 	public string? AltName { get; set; }
 
 	[StringLength(255)]

@@ -83,29 +83,35 @@ public class LootService
 		}
 	}
 
-	public async Task RefreshLock(bool locked)
+	public async Task RefreshLock(int guildId, bool locked)
 	{
-		await _hub.Clients.All.SendAsync("lock", locked);
+		await _hub.Clients
+			.Group(guildId.ToString())
+			.SendAsync("lock", locked);
 	}
 
-	public async Task RefreshLoots()
+	public async Task RefreshLoots(int guildId)
 	{
 		var loots = (await _db.Loots
 			.AsNoTracking()
+			.Where(x => x.GuildId == guildId)
 			.Where(x => x.Expansion == Expansion.ToL)
 			.OrderBy(x => x.Name)
 			.ToListAsync())
 			.Select(x => new LootDto(x))
 			.ToArray();
 
-		await _hub.Clients.All.SendAsync("loots", loots);
+		await _hub.Clients
+			.Group(guildId.ToString())
+			.SendAsync("loots", loots);
 	}
 
-	public async Task RefreshRequests()
+	public async Task RefreshRequests(int guildId)
 	{
 		var requests = (await _db.LootRequests
 			.AsNoTracking()
 			.Include(x => x.Player)
+			.Where(x => x.Player.GuildId == guildId)
 			.Where(x => !x.Archived)
 			.OrderByDescending(x => x.Spell)
 			.ThenBy(x => x.LootId)
@@ -114,6 +120,8 @@ public class LootService
 			.Select(x => new LootRequestDto(x))
 			.ToArray();
 
-		await _hub.Clients.All.SendAsync("requests", requests);
+		await _hub.Clients
+			.Group(guildId.ToString())
+			.SendAsync("requests", requests);
 	}
 }

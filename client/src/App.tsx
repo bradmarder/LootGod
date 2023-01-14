@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-import { Container, Row, Col, Alert, Button } from 'react-bootstrap';
+import { Container, Row, Col, Button } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import { HubConnectionBuilder } from '@microsoft/signalr';
@@ -12,6 +12,7 @@ import Loots from './loots';
 import { GrantedLoots } from './grantedLoots';
 import { ArchivedLoot } from './archivedLoot';
 import { RaidAttendance } from './raidAttendance';
+import { Upload } from './upload';
 
 const api = process.env.REACT_APP_API_PATH;
 
@@ -29,7 +30,6 @@ axios.defaults.headers.common['Player-Key'] = key;
 export default function App() {
 	const [loading, setLoading] = useState(false);
 	const [isAdmin, setIsAdmin] = useState(false);
-	const [isReady, setIsReady] = useState(true);
 	const [lootLock, setLootLock] = useState(false);
 	const [requests, setRequests] = useState<ILootRequest[]>([]);
 	const [loots, setLoots] = useState<ILoot[]>([]);
@@ -82,7 +82,7 @@ export default function App() {
 
 	useEffect(() => {
 		const connection = new HubConnectionBuilder()
-			.withUrl(api + "/lootHub")
+			.withUrl(api + "/lootHub?key=" + key)
 			.configureLogging(2) // signalR.LogLevel.Information
 			.withAutomaticReconnect()
 			.build();
@@ -122,7 +122,7 @@ export default function App() {
 			{/* {!isReady &&
 				<Login finishLogin={finishLogin} />
 			} */}
-			{isReady &&
+			{true &&
 				<Row>
 					<Col xs={12} xl={6}>
 						<CreateLootRequest requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock}></CreateLootRequest>
@@ -144,6 +144,7 @@ export default function App() {
 						</Alert> */}
 						{isAdmin &&
 							<>
+								<Upload></Upload>
 								<CreateLoot loots={loots}></CreateLoot>
 								{lootLock &&
 									<Button variant={'success'} onClick={disableLootLock} disabled={loading}>Unlock/Enable Loot Requests</Button>

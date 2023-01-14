@@ -28,8 +28,7 @@ public class LootRequest
 
 	public string? IP { get; set; }
 
-	//[Required]
-	[MaxLength(24)]
+	[StringLength(24, MinimumLength = 4)]
 	public string? AltName { get; set; } = null!;
 
 	/// <summary>

@@ -39,10 +39,11 @@ public class Loot
 	};
 
 	public Loot() { }
-	public Loot(string name, Expansion expansion)
+	public Loot(string name, Expansion expansion, int guildId)
 	{
 		Name = name;
 		Expansion = expansion;
+		GuildId = guildId;
 	}
 
 	[Key]
