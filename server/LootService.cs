@@ -16,7 +16,7 @@ public class LootService
 		_httpContextAccessor = httpContextAccessor;
 	}
 
-	private Guid? GetPlayerKey() =>
+	public Guid? GetPlayerKey() =>
 		_httpContextAccessor.HttpContext!.Request.Headers.TryGetValue("Player-Key", out var val)
 			? Guid.Parse(val.ToString())
 			: null;
@@ -32,6 +32,7 @@ public class LootService
 
 		return await _db.Players
 			.Where(x => x.Key == key)
+			.Where(x => x.Active != false)
 			.Select(x => x.Id)
 			.FirstOrDefaultAsync();
 	}
@@ -42,6 +43,7 @@ public class LootService
 
 		return await _db.Players
 			.Where(x => x.Key == key)
+			.Where(x => x.Active != false)
 			.Select(x => x.GuildId)
 			.FirstOrDefaultAsync();
 	}
@@ -63,7 +65,7 @@ public class LootService
 
 		return await _db.Players
 			.Where(x => x.Key == key)
-			.Select(x => x.Guild!.RaidLootLocked)
+			.Select(x => x.Guild.RaidLootLocked)
 			.FirstOrDefaultAsync();
 	}
 

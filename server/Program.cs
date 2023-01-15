@@ -449,6 +449,7 @@ app.MapPost("ImportGuildDump", async (LootGodContext db, LootService lootService
 		{
 			// if a player no longer appears in a guild dump output, we assert them inactive
 			player.Active = false;
+			player.Admin = false;
 		}
 	}
 	await db.SaveChangesAsync();
@@ -513,10 +514,12 @@ app.MapPost("BulkImportRaidDump", async (LootGodContext db, LootService lootServ
 {
 	await lootService.EnsureAdminStatus();
 
+	var playerKey = lootService.GetPlayerKey();
+
 	await using var stream = file.OpenReadStream();
 	using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
 
-	foreach (var entry in zip.Entries)
+	foreach (var entry in zip.Entries.OrderBy(x => x.LastWriteTime))
 	{
 		await using var dump = entry.Open();
 		using var sr = new StreamReader(dump);
@@ -526,6 +529,7 @@ app.MapPost("BulkImportRaidDump", async (LootGodContext db, LootService lootServ
 		{
 			{ content, "file", entry.FullName }
 		};
+		form.Headers.Add("Player-Key", playerKey!.ToString());
 		var port = aspnetcore_urls!.Split(':').Last();
 		var res = await httpClient.PostAsync($"http://{IPAddress.Loopback}:{port}/ImportRaidDump", form);
 		res.EnsureSuccessStatusCode();

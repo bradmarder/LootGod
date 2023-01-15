@@ -16,17 +16,19 @@ export function Upload() {
 	const uploadDump = async () => {
 		setIsLoading(true);
 		try {
-			const endpoint = file!.name.startsWith('RaidRoster') ? '/ImportRaidDump' : '/ImportGuildDump';
+			const endpoint = file!.name.endsWith('.zip') ? '/BulkImportRaidDump'
+				 : file!.name.startsWith('RaidRoster') ? '/ImportRaidDump'
+				 : '/ImportGuildDump';
 			const formData = new FormData();
 			formData.append("file", file!);
 			await axios.post(api + endpoint, formData);
 			setUploaded([...uploaded, file!.name]);
 		}
 		finally {
+			setFile(null);
+			setKey(key + 1);
 			setIsLoading(false);
 		}
-		setFile(null);
-		setKey(key + 1);
 	};
 
 	return (
@@ -35,7 +37,7 @@ export function Upload() {
 			<Form onSubmit={uploadDump}>
 				<Row>
 					<Col>
-						<input type="file" key={key} onChange={e => setFile(e.target.files![0])} />
+						<input type='file' key={key} accept='.txt,.zip' onChange={e => setFile(e.target.files![0])} />
 					</Col>
 				</Row>
 				<br />
