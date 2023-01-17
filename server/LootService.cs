@@ -97,7 +97,7 @@ public class LootService
 		var loots = (await _db.Loots
 			.AsNoTracking()
 			.Where(x => x.GuildId == guildId)
-			.Where(x => x.Expansion == Expansion.ToL)
+			.Where(x => x.Expansion == Expansion.ToL || x.Expansion == Expansion.NoS)
 			.OrderBy(x => x.Name)
 			.ToListAsync())
 			.Select(x => new LootDto(x))

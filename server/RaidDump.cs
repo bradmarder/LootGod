@@ -1,28 +1,19 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LootGod;
 
-[Index(nameof(Timestamp))]
-[Index(nameof(PlayerId), nameof(Timestamp), IsUnique = true)]
+[PrimaryKey(nameof(Timestamp), nameof(PlayerId))]
 public class RaidDump
 {
 	public RaidDump() { }
-	public RaidDump(DateTime timestamp, int playerId)
+	public RaidDump(long timestamp, int playerId)
 	{
 		Timestamp = timestamp;
 		PlayerId = playerId;
 	}
 
-	[Key]
-	public int Id { get; set; }
-
-	/// <summary>
-	/// All dumps will be grouped by their timestamp.
-	/// NOT UTC! This is the user's local datetime, which is most likely CST.
-	/// </summary>
-	public DateTime Timestamp { get; set; }
+	public long Timestamp { get; set; }
 
 	public int PlayerId { get; set; }
 

@@ -10,7 +10,6 @@ public class LootGodContext : DbContext
 	}
 
 	public DbSet<Guild> Guilds => Set<Guild>();
-	//public DbSet<LoginAttempt> LoginAttempts => Set<LoginAttempt>();
 	public DbSet<LootRequest> LootRequests => Set<LootRequest>();
 	public DbSet<Loot> Loots => Set<Loot>();
 	public DbSet<Player> Players => Set<Player>();

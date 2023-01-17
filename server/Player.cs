@@ -6,7 +6,6 @@ using System.Security.Cryptography;
 namespace LootGod;
 
 [Index(nameof(Name), nameof(GuildId), IsUnique = true)]
-[Index(nameof(GuildId))]
 [Index(nameof(Key), IsUnique = true)]
 public class Player
 {

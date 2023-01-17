@@ -2,6 +2,16 @@
 
 public class StaticData
 {
+	public static readonly HashSet<string> NosLoot = new(StringComparer.OrdinalIgnoreCase)
+	{
+		"Faded Spectral Luminosity Arms Armor",
+		"Faded Spectral Luminosity Chest Armor",
+		"Faded Spectral Luminosity Feet Armor",
+		"Faded Spectral Luminosity Head Armor",
+		"Faded Spectral Luminosity Legs Armor",
+		"Faded Spectral Luminosity Wrist Armor",
+	};
+
 	public static readonly HashSet<string> ToLLoots = new(StringComparer.OrdinalIgnoreCase)
 	{
 		// rank 3 spells

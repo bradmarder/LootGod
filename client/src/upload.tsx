@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './App.css';
-import { Row, Col, Alert, Button, Form } from 'react-bootstrap';
+import { Alert, Button, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 
@@ -21,7 +21,7 @@ export function Upload() {
 				 : '/ImportGuildDump';
 			const formData = new FormData();
 			formData.append("file", file!);
-			await axios.post(api + endpoint, formData);
+			await axios.post(api + endpoint + '?offset=' + new Date().getTimezoneOffset(), formData);
 			setUploaded([...uploaded, file!.name]);
 		}
 		finally {
@@ -34,13 +34,10 @@ export function Upload() {
 	return (
 		<Alert variant='primary'>
 			<h4>Upload Guild/Raid Dumps (Admin only)</h4>
+			<hr />
 			<Form onSubmit={uploadDump}>
-				<Row>
-					<Col>
-						<input type='file' key={key} accept='.txt,.zip' onChange={e => setFile(e.target.files![0])} />
-					</Col>
-				</Row>
-				<br />
+				<input type='file' key={key} accept='.txt,.zip' onChange={e => setFile(e.target.files![0])} />
+				<hr />
 				<Button variant='success' disabled={isLoading || file == null} onClick={uploadDump}>Upload</Button>
 				<hr />
 				{uploaded.map(x =>

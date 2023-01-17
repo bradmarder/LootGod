@@ -49,28 +49,15 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 
 	await db.Database.EnsureCreatedAsync();
 
-	//foreach (var item in StaticData.CoVLoots)
-	//{
-	//	if (!db.Loots.Any(x => x.Name == item))
-	//	{
-	//		db.Loots.Add(new(item, Expansion.CoV));
-	//	}
-	//}
-	//foreach (var item in StaticData.ToLLoots)
-	//{
-	//	if (!db.Loots.Any(x => x.Name == item))
-	//	{
-	//		db.Loots.Add(new(item, Expansion.ToL));
-	//	}
-	//}
+	foreach (var item in StaticData.NosLoot)
+	{
+		if (!db.Loots.Any(x => x.GuildId == 2 && x.Name == item))
+		{
+			db.Loots.Add(new(item, Expansion.NoS, 2));
+		}
+	}
 
-	//_ = await db.SaveChangesAsync();
-
-	//try
-	//{
-	//	await db.Database.ExecuteSqlRawAsync("ALTER TABLE Players ADD Hidden INTEGER NOT NULL default 0;");
-	//}
-	//catch { }
+	_ = await db.SaveChangesAsync();
 }
 
 app.UseExceptionHandler(opt =>
@@ -99,9 +86,9 @@ app.MapHub<LootHub>("/lootHub");
 app.UseOutputCache();
 app.MapGet("/test", () => "Hello World!");
 
-app.MapPost("NewLoot", async (LootGodContext db, string name) =>
+app.MapPost("NewLootNoS", async (LootGodContext db, string name, int guildId) =>
 {
-	var loot = new Loot(name, Expansion.NoS, 1) { RaidQuantity = 1 };
+	var loot = new Loot(name, Expansion.NoS, guildId) { RaidQuantity = 1 };
 	db.Loots.Add(loot);
 	await db.SaveChangesAsync();
 });
@@ -149,7 +136,7 @@ app.MapGet("GetLoots", async (LootGodContext db, LootService lootService) =>
 	return (await db.Loots
 		.AsNoTracking()
 		.Where(x => x.GuildId == guildId)
-		.Where(x => x.Expansion == Expansion.ToL)
+		.Where(x => x.Expansion == Expansion.ToL || x.Expansion == Expansion.NoS)
 		.OrderBy(x => x.Name)
 		.ToListAsync())
 		.Select(x => new LootDto(x));
@@ -448,6 +435,7 @@ app.MapPost("ImportGuildDump", async (LootGodContext db, LootService lootService
 		else
 		{
 			// if a player no longer appears in a guild dump output, we assert them inactive
+			// TODO: disconnect removed player/connection from hub
 			player.Active = false;
 			player.Admin = false;
 		}
@@ -466,7 +454,7 @@ app.MapPost("ImportGuildDump", async (LootGodContext db, LootService lootService
 	await db.SaveChangesAsync();
 });
 
-app.MapPost("ImportRaidDump", async (LootGodContext db, LootService lootService, IFormFile file) =>
+app.MapPost("ImportRaidDump", async (LootGodContext db, LootService lootService, IFormFile file, int offset) =>
 {
 	await lootService.EnsureAdminStatus();
 
@@ -498,7 +486,13 @@ app.MapPost("ImportRaidDump", async (LootGodContext db, LootService lootService,
 	// example filename = RaidRoster_firiona-20220815-205645.txt
 	var parts = file.FileName.Split('-');
 	var time = parts[1] + parts[2].Split('.')[0];
-	var timestamp = DateTime.ParseExact(time, "yyyyMMddHHmmss", CultureInfo.InvariantCulture);
+
+	// since the filename of the raid dump doesn't include the timezone, we assume it matches the user's browser UTC offset
+	var timestamp = DateTimeOffset
+		.ParseExact(time, "yyyyMMddHHmmss", CultureInfo.InvariantCulture)
+		.AddMinutes(offset)
+		.ToUnixTimeSeconds();
+
 	var raidDumps = (await db.Players
 		.Where(x => x.GuildId == guildId)
 		.Where(x => nameToClassMap.Keys.Contains(x.Name))
@@ -507,10 +501,17 @@ app.MapPost("ImportRaidDump", async (LootGodContext db, LootService lootService,
 		.Select(x => new RaidDump(timestamp, x))
 		.ToArray();
 	db.RaidDumps.AddRange(raidDumps);
-	await db.SaveChangesAsync();
+
+	// A unique constraint on the composite index for (Timestamp/Player) will cause exceptions for duplicate raid dumps.
+	// It is safe/intended to ignore these exceptions for idempotency.
+	try
+	{
+		await db.SaveChangesAsync();
+	}
+	catch (DbUpdateException) { }
 });
 
-app.MapPost("BulkImportRaidDump", async (LootGodContext db, LootService lootService, IFormFile file) =>
+app.MapPost("BulkImportRaidDump", async (LootGodContext db, LootService lootService, IFormFile file, int offset) =>
 {
 	await lootService.EnsureAdminStatus();
 
@@ -531,7 +532,7 @@ app.MapPost("BulkImportRaidDump", async (LootGodContext db, LootService lootServ
 		};
 		form.Headers.Add("Player-Key", playerKey!.ToString());
 		var port = aspnetcore_urls!.Split(':').Last();
-		var res = await httpClient.PostAsync($"http://{IPAddress.Loopback}:{port}/ImportRaidDump", form);
+		var res = await httpClient.PostAsync($"http://{IPAddress.Loopback}:{port}/ImportRaidDump?offset={offset}", form);
 		res.EnsureSuccessStatusCode();
 	}
 });
@@ -539,7 +540,7 @@ app.MapPost("BulkImportRaidDump", async (LootGodContext db, LootService lootServ
 app.MapGet("GetPlayerAttendance", async (LootGodContext db, LootService lootService) =>
 {
 	var guildId = await lootService.GetGuildId();
-	var oneHundredEightyDaysAgo = DateTime.UtcNow.AddDays(-180);
+	var oneHundredEightyDaysAgo = DateTimeOffset.UtcNow.AddDays(-180).ToUnixTimeSeconds();
 	var ninetyDaysAgo = DateTime.UtcNow.AddDays(-90);
 	var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
 	var ninety = DateOnly.FromDateTime(ninetyDaysAgo);
@@ -557,7 +558,8 @@ app.MapGet("GetPlayerAttendance", async (LootGodContext db, LootService lootServ
 		.Where(x => x.Player.Active == true)
 		.ToListAsync();
 	var uniqueDates = dumps
-		.Select(x => DateOnly.FromDateTime(x.Timestamp))
+		.Select(x => DateTimeOffset.FromUnixTimeSeconds(x.Timestamp))
+		.Select(x => DateOnly.FromDateTime(x.DateTime))
 		.ToHashSet();
 	var oneHundredEightDayMaxCount = uniqueDates.Count;
 	var ninetyDayMaxCount = uniqueDates.Count(x => x > ninety);
@@ -565,7 +567,12 @@ app.MapGet("GetPlayerAttendance", async (LootGodContext db, LootService lootServ
 
 	return dumps
 		.GroupBy(x => x.PlayerId)
-		.ToDictionary(x => playerMap[x.Key], x => x.Select(y => DateOnly.FromDateTime(y.Timestamp)).ToHashSet())
+		.ToDictionary(
+			x => playerMap[x.Key],
+			x => x
+				.Select(y => DateTimeOffset.FromUnixTimeSeconds(y.Timestamp))
+				.Select(y => DateOnly.FromDateTime(y.DateTime))
+				.ToHashSet())
 		.Select(x => new
 		{
 			Name = x.Key.Name,
@@ -580,47 +587,6 @@ app.MapGet("GetPlayerAttendance", async (LootGodContext db, LootService lootServ
 		.ToArray();
 });
 
-app.MapGet("GetTestPlayerAttendance", async (LootGodContext db, LootService lootService) =>
-{
-	var guildId = await lootService.GetGuildId();
-	var oneHundredEightyDaysAgo = DateTime.UtcNow.AddDays(-180);
-	var ninetyDaysAgo = DateTime.UtcNow.AddDays(-90);
-	var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
-
-	var playerMap = await db.Players
-		.Where(x => x.GuildId == guildId)
-		.ToDictionaryAsync(x => x.Id, x => (x.Name, x.RankId, x.Hidden));
-	var rankIdToNameMap = await db.Ranks
-		.Where(x => x.GuildId == guildId)
-		.ToDictionaryAsync(x => x.Id, x => x.Name);
-	var dumps = await db.RaidDumps
-		.Where(x => x.Player.GuildId == guildId)
-		.Where(x => x.Timestamp > oneHundredEightyDaysAgo)
-		.Where(x => x.Player.Active == true)
-		.ToListAsync();
-	var uniqueTimestamps = dumps
-		.Select(x => x.Timestamp)
-		.ToHashSet();
-	var oneHundredEightDayMaxCount = uniqueTimestamps.Count;
-	var ninetyDayMaxCount = uniqueTimestamps.Count(x => x > ninetyDaysAgo);
-	var thirtyDayMaxCount = uniqueTimestamps.Count(x => x > thirtyDaysAgo);
-
-	return dumps
-		.GroupBy(x => x.PlayerId)
-		.ToDictionary(x => playerMap[x.Key], x => x)
-		.Select(x => new
-		{
-			Name = x.Key.Name,
-			Hidden = x.Key.Hidden,
-			Rank = x.Key.RankId is null ? "unknown" : rankIdToNameMap[x.Key.RankId.Value],
-
-			_30 = Math.Round(100.0 * x.Value.Count(y => y.Timestamp > thirtyDaysAgo) / thirtyDayMaxCount, 0, MidpointRounding.AwayFromZero),
-			_90 = Math.Round(100.0 * x.Value.Count(y => y.Timestamp > ninetyDaysAgo) / ninetyDayMaxCount, 0, MidpointRounding.AwayFromZero),
-			_180 = Math.Round(100.0 * x.Value.Count(y => y.Timestamp > oneHundredEightyDaysAgo) / oneHundredEightDayMaxCount, 0, MidpointRounding.AwayFromZero),
-		})
-		.OrderBy(x => x.Name)
-		.ToArray();
-});
 
 app.MapGet("GetGrantedLootOutput", async (LootGodContext db, LootService lootService) =>
 {
