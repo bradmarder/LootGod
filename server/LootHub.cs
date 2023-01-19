@@ -16,7 +16,12 @@ public class LootHub : Hub
 	{
 		var key = Guid.Parse(Context.GetHttpContext()!.Request.Query["key"].ToString());
 		var player = await _db.Players.FirstOrDefaultAsync(x => x.Key == key);
-		await Groups.AddToGroupAsync(Context.ConnectionId, player!.GuildId.ToString());
+
+		if (player is not null)
+		{
+			await Groups.AddToGroupAsync(Context.ConnectionId, player.GuildId.ToString());
+		}
+
 		await base.OnConnectedAsync();
 	}
 }

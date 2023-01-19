@@ -21,6 +21,8 @@ public class Guild
 
 	public int? LeaderId { get; set; }
 
+	public string? DiscordWebhookUrl { get; set; }
+
 	[ForeignKey(nameof(LeaderId))]
 	public virtual Player? Leader { get; set; } = null!;
 

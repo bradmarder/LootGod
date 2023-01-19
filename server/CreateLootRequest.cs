@@ -4,6 +4,8 @@ namespace LootGod;
 
 public class CreateLootRequest
 {
+	public bool RaidNight { get; set; }
+
 	[StringLength(24, MinimumLength = 4)]
 	public string? AltName { get; set; }
 

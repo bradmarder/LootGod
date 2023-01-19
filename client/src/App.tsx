@@ -53,7 +53,7 @@ export default function App() {
 	const enableLootLock = async () => {
 		setLoading(true);
 		try {
-			await axios.post(api + '/EnableLootLock');
+			await axios.post(api + '/ToggleLootLock?enable=true');
 		}
 		finally {
 			setLoading(false);
@@ -62,7 +62,7 @@ export default function App() {
 	const disableLootLock = async () => {
 		setLoading(true);
 		try {
-			await axios.post(api + '/DisableLootLock');
+			await axios.post(api + '/ToggleLootLock?enable=false');
 		}
 		finally {
 			setLoading(false);

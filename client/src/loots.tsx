@@ -14,7 +14,7 @@ export default function Loots(props: IContext) {
 	const grantLootRequest = async (id: number) => {
 		setIsLoading(true);
 		try {
-			await axios.post(api + '/GrantLootRequest?id=' + id);
+			await axios.post(api + '/GrantLootRequest?id=' + id + '&grant=true');
 		}
 		finally {
 			setIsLoading(false);
@@ -44,7 +44,7 @@ export default function Loots(props: IContext) {
 	const ungrantLootRequest = async (id: number) => {
 		setIsLoading(true);
 		try {
-			await axios.post(api + '/UngrantLootRequest?id=' + id);
+			await axios.post(api + '/GrantLootRequest?id=' + id + '&grant=false');
 		}
 		finally {
 			setIsLoading(false);

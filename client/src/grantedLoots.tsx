@@ -14,7 +14,7 @@ export function GrantedLoots(props: IContext) {
 	const ungrantLootRequest = async (id: number) => {
 		setIsLoading(true);
 		try {
-			await axios.post(api + '/UngrantLootRequest?id=' + id);
+			await axios.post(api + '/GrantLootRequest?id=' + id + '&grant=false');
 		}
 		finally {
 			setIsLoading(false);
@@ -88,7 +88,8 @@ export function GrantedLoots(props: IContext) {
 						</tbody>
 					</Table>
 					<Alert variant={'warning'}>
-						<strong>WARNING!</strong> This archives *ALL* loot requests and subtracts granted quantities.
+						<strong>WARNING!</strong> This archives all active loot requests and subtracts granted quantities. If you have a Discord webhook set, this will also
+						post the granted loot output to that channel.
 						<br />
 						<Button variant={'success'} disabled={isLoading} onClick={finishLootGranting}>Finish Granting Loots</Button>
 					</Alert>

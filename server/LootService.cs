@@ -85,6 +85,29 @@ public class LootService
 		}
 	}
 
+	public async Task<string> GetGrantedLootOutput()
+	{
+		var guildId = await GetGuildId();
+
+		var items = (await _db.LootRequests
+			.AsNoTracking()
+			.Include(x => x.Loot)
+			.Include(x => x.Player)
+			.Where(x => x.Player.GuildId == guildId)
+			.Where(x => x.Granted && !x.Archived)
+			.OrderBy(x => x.LootId)
+			.ThenBy(x => x.AltName ?? x.Player.Name)
+			.ToListAsync())
+			.GroupBy(x => (x.LootId, x.AltName ?? x.Player.Name))
+			.Select(x =>
+			{
+				var request = x.First();
+				return $"{request.Loot.Name} | {request.AltName ?? request.Player.Name} | x{x.Sum(y => y.Quantity)}";
+			});
+
+		return string.Join(Environment.NewLine, items);
+	}
+
 	public async Task RefreshLock(int guildId, bool locked)
 	{
 		await _hub.Clients

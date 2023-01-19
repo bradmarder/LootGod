@@ -52,8 +52,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B35EB5A2-496
 		client\src\login.tsx = client\src\login.tsx
 		client\src\lootRequests.tsx = client\src\lootRequests.tsx
 		client\src\loots.tsx = client\src\loots.tsx
-		client\src\reportWebVitals.ts = client\src\reportWebVitals.ts
-		client\src\setupTests.ts = client\src\setupTests.ts
 	EndProjectSection
 EndProject
 Global

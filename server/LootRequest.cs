@@ -19,6 +19,7 @@ public class LootRequest
 		LootId = dto.LootId;
 		Quantity = dto.Quantity;
 		CurrentItem = dto.CurrentItem;
+		RaidNight = dto.RaidNight;
 	}
 
 	[Key]
