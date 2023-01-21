@@ -4,7 +4,6 @@ import { Container, Row, Col, Button } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import { HubConnectionBuilder } from '@microsoft/signalr';
-//import { Login } from './login';
 import { LootRequests } from './lootRequests';
 import { CreateLootRequest } from './createLootRequest';
 import { CreateLoot } from './createLoot';
@@ -13,8 +12,6 @@ import { GrantedLoots } from './grantedLoots';
 import { ArchivedLoot } from './archivedLoot';
 import { RaidAttendance } from './raidAttendance';
 import { Upload } from './upload';
-
-const api = process.env.REACT_APP_API_PATH;
 
 const params = new Proxy(new URLSearchParams(window.location.search), {
 	get: (searchParams, prop) => searchParams.get(prop as string),
@@ -26,6 +23,7 @@ if (key == null || key === '') {
 }
 localStorage.setItem('key', key);
 axios.defaults.headers.common['Player-Key'] = key;
+axios.defaults.baseURL = process.env.REACT_APP_API_PATH;
 
 export default function App() {
 	const [loading, setLoading] = useState(false);
@@ -35,25 +33,25 @@ export default function App() {
 	const [loots, setLoots] = useState<ILoot[]>([]);
 
 	const getAdminStatus = async (signal: AbortSignal) => {
-		const res = await axios.get<boolean>(api + '/GetAdminStatus', { signal });
+		const res = await axios.get<boolean>('/GetAdminStatus', { signal });
 		setIsAdmin(res.data);
 	};
 	const getLoots = async (signal: AbortSignal) => {
-		const res = await axios.get<ILoot[]>(api + '/GetLoots', { signal });
+		const res = await axios.get<ILoot[]>('/GetLoots', { signal });
 		setLoots(res.data);
 	};
 	const getLootRequests = async (signal: AbortSignal) => {
-		const res = await axios.get<ILootRequest[]>(api + '/GetLootRequests', { signal });
+		const res = await axios.get<ILootRequest[]>('/GetLootRequests', { signal });
 		setRequests(res.data);
 	};
 	const getLootLock = async (signal: AbortSignal) => {
-		const res = await axios.get<boolean>(api + '/GetLootLock', { signal });
+		const res = await axios.get<boolean>('/GetLootLock', { signal });
 		setLootLock(res.data);
 	};
 	const enableLootLock = async () => {
 		setLoading(true);
 		try {
-			await axios.post(api + '/ToggleLootLock?enable=true');
+			await axios.post('/ToggleLootLock?enable=true');
 		}
 		finally {
 			setLoading(false);
@@ -62,7 +60,7 @@ export default function App() {
 	const disableLootLock = async () => {
 		setLoading(true);
 		try {
-			await axios.post(api + '/ToggleLootLock?enable=false');
+			await axios.post('/ToggleLootLock?enable=false');
 		}
 		finally {
 			setLoading(false);
@@ -82,7 +80,7 @@ export default function App() {
 
 	useEffect(() => {
 		const connection = new HubConnectionBuilder()
-			.withUrl(api + "/lootHub?key=" + key)
+			.withUrl(process.env.REACT_APP_API_PATH + '/lootHub?key=' + key)
 			.configureLogging(2) // signalR.LogLevel.Information
 			.withAutomaticReconnect()
 			.build();

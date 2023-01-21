@@ -5,8 +5,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import classes from './eqClasses';
 
-const api = process.env.REACT_APP_API_PATH;
-
 export function GrantedLoots(props: IContext) {
 
 	const [isLoading, setIsLoading] = useState(false);
@@ -14,7 +12,7 @@ export function GrantedLoots(props: IContext) {
 	const ungrantLootRequest = async (id: number) => {
 		setIsLoading(true);
 		try {
-			await axios.post(api + '/GrantLootRequest?id=' + id + '&grant=false');
+			await axios.post('/GrantLootRequest?id=' + id + '&grant=false');
 		}
 		finally {
 			setIsLoading(false);
@@ -23,7 +21,7 @@ export function GrantedLoots(props: IContext) {
 	const finishLootGranting = async () => {
 		setIsLoading(true);
 		try {
-			await axios.post(api + '/FinishLootRequests');
+			await axios.post('/FinishLootRequests');
 		}
 		finally {
 			setIsLoading(false);
@@ -33,7 +31,7 @@ export function GrantedLoots(props: IContext) {
 	const downloadOutputFile = async (e: any) => {
 		e.preventDefault();
 
-		const res = await axios.get(api + '/GetGrantedLootOutput', { responseType: 'blob' });
+		const res = await axios.get('/GetGrantedLootOutput', { responseType: 'blob' });
 		const href = URL.createObjectURL(res.data);
 		const link = document.createElement('a');
 

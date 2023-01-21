@@ -6,8 +6,6 @@ import axios, { AxiosPromise } from 'axios';
 import classes from './eqClasses';
 import { EQClass } from './eqClass';
 
-const api = process.env.REACT_APP_API_PATH;
-
 export function CreateLootRequest(props: IContext) {
 
 	const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +41,7 @@ export function CreateLootRequest(props: IContext) {
 		};
 		setIsLoading(true);
 		try {
-			await axios.post<{}, AxiosPromise<ILootRequest>>(api + '/CreateLootRequest', data);
+			await axios.post<{}, AxiosPromise<ILootRequest>>('/CreateLootRequest', data);
 		}
 		catch {
 			// DUPLICATE REQUEST ERROR MESSAGE

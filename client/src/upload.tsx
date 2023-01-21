@@ -4,8 +4,6 @@ import { Alert, Button, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 
-const api = process.env.REACT_APP_API_PATH;
-
 export function Upload() {
 
 	const [isLoading, setIsLoading] = useState(false);
@@ -21,7 +19,7 @@ export function Upload() {
 				 : '/ImportGuildDump';
 			const formData = new FormData();
 			formData.append("file", file!);
-			await axios.post(api + endpoint + '?offset=' + new Date().getTimezoneOffset(), formData);
+			await axios.post(endpoint + '?offset=' + new Date().getTimezoneOffset(), formData);
 			setUploaded([...uploaded, file!.name]);
 		}
 		finally {

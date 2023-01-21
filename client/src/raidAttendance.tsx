@@ -4,15 +4,13 @@ import { Table, Button } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 
-const api = process.env.REACT_APP_API_PATH;
-
 export function RaidAttendance(props: { isAdmin: boolean }) {
 
 	const [isLoading, setIsLoading] = useState(true);
 	const [ra, setRa] = useState<IRaidAttendance[]>([]);
 
 	const getRA = async () => {
-		const res = await axios.get<IRaidAttendance[]>(api + '/GetPlayerAttendance');
+		const res = await axios.get<IRaidAttendance[]>('/GetPlayerAttendance');
 		setRa(res.data);
 		setIsLoading(false);
 	};
@@ -26,7 +24,7 @@ export function RaidAttendance(props: { isAdmin: boolean }) {
 	const toggleHidden = async (name: string) => {
 		setIsLoading(true);
 		try {
-			await axios.post(api + '/ToggleHiddenPlayer?playerName=' + name);
+			await axios.post('/ToggleHiddenPlayer?playerName=' + name);
 			await getRA();
 		}
 		finally {

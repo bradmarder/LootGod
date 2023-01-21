@@ -5,8 +5,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import classes from './eqClasses';
 
-const api = process.env.REACT_APP_API_PATH;
-
 export function LootRequests(props: IContext) {
 
 	const [isLoading, setIsLoading] = useState(false);
@@ -14,14 +12,14 @@ export function LootRequests(props: IContext) {
 
 	useEffect(() => {
 		axios
-			.get<number>(api + '/GetPlayerId')
+			.get<number>('/GetPlayerId')
 			.then(x => setPlayerId(x.data));
 	}, []);
 
 	const deleteLootRequest = async (id: number) => {
 		setIsLoading(true);
 		try {
-			await axios.post(api + '/DeleteLootRequest?id=' + id);
+			await axios.post('/DeleteLootRequest?id=' + id);
 		}
 		finally {
 			setIsLoading(false);

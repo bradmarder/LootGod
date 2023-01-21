@@ -5,8 +5,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import classes from './eqClasses';
 
-const api = process.env.REACT_APP_API_PATH;
-
 export default function Loots(props: IContext) {
 
 	const [isLoading, setIsLoading] = useState(false);
@@ -14,7 +12,7 @@ export default function Loots(props: IContext) {
 	const grantLootRequest = async (id: number) => {
 		setIsLoading(true);
 		try {
-			await axios.post(api + '/GrantLootRequest?id=' + id + '&grant=true');
+			await axios.post('/GrantLootRequest?id=' + id + '&grant=true');
 		}
 		finally {
 			setIsLoading(false);
@@ -24,7 +22,7 @@ export default function Loots(props: IContext) {
 	const incrementLoot = async (id: number) => {
 		setIsLoading(true);
 		try {
-			await axios.post(api + '/IncrementLootQuantity?id=' + id);
+			await axios.post('/IncrementLootQuantity?id=' + id);
 		}
 		finally {
 			setIsLoading(false);
@@ -34,7 +32,7 @@ export default function Loots(props: IContext) {
 	const decrementLoot = async (id: number) => {
 		setIsLoading(true);
 		try {
-			await axios.post(api + '/DecrementLootQuantity?id=' + id);
+			await axios.post('/DecrementLootQuantity?id=' + id);
 		}
 		finally {
 			setIsLoading(false);
@@ -44,7 +42,7 @@ export default function Loots(props: IContext) {
 	const ungrantLootRequest = async (id: number) => {
 		setIsLoading(true);
 		try {
-			await axios.post(api + '/GrantLootRequest?id=' + id + '&grant=false');
+			await axios.post('/GrantLootRequest?id=' + id + '&grant=false');
 		}
 		finally {
 			setIsLoading(false);

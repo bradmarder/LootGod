@@ -4,8 +4,6 @@ import { Alert, Button, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 
-const api = process.env.REACT_APP_API_PATH;
-
 export interface ILoginProps {
 	readonly finishLogin: (name: string, admin: boolean) => void;
 }
@@ -15,7 +13,7 @@ export function Login(props: ILoginProps) {
 	const [mainName, setMainName] = useState(name || '');
 	const [password, setPassword] = useState('');
 	const login = async () => {
-		const res = await axios.post<boolean>(api + "/login", { mainName, password });
+		const res = await axios.post<boolean>("/login", { mainName, password });
 
 		localStorage.setItem('name', mainName);
 		localStorage.setItem('admin', res.data + '');

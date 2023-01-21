@@ -5,8 +5,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import classes from './eqClasses';
 
-const api = process.env.REACT_APP_API_PATH;
-
 export function ArchivedLoot(props: IContext) {
 
 	const [isLoading, setIsLoading] = useState(false);
@@ -20,7 +18,7 @@ export function ArchivedLoot(props: IContext) {
 			name: name || null,
 			lootId: lootId || null,
 		};
-		const res = await axios.get<ILootRequest[]>(api + '/GetArchivedLootRequests', { params });
+		const res = await axios.get<ILootRequest[]>('/GetArchivedLootRequests', { params });
 		setRequests(res.data);
 		setIsLoading(false);
 	};

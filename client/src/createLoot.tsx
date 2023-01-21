@@ -4,8 +4,6 @@ import { Row, Col, Alert, Button, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios, { AxiosPromise } from 'axios';
 
-const api = process.env.REACT_APP_API_PATH;
-
 export function CreateLoot(props: { loots: ILoot[] }) {
 
 	const [isLoading, setIsLoading] = useState(false);
@@ -19,7 +17,7 @@ export function CreateLoot(props: { loots: ILoot[] }) {
 		};
 		setIsLoading(true);
 		try {
-			await axios.post<{}, AxiosPromise<ILoot>>(api + '/UpdateLootQuantity', data);
+			await axios.post<{}, AxiosPromise<ILoot>>('/UpdateLootQuantity', data);
 		}
 		finally {
 			setIsLoading(false);

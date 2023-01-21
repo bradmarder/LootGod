@@ -2,6 +2,7 @@ using LootGod;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
@@ -230,16 +231,6 @@ app.MapPost("IncrementLootQuantity", async (LootGodContext db, int id, LootServi
 
 app.MapPost("DecrementLootQuantity", async (LootGodContext db, int id, LootService lootService) =>
 {
-	//var unarchivedGrantedLootRequestCount = await db.LootRequests.CountAsync(x => !x.Archived && x.Granted && x.LootId == id);
-	//var loot = await db.Loots.SingleAsync(x => x.Id == id);
-
-	//// user would need to un-grant loot requests before decrementing quantity
-	//if (loot.Quantity == unarchivedGrantedLootRequestCount)
-	//{
-	//	return;
-	//}
-	// TODO: RotQuantity
-
 	await lootService.EnsureAdminStatus();
 
 	var guildId = await lootService.GetGuildId();
@@ -307,19 +298,26 @@ app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootServ
 	// capture the output before we archive requests
 	var output = await lootService.GetGrantedLootOutput();
 
-	var items = await db.LootRequests
-		.Include(x => x.Loot)
+	var requests = await db.LootRequests
 		.Where(x => x.Player.GuildId == guildId)
 		.Where(x => !x.Archived)
 		.ToListAsync();
+	var loots = await db.Loots
+		.Where(x => x.GuildId == guildId)
+		.Where(x => x.RaidQuantity > 0)
+		.ToListAsync();
 
-	foreach (var x in items)
+	foreach (var request in requests)
 	{
-		x.Archived = true;
+		request.Archived = true;
 	}
-	foreach (var x in items.Where(x => x.Granted))
+	foreach (var loot in loots)
 	{
-		x.Loot.RaidQuantity -= x.Quantity;
+		var grantedQuantity = requests
+			.Where(x => x.LootId == loot.Id && x.Granted)
+			.Sum(x => x.Quantity);
+		loot.RotQuantity += (byte)(loot.RaidQuantity - grantedQuantity);
+		loot.RaidQuantity = 0;
 	}
 
 	_ = await db.SaveChangesAsync();
@@ -342,43 +340,6 @@ app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootServ
 	var t1 = lootService.RefreshLoots(guildId);
 	var t2 = lootService.RefreshRequests(guildId);
 	await Task.WhenAll(t1, t2);
-
-	// export raidloot to rotloot
-	if (!string.IsNullOrEmpty(rotLootUrl))
-	{
-		var leftoverLootQuantityMap = await db.Loots
-			.Where(x => x.GuildId == guildId)
-			.Where(x => x.RaidQuantity > 0)
-			.ToDictionaryAsync(x => x.Id, x => x.RaidQuantity);
-
-		var res = await httpClient.PostAsJsonAsync(rotLootUrl + "/ImportRaidLoot", leftoverLootQuantityMap);
-		res.EnsureSuccessStatusCode();
-
-		// reset all raid loot quantity to zero
-		await db.Loots
-			.Where(x => x.GuildId == guildId)
-			.ExecuteUpdateAsync(x => x.SetProperty(y => y.RaidQuantity, 0));
-	}
-});
-
-// TODO: remove
-app.MapPost("ImportRaidLoot", async (LootGodContext db, LootService lootService, IDictionary<int, byte> lootQuantityMap) =>
-{
-	await lootService.EnsureAdminStatus();
-	var guildId = await lootService.GetGuildId();
-
-	var loots = await db.Loots
-		.Where(x => lootQuantityMap.Keys.Contains(x.Id))
-		.ToListAsync();
-
-	foreach (var loot in loots)
-	{
-		loot.RaidQuantity += lootQuantityMap[loot.Id];
-	}
-
-	await db.SaveChangesAsync();
-
-	await lootService.RefreshLoots(guildId);
 });
 
 app.MapPost("ImportGuildDump", async (LootGodContext db, LootService lootService, IFormFile file) =>
