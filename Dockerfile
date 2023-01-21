@@ -17,6 +17,7 @@ RUN npm install react-scripts -g --silent
 COPY /client/ ./
 
 # required ENV variable when compiling the bundle
+ARG REACT_APP_API_PATH
 ARG REACT_APP_TITLE
 
 # compile the production bundle

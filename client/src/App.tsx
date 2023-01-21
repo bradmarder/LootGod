@@ -105,23 +105,9 @@ export default function App() {
 		return () => { connection.stop(); }
 	}, []);
 
-	// const logout = () => {
-	// 	localStorage.removeItem('name');
-	// 	setMainName('');
-	// 	setIsReady(false);
-	// };
-	// const finishLogin = (name: string, admin: boolean) => {
-	// 	setMainName(name);
-	// 	setIsAdmin(admin);
-	// 	setIsReady(true);
-	// };
-
 	return (
 		<Container fluid>
 			<h1>{process.env.REACT_APP_TITLE}</h1>
-			{/* {!isReady &&
-				<Login finishLogin={finishLogin} />
-			} */}
 			{true &&
 				<Row>
 					<Col xs={12} xl={6}>
@@ -137,11 +123,6 @@ export default function App() {
 						}
 					</Col>
 					<Col xs={12} xl={6}>
-						{/* <Alert variant='secondary'>
-							Logged in as <strong>{mainName}</strong>
-							<br />
-							<Button onClick={logout}>Logout</Button>
-						</Alert> */}
 						{isAdmin &&
 							<>
 								<Upload></Upload>
