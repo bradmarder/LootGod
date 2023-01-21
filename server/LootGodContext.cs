@@ -29,11 +29,6 @@ public class LootGodContext : DbContext
 			.HasDefaultValueSql("CURRENT_TIMESTAMP");
 
 		modelBuilder
-			.Entity<LoginAttempt>()
-			.Property(x => x.CreatedDate)
-			.HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-		modelBuilder
 			.Entity<Player>()
 			.Property(x => x.CreatedDate)
 			.HasDefaultValueSql("CURRENT_TIMESTAMP");

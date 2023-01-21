@@ -1,18 +1,12 @@
 using LootGod;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
-
-// using (var reader = File.OpenRead("C:\\Users\\bmarder\\Desktop\\itemlist.txt.gz"))
-// using (var zip = new GZipStream(reader, CompressionMode.Decompress, true))
-// using (var unzip = new StreamReader(zip))
-// 	while (!unzip.EndOfStream)
-// 		Console.WriteLine(await unzip.ReadLineAsync());
-// Debug.Fail("");
 
 var builder = WebApplication.CreateBuilder(args);
 var source = Environment.GetEnvironmentVariable("DATABASE_URL");
@@ -21,7 +15,8 @@ var aspnetcore_urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
 var password = Environment.GetEnvironmentVariable("PASSWORD");
 using var httpClient = new HttpClient();
 
-builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite($"Data Source={source};"));
+var connString = new SqliteConnectionStringBuilder { DataSource = source };
+builder.Services.AddDbContextPool<LootGodContext>(x => x.UseSqlite(connString.ConnectionString));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 if (builder.Environment.IsDevelopment())
@@ -43,25 +38,6 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 	var db = scope.ServiceProvider.GetRequiredService<LootGodContext>();
 
 	await db.Database.EnsureCreatedAsync();
-
-	//foreach (var item in StaticData.NosLoot)
-	//{
-	//	if (!db.Loots.Any(x => x.GuildId == 2 && x.Name == item))
-	//	{
-	//		db.Loots.Add(new(item, Expansion.NoS, 2));
-	//	}
-	//}
-
-	try
-	{
-		await db.Loots
-			.Where(x => x.Expansion == Expansion.NoS)
-			.Where(x => x.Name.EndsWith("Shar Vhal"))
-			.ExecuteDeleteAsync();
-	}
-	catch { }
-
-	//_ = await db.SaveChangesAsync();
 }
 
 app.UseExceptionHandler(opt =>
@@ -95,6 +71,16 @@ app.UseSwaggerUI();
 app.MapHub<LootHub>("/lootHub");
 app.UseOutputCache();
 app.MapGet("/test", () => "Hello World!");
+
+//foreach (var item in StaticData.NosLoot)
+//{
+//	if (!db.Loots.Any(x => x.GuildId == 2 && x.Name == item))
+//	{
+//		db.Loots.Add(new(item, Expansion.NoS, 2));
+//	}
+//}
+
+//_ = await db.SaveChangesAsync();
 
 app.MapPost("NewLootNoS", async (LootGodContext db, string name, int guildId) =>
 {
@@ -614,13 +600,4 @@ app.MapGet("GetGrantedLootOutput", async (LootService lootService) =>
 
 await app.RunAsync();
 
-public class CreateLoginAttempt
-{
-	public string MainName { get; set; } = null!;
-	public string Password { get; set; } = null!;
-}
-public class CreateLoot
-{
-	public byte Quantity { get; set; }
-	public string Name { get; set; } = null!;
-}
+public record CreateLoot(byte Quantity, string Name);
