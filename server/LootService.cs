@@ -115,16 +115,51 @@ public class LootService
 			.SendAsync("lock", locked);
 	}
 
-	public async Task RefreshLoots(int guildId)
+	public async Task<LootDto[]> LoadLoots(int guildId)
 	{
-		var loots = (await _db.Loots
-			.AsNoTracking()
+		return await _db.Loots
 			.Where(x => x.GuildId == guildId)
 			.Where(x => x.Expansion == Expansion.ToL || x.Expansion == Expansion.NoS)
 			.OrderBy(x => x.Name)
-			.ToListAsync())
-			.Select(x => new LootDto(x))
-			.ToArray();
+			.Select(x => new LootDto
+			{
+				Id = x.Id,
+				Name = x.Name,
+				Quantity = x.RaidQuantity,
+			})
+			.ToArrayAsync();
+	}
+
+	public async Task<LootRequestDto[]> LoadLootRequests(int guildId)
+	{
+		return await _db.LootRequests
+			.Where(x => x.Player.GuildId == guildId)
+			.Where(x => !x.Archived)
+			.OrderByDescending(x => x.Spell != null)
+			.ThenBy(x => x.LootId)
+			.ThenByDescending(x => x.AltName ?? x.Player.Name)
+			.Select(x => new LootRequestDto
+			{
+				Id = x.Id,
+				PlayerId = x.PlayerId,
+				CreatedDate = x.CreatedDate,
+				AltName = x.AltName,
+				MainName = x.Player.Name,
+				Class = x.Class ?? x.Player.Class,
+				Spell = x.Spell,
+				LootId = x.LootId,
+				Quantity = x.Quantity,
+				RaidNight = x.RaidNight,
+				IsAlt = x.IsAlt,
+				Granted = x.Granted,
+				CurrentItem = x.CurrentItem,
+			})
+			.ToArrayAsync();
+	}
+
+	public async Task RefreshLoots(int guildId)
+	{
+		var loots = await LoadLoots(guildId);
 
 		await _hub.Clients
 			.Group(guildId.ToString())
@@ -133,17 +168,7 @@ public class LootService
 
 	public async Task RefreshRequests(int guildId)
 	{
-		var requests = (await _db.LootRequests
-			.AsNoTracking()
-			.Include(x => x.Player)
-			.Where(x => x.Player.GuildId == guildId)
-			.Where(x => !x.Archived)
-			.OrderByDescending(x => x.Spell)
-			.ThenBy(x => x.LootId)
-			.ThenByDescending(x => x.AltName ?? x.Player.Name)
-			.ToListAsync())
-			.Select(x => new LootRequestDto(x))
-			.ToArray();
+		var requests = await LoadLootRequests(guildId);
 
 		await _hub.Clients
 			.Group(guildId.ToString())

@@ -1,17 +1,13 @@
 ﻿namespace LootGod;
 
-public class LootDto
+public record LootDto
 {
-	public LootDto(Loot model)
-	{
-		Id = model.Id;
-		Quantity = model.RaidQuantity;
-		Name = model.Name;
-		IsSpell = model.IsSpell;
-	}
+	public required int Id { get; init; }
+	public required byte Quantity { get; init; }
+	public required string Name { get; init; }
 
-	public int Id { get; }
-	public byte Quantity { get; }
-	public string Name { get; }
-	public bool IsSpell { get; }
+	public virtual bool IsSpell =>
+		Loot.Nuggets.Contains(Name)
+		|| (Loot.SpellPrefixes.Any(x => Name.StartsWith(x, StringComparison.OrdinalIgnoreCase))
+		&& Loot.SpellSuffixes.Any(x => Name.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
 }

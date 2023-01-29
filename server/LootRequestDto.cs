@@ -1,35 +1,18 @@
 ﻿namespace LootGod;
 
-public class LootRequestDto
+public record LootRequestDto
 {
-	public LootRequestDto(LootRequest model)
-	{
-		Id = model.Id;
-		PlayerId = model.PlayerId;
-		CreatedDate = model.CreatedDate;
-		AltName = model.AltName;
-		MainName = model.Player.Name;
-		Class = model.Class ?? model.Player.Class;
-		Spell = model.Spell;
-		LootId = model.LootId;
-		Quantity = model.Quantity;
-		RaidNight = model.RaidNight;
-		IsAlt = model.IsAlt;
-		Granted = model.Granted;
-		CurrentItem = model.CurrentItem;
-	}
-
-	public int Id { get; }
-	public int PlayerId { get; }
-	public DateTime CreatedDate { get; }
-	public string MainName { get; }
-	public string? AltName { get; }
-	public string? Spell { get; }
-	public EQClass Class { get; }
-	public int LootId { get; }
-	public int Quantity { get; }
-	public bool RaidNight { get; }
-	public bool IsAlt { get; }
-	public bool Granted { get; }
-	public string CurrentItem { get; }
+	public required int Id { get; init; }
+	public required int PlayerId { get; init; }
+	public required DateTime CreatedDate { get; init; }
+	public required string MainName { get; init; }
+	public required string? AltName { get; init; }
+	public required string? Spell { get; init; }
+	public required EQClass Class { get; init; }
+	public required int LootId { get; init; }
+	public required int Quantity { get; init; }
+	public required bool RaidNight { get; init; }
+	public required bool IsAlt { get; init; }
+	public required bool Granted { get; init; }
+	public required string CurrentItem { get; init; }
 }

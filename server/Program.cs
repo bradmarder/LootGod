@@ -2,7 +2,6 @@ using LootGod;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
@@ -101,20 +100,11 @@ app.MapPost("GuildDiscord", async (LootGodContext db, string webhook, int guildI
 	await db.SaveChangesAsync();
 });
 
-app.MapGet("GetLootRequests", async (LootGodContext db, LootService lootService) =>
+app.MapGet("GetLootRequests", async (LootService lootService) =>
 {
 	var guildId = await lootService.GetGuildId();
 
-	return (await db.LootRequests
-		.AsNoTracking()
-		.Include(x => x.Player)
-		.Where(x => x.Player.GuildId == guildId)
-		.Where(x => !x.Archived)
-		.OrderByDescending(x => x.Spell != null)
-		.ThenBy(x => x.LootId)
-		.ThenByDescending(x => x.AltName ?? x.Player.Name)
-		.ToListAsync())
-		.Select(x => new LootRequestDto(x));
+	return await lootService.LoadLootRequests(guildId);
 });
 
 app.MapGet("GetArchivedLootRequests", async (LootGodContext db, LootService lootService, string? name, int? lootId) =>
@@ -123,9 +113,7 @@ app.MapGet("GetArchivedLootRequests", async (LootGodContext db, LootService loot
 
 	var guildId = await lootService.GetGuildId();
 
-	return (await db.LootRequests
-		.AsNoTracking()
-		.Include(x => x.Player)
+	return await db.LootRequests
 		.Where(x => x.Player.GuildId == guildId)
 		.Where(x => x.Archived)
 		.Where(x => name == null || EF.Functions.Like(x.AltName!, name) || EF.Functions.Like(x.Player.Name, name))
@@ -133,21 +121,30 @@ app.MapGet("GetArchivedLootRequests", async (LootGodContext db, LootService loot
 		.OrderByDescending(x => x.Spell != null)
 		.ThenBy(x => x.LootId)
 		.ThenByDescending(x => x.AltName ?? x.Player.Name)
-		.ToListAsync())
-		.Select(x => new LootRequestDto(x));
+		.Select(x => new LootRequestDto
+		{
+			Id = x.Id,
+			PlayerId = x.PlayerId,
+			CreatedDate = x.CreatedDate,
+			AltName = x.AltName,
+			MainName = x.Player.Name,
+			Class = x.Class ?? x.Player.Class,
+			Spell = x.Spell,
+			LootId = x.LootId,
+			Quantity = x.Quantity,
+			RaidNight = x.RaidNight,
+			IsAlt = x.IsAlt,
+			Granted = x.Granted,
+			CurrentItem = x.CurrentItem,
+		})
+		.ToArrayAsync();
 });
 
-app.MapGet("GetLoots", async (LootGodContext db, LootService lootService) =>
+app.MapGet("GetLoots", async (LootService lootService) =>
 {
 	var guildId = await lootService.GetGuildId();
 
-	return (await db.Loots
-		.AsNoTracking()
-		.Where(x => x.GuildId == guildId)
-		.Where(x => x.Expansion == Expansion.ToL || x.Expansion == Expansion.NoS)
-		.OrderBy(x => x.Name)
-		.ToListAsync())
-		.Select(x => new LootDto(x));
+	return await lootService.LoadLoots(guildId);
 });
 
 app.MapPost("ToggleHiddenPlayer", async (string playerName, LootGodContext db, LootService lootService) =>

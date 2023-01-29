@@ -15,7 +15,7 @@ public enum Expansion : byte
 [Index(nameof(Name), nameof(GuildId), IsUnique = true)]
 public class Loot
 {
-	private static readonly HashSet<string> _spellPrefixes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+	public static readonly HashSet<string> SpellPrefixes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
 		"Minor",
 		"Lesser",
@@ -25,7 +25,7 @@ public class Loot
 		"Captured",
 	};
 
-	private static readonly HashSet<string> _spellSuffixes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+	public static readonly HashSet<string> SpellSuffixes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
 		"Rune",
 		"Ethernere",
@@ -33,7 +33,7 @@ public class Loot
 		"Shar Vahl",
 	};
 
-	private static readonly HashSet<string> _nuggets = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+	public static readonly HashSet<string> Nuggets = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
 		"Diamondized Restless Ore",
 		"Calcified Bloodied Ore",
@@ -67,9 +67,4 @@ public class Loot
 
 	[InverseProperty(nameof(LootRequest.Loot))]
 	public virtual ICollection<LootRequest> LootRequests { get; } = null!;
-
-	public virtual bool IsSpell =>
-		_nuggets.Contains(Name)
-		|| (_spellPrefixes.Any(x => Name.StartsWith(x, StringComparison.OrdinalIgnoreCase))
-		&& _spellSuffixes.Any(x => Name.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
 }
