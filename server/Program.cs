@@ -10,9 +10,7 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 var source = Environment.GetEnvironmentVariable("DATABASE_URL");
-var rotLootUrl = Environment.GetEnvironmentVariable("ROT_LOOT_URL");
 var aspnetcore_urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
-var password = Environment.GetEnvironmentVariable("PASSWORD");
 using var httpClient = new HttpClient();
 
 var connString = new SqliteConnectionStringBuilder { DataSource = source };
@@ -157,6 +155,18 @@ app.MapPost("ToggleHiddenPlayer", async (string playerName, LootGodContext db, L
 		.Where(x => x.GuildId == guildId)
 		.Where(x => x.Name == playerName)
 		.ExecuteUpdateAsync(x => x.SetProperty(y => y.Hidden, y => !y.Hidden));
+});
+
+app.MapPost("TogglePlayerAdmin", async (string playerName, LootGodContext db, LootService lootService) =>
+{
+	await lootService.EnsureGuildLeader();
+
+	var guildId = await lootService.GetGuildId();
+
+	await db.Players
+		.Where(x => x.GuildId == guildId)
+		.Where(x => x.Name == playerName)
+		.ExecuteUpdateAsync(x => x.SetProperty(y => y.Admin, y => !y.Admin));
 });
 
 app.MapPost("CreateLootRequest", async (CreateLootRequest dto, LootGodContext db, LootService lootService) =>
@@ -506,7 +516,7 @@ app.MapGet("GetPlayerAttendance", async (LootGodContext db, LootService lootServ
 
 	var playerMap = await db.Players
 		.Where(x => x.GuildId == guildId)
-		.ToDictionaryAsync(x => x.Id, x => (x.Name, x.RankId, x.Hidden));
+		.ToDictionaryAsync(x => x.Id, x => (x.Name, x.RankId, x.Hidden, x.Admin));
 	var rankIdToNameMap = await db.Ranks
 		.Where(x => x.GuildId == guildId)
 		.ToDictionaryAsync(x => x.Id, x => x.Name);
@@ -536,6 +546,7 @@ app.MapGet("GetPlayerAttendance", async (LootGodContext db, LootService lootServ
 		{
 			Name = x.Key.Name,
 			Hidden = x.Key.Hidden,
+			Admin = x.Key.Admin,
 			Rank = x.Key.RankId is null ? "unknown" : rankIdToNameMap[x.Key.RankId.Value],
 
 			_30 = Math.Round(100.0 * x.Value.Count(y => y > thirty) / thirtyDayMaxCount, 0, MidpointRounding.AwayFromZero),

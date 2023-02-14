@@ -32,6 +32,17 @@ export function RaidAttendance(props: { isAdmin: boolean }) {
 		}
 	};
 
+	const toggleAdmin = async (name: string) => {
+		setIsLoading(true);
+		try {
+			await axios.post('/TogglePlayerAdmin?playerName=' + name);
+			await getRA();
+		}
+		finally {
+			setIsLoading(false);
+		}
+	};
+
 	useEffect(() => {
 		getRA();
 	}, []);
@@ -51,6 +62,9 @@ export function RaidAttendance(props: { isAdmin: boolean }) {
 							{props.isAdmin &&
 								<th>Hide/Show (Admin Only)</th>
 							}
+							{props.isAdmin &&
+								<th>Enable/Disable Admin (Leader Only)</th>
+							}
 						</tr>
 					</thead>
 					<tbody>
@@ -68,6 +82,16 @@ export function RaidAttendance(props: { isAdmin: boolean }) {
 										}
 										{item.hidden === false &&
 											<Button variant='success' disabled={isLoading} onClick={() => toggleHidden(item.name)}>Hide</Button>
+										}
+									</td>
+								}
+								{props.isAdmin &&
+									<td>
+										{!item.admin &&
+											<Button variant='success' disabled={isLoading} onClick={() => toggleAdmin(item.name)}>Enable</Button>
+										}
+										{item.admin &&
+											<Button variant='danger' disabled={isLoading} onClick={() => toggleAdmin(item.name)}>Disable</Button>
 										}
 									</td>
 								}

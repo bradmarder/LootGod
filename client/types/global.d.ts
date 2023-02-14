@@ -34,6 +34,7 @@ declare interface IRaidAttendance {
 	readonly name: string;
 	readonly rank: string;
 	readonly hidden: boolean;
+	readonly admin: boolean;
 	readonly _30: number;
 	readonly _90: number;
 	readonly _180: number;

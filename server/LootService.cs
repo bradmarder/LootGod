@@ -59,6 +59,13 @@ public class LootService
 			.FirstOrDefaultAsync();
 	}
 
+	public async Task<bool> IsGuildLeader()
+	{
+		var key = GetPlayerKey();
+
+		return await _db.Players.AnyAsync(x => x.Key == key && x.Rank!.Name == "Leader");
+	}
+
 	public async Task<bool> GetRaidLootLock()
 	{
 		var key = GetPlayerKey();
@@ -72,6 +79,14 @@ public class LootService
 	public async Task EnsureAdminStatus()
 	{
 		if (!await GetAdminStatus())
+		{
+			throw new UnauthorizedAccessException(GetPlayerKey().ToString());
+		}
+	}
+
+	public async Task EnsureGuildLeader()
+	{
+		if (!await IsGuildLeader())
 		{
 			throw new UnauthorizedAccessException(GetPlayerKey().ToString());
 		}
