@@ -28,24 +28,6 @@ export function GrantedLoots(props: IContext) {
 		}
 	};
 
-	const downloadOutputFile = async (e: any) => {
-		e.preventDefault();
-
-		const res = await axios.get('/GetGrantedLootOutput', { responseType: 'blob' });
-		const href = URL.createObjectURL(res.data);
-		const link = document.createElement('a');
-
-		// hack because dev uses CORS and 'content-disposition' is not exposed
-		const fileName =  res.headers['content-disposition']?.split('filename=')[1].split(';')[0] ?? 'dev';
-
-		link.href = href;
-		link.setAttribute('download', fileName + '.txt');
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		URL.revokeObjectURL(href);
-	};
-
 	const grantedLootRequests = useMemo(() =>
 		props.requests.filter(x => x.granted),
 		[props.requests]);
@@ -58,7 +40,7 @@ export function GrantedLoots(props: IContext) {
 			}
 			{grantedLootRequests.length > 0 &&
 				<>
-					<a target="_blank" rel="noreferrer" href='/' onClick={downloadOutputFile}>Download Granted Loot Output Text File (for discord)</a>
+					<a target="_blank" rel="noreferrer" href={'/GetGrantedLootOutput?playerKey=' + localStorage.getItem('key')}>Download Granted Loot Output Text File (for discord)</a>
 					<Table striped bordered hover size="sm">
 						<thead>
 							<tr>

@@ -29,12 +29,20 @@ public class Player
 		["Wizard"] = EQClass.Wizard,
 	};
 
+	static Guid GetRandomGuid()
+	{
+		Span<byte> span = stackalloc byte[16];
+		RandomNumberGenerator.Fill(span);
+		return new Guid(span);
+	}
+
 	public Player() { }
 	public Player(string name, string eqClass, int guildId)
 	{
 		Name = name;
 		Class = ClassNameToEnumMap[eqClass];
 		GuildId = guildId;
+		Key = GetRandomGuid();
 	}
 	public Player(GuildDumpPlayerOutput dump, int guildId)
 	{
@@ -45,13 +53,7 @@ public class Player
 		Alt = dump.Alt;
 		Level = dump.Level;
 		LastOnDate = dump.LastOnDate;
-
-		if (!dump.Alt)
-		{
-			Span<byte> span = stackalloc byte[16];
-			RandomNumberGenerator.Fill(span);
-			Key = new Guid(span);
-		}
+		Key = GetRandomGuid();
 	}
 
 	[Key]

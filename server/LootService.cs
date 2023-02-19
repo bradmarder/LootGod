@@ -17,9 +17,9 @@ public class LootService
 	}
 
 	public Guid? GetPlayerKey() =>
-		_httpContextAccessor.HttpContext!.Request.Headers.TryGetValue("Player-Key", out var val)
-			? Guid.Parse(val.ToString())
-			: null;
+		_httpContextAccessor.HttpContext!.Request.Headers.TryGetValue("Player-Key", out var headerKey) ? Guid.Parse(headerKey.ToString())
+		: _httpContextAccessor.HttpContext!.Request.Query.TryGetValue("playerKey", out var queryKey) ? Guid.Parse(queryKey.ToString())
+		: null;
 
 	public string? GetIPAddress() =>
 		_httpContextAccessor.HttpContext!.Request.Headers.TryGetValue("Fly-Client-IP", out var val)

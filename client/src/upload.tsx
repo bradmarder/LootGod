@@ -41,6 +41,7 @@ export function Upload() {
 				{uploaded.map(x =>
 					<h6 key={x}>{x}</h6>
 				)}
+				<a target="_blank" rel="noreferrer" href={'/GetPasswords?playerKey=' + localStorage.getItem('key')}>Download Master Password Links (Leader Only)</a>
 			</Form>
 		</Alert>
 	);

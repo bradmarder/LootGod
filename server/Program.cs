@@ -564,7 +564,28 @@ app.MapGet("GetGrantedLootOutput", async (LootService lootService) =>
 	var output = await lootService.GetGrantedLootOutput();
 	var bytes = Encoding.UTF8.GetBytes(output);
 
-	return Results.File(bytes, contentType: "text/plain", fileDownloadName: "RaidLootOutput-" + DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+	return Results.File(bytes,
+		contentType: "text/plain",
+		fileDownloadName: "RaidLootOutput-" + DateTimeOffset.UtcNow.ToUnixTimeSeconds() + ".txt");
+});
+
+app.MapGet("/GetPasswords", async (LootGodContext db, LootService lootService) =>
+{
+	await lootService.EnsureGuildLeader();
+
+	var guildId = await lootService.GetGuildId();
+	var namePasswordsMap = await db.Players
+		.Where(x => x.GuildId == guildId)
+		.Where(x => x.Alt != true)
+		.OrderBy(x => x.Name)
+		.Select(x => x.Name + " " + "https://raidloot.fly.dev?key=" + x.Key)
+		.ToArrayAsync();
+	var data = string.Join(Environment.NewLine, namePasswordsMap);
+	var bytes = Encoding.UTF8.GetBytes(data);
+
+	return Results.File(bytes,
+		contentType: "text/plain",
+		fileDownloadName: "GuildPasswords-" + DateTimeOffset.UtcNow.ToUnixTimeSeconds() + ".txt");
 });
 
 await app.RunAsync();
