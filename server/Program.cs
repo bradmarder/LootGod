@@ -577,6 +577,7 @@ app.MapGet("/GetPasswords", async (LootGodContext db, LootService lootService) =
 	var namePasswordsMap = await db.Players
 		.Where(x => x.GuildId == guildId)
 		.Where(x => x.Alt != true)
+		.Where(x => x.Active != false)
 		.OrderBy(x => x.Name)
 		.Select(x => x.Name + " " + "https://raidloot.fly.dev?key=" + x.Key)
 		.ToArrayAsync();
