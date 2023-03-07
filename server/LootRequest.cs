@@ -13,13 +13,18 @@ public class LootRequest
 	{
 		IP = ip;
 		PlayerId = playerId;
-		AltName = dto.AltName?.Trim();
 		Spell = dto.Spell?.Trim();
 		Class = dto.Class;
 		LootId = dto.LootId;
 		Quantity = dto.Quantity;
 		CurrentItem = dto.CurrentItem;
 		RaidNight = dto.RaidNight;
+
+		// The UI should prevent entering AltName for RaidNight loot
+		if (!dto.RaidNight)
+		{
+			AltName = dto.AltName?.Trim();
+		}
 	}
 
 	[Key]
