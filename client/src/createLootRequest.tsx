@@ -24,8 +24,10 @@ export function CreateLootRequest(props: IContext) {
 		hasQtyLoots.length === 0
 		|| isLoading
 		|| lootId === 0
-		|| eqClass === ''
 		|| quantity < 1
+
+		// if specifying an alt, then class is required
+		|| (altName.length > 0 && eqClass === '')
 
 		// if a spell is selected, the user *must* enter a spell name
 		|| (spellSelected && spell == null);
@@ -126,7 +128,7 @@ export function CreateLootRequest(props: IContext) {
 				<Row>
 					<Col>
 						<Form.Group className="mb-3">
-							<Form.Label>Upgrading From (your current item) <strong className={'text-danger'}>Required for raid-night loot (not rot drops).</strong></Form.Label>
+							<Form.Label>Upgrading From (your current item) <strong className={'text-danger'} hidden={!props.raidNight}>Required</strong></Form.Label>
 							<Form.Control type="text" placeholder="Current Item" value={currentItem} onChange={e => setCurrentItem(e.target.value)} />
 						</Form.Group>
 					</Col>
