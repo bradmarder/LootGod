@@ -217,12 +217,12 @@ app.MapPost("UpdateLootQuantity", async (CreateLoot dto, LootGodContext db, Loot
 	await db.Loots
 		.Where(x => x.GuildId == guildId)
 		.Where(x => x.Name == dto.Name)
-		.ExecuteUpdateAsync(x => x.SetProperty(y => y.RaidQuantity, dto.Quantity));
+		.ExecuteUpdateAsync(x => x.SetProperty(y => dto.RaidNight ? y.RaidQuantity : y.RotQuantity, dto.Quantity));
 
 	await lootService.RefreshLoots(guildId);
 });
 
-app.MapPost("IncrementLootQuantity", async (LootGodContext db, int id, LootService lootService) =>
+app.MapPost("IncrementLootQuantity", async (LootGodContext db, int id, bool raidNight, LootService lootService) =>
 {
 	await lootService.EnsureAdminStatus();
 
@@ -231,12 +231,14 @@ app.MapPost("IncrementLootQuantity", async (LootGodContext db, int id, LootServi
 	await db.Loots
 		.Where(x => x.Id == id)
 		.Where(x => x.GuildId == guildId)
-		.ExecuteUpdateAsync(x => x.SetProperty(y => y.RaidQuantity, y => y.RaidQuantity + 1));
+		.ExecuteUpdateAsync(x => x.SetProperty(
+			y => raidNight ? y.RaidQuantity : y.RotQuantity,
+			y => (raidNight ? y.RaidQuantity : y.RotQuantity) + 1));
 
 	await lootService.RefreshLoots(guildId);
 });
 
-app.MapPost("DecrementLootQuantity", async (LootGodContext db, int id, LootService lootService) =>
+app.MapPost("DecrementLootQuantity", async (LootGodContext db, int id, bool raidNight, LootService lootService) =>
 {
 	await lootService.EnsureAdminStatus();
 
@@ -245,7 +247,9 @@ app.MapPost("DecrementLootQuantity", async (LootGodContext db, int id, LootServi
 	await db.Loots
 		.Where(x => x.Id == id)
 		.Where(x => x.GuildId == guildId)
-		.ExecuteUpdateAsync(x => x.SetProperty(y => y.RaidQuantity, y => y.RaidQuantity == 0 ? 0 : y.RaidQuantity - 1));
+		.ExecuteUpdateAsync(x => x.SetProperty(
+			y => raidNight ? y.RaidQuantity : y.RotQuantity,
+			y => (raidNight ? y.RaidQuantity : y.RotQuantity) == 0 ? 0 : (raidNight ? y.RaidQuantity : y.RotQuantity) - 1));
 
 	await lootService.RefreshLoots(guildId);
 });
@@ -591,4 +595,4 @@ app.MapGet("/GetPasswords", async (LootGodContext db, LootService lootService) =
 
 await app.RunAsync();
 
-public record CreateLoot(byte Quantity, string Name);
+public record CreateLoot(byte Quantity, string Name, bool RaidNight);

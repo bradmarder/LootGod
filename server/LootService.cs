@@ -140,7 +140,8 @@ public class LootService
 			{
 				Id = x.Id,
 				Name = x.Name,
-				Quantity = x.RaidQuantity,
+				RaidQuantity = x.RaidQuantity,
+				RotQuantity = x.RotQuantity,
 			})
 			.ToArrayAsync();
 	}

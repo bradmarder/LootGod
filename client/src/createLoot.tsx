@@ -2,9 +2,9 @@ import { useState } from 'react';
 import './App.css';
 import { Row, Col, Alert, Button, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import axios, { AxiosPromise } from 'axios';
+import axios from 'axios';
 
-export function CreateLoot(props: { loots: ILoot[] }) {
+export function CreateLoot(props: { loots: ILoot[], raidNight: boolean }) {
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [createLootName, setCreateLootName] = useState('');
@@ -14,10 +14,11 @@ export function CreateLoot(props: { loots: ILoot[] }) {
 		const data = {
 			Name: createLootName,
 			Quantity: createLootQuantity,
+			RaidNight: props.raidNight,
 		};
 		setIsLoading(true);
 		try {
-			await axios.post<{}, AxiosPromise<ILoot>>('/UpdateLootQuantity', data);
+			await axios.post('/UpdateLootQuantity', data);
 		}
 		finally {
 			setIsLoading(false);

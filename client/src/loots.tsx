@@ -22,7 +22,7 @@ export default function Loots(props: IContext) {
 	const incrementLoot = async (id: number) => {
 		setIsLoading(true);
 		try {
-			await axios.post('/IncrementLootQuantity?id=' + id);
+			await axios.post('/IncrementLootQuantity?id=' + id+ '&raidNight=' + props.raidNight);
 		}
 		finally {
 			setIsLoading(false);
@@ -32,7 +32,7 @@ export default function Loots(props: IContext) {
 	const decrementLoot = async (id: number) => {
 		setIsLoading(true);
 		try {
-			await axios.post('/DecrementLootQuantity?id=' + id);
+			await axios.post('/DecrementLootQuantity?id=' + id + '&raidNight=' + props.raidNight);
 		}
 		finally {
 			setIsLoading(false);
@@ -50,20 +50,25 @@ export default function Loots(props: IContext) {
 	};
 
 	const items = props.loots
-		.filter(x => x.quantity > 0)
+		.filter(x => (props.raidNight ? x.raidQuantity : x.rotQuantity) > 0)
 		.filter(x => props.spell ? x.isSpell : !x.isSpell)
 
 		// subtract the granted loot quantity from the total loot quantity
 		.map(item => {
 			const grantedLootQty = props.requests
+				.filter(x => props.raidNight === x.raidNight)
 				.filter(x => x.lootId === item.id)
 				.filter(x => x.granted)
 				.map(x => x.quantity)
 				.reduce((x, y) => x + y, 0);
 
 			// clone object to prevent mutating original and causing issues
-			const ref = JSON.parse(JSON.stringify(item))
-			ref.quantity -= grantedLootQty;
+			const ref = JSON.parse(JSON.stringify(item)) as ILoot;
+			if (props.raidNight) {
+				ref.raidQuantity -= grantedLootQty;
+			} else {
+				ref.rotQuantity -= grantedLootQty;
+			}
 			return ref;
 		});
 
@@ -94,15 +99,15 @@ export default function Loots(props: IContext) {
 									<a href={'https://www.raidloot.com/items?view=List&name=' + item.name} target='_blank' rel='noreferrer'>{item.name}</a>
 								}
 								{props.spell && item.name}
-								&nbsp;| {item.quantity} available | {props.requests.filter(x => x.lootId === item.id).length} request(s)</Accordion.Header>
+								&nbsp;| {props.raidNight ? item.raidQuantity : item.rotQuantity} available | {props.requests.filter(x => x.lootId === item.id).length} request(s)</Accordion.Header>
 							<Accordion.Body>
 								{props.isAdmin &&
 									<>
-										{item.quantity === 0 &&
+										{(props.raidNight ? item.raidQuantity : item.rotQuantity) === 0 &&
 											<Alert variant={'warning'}><strong>Grant Disabled</strong> - Already Allotted Maximum Quantity</Alert>
 										}
 										<Button variant={'warning'} size={'sm'} disabled={isLoading} onClick={() => incrementLoot(item.id)}>Increment Quantity</Button>
-										<Button variant={'danger'} size={'sm'} disabled={isLoading || item.quantity === 0} onClick={() => decrementLoot(item.id)}>Decrement Quantity</Button>
+										<Button variant={'danger'} size={'sm'} disabled={isLoading || (props.raidNight ? item.raidQuantity : item.rotQuantity) === 0} onClick={() => decrementLoot(item.id)}>Decrement Quantity</Button>
 										<br /><br />
 										{props.requests.filter(x => x.lootId === item.id).map(req =>
 											<span key={req.id}>
@@ -111,7 +116,7 @@ export default function Loots(props: IContext) {
 												{props.isAdmin && req.granted &&
 													<Button variant={'danger'} disabled={isLoading} onClick={() => ungrantLootRequest(req.id)}>Un-Grant</Button>
 												}
-												{props.isAdmin && !req.granted && item.quantity > 0 &&
+												{props.isAdmin && !req.granted && (props.raidNight ? item.raidQuantity : item.rotQuantity) > 0 &&
 													<Button variant={'success'} disabled={isLoading} onClick={() => grantLootRequest(req.id)}>Grant</Button>
 												}
 												<br />

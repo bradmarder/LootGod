@@ -60,6 +60,7 @@ export function ArchivedLoot(props: IContext) {
 							<th>Upgrading From</th>
 							<th>Granted?</th>
 							<th>Date</th>
+							<tr>RaidNight / Rot</tr>
 						</tr>
 					</thead>
 					<tbody>
@@ -73,6 +74,7 @@ export function ArchivedLoot(props: IContext) {
 								<td>{item.currentItem}</td>
 								<td className={item.granted ? 'text-success' : 'text-danger'}>{item.granted ? "yes" : "no"}</td>
 								<td>{new Date(item.createdDate + '+00:00').toLocaleDateString()}</td>
+								<td>{item.raidNight ? 'Raid' : 'Rot'}</td>
 							</tr>
 						)}
 					</tbody>

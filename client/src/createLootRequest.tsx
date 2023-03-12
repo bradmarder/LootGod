@@ -2,7 +2,7 @@ import { useState } from 'react';
 import './App.css';
 import { Row, Col, Alert, Button, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import axios, { AxiosPromise } from 'axios';
+import axios from 'axios';
 import classes from './eqClasses';
 import { EQClass } from './eqClass';
 
@@ -16,7 +16,7 @@ export function CreateLootRequest(props: IContext) {
 	const [eqClass, setClass] = useState('');
 	const [lootId, setLootId] = useState(0);
 
-	const hasQtyLoots = props.loots.filter(x => x.quantity > 0);
+	const hasQtyLoots = props.loots.filter(x => (props.raidNight ? x.raidQuantity : x.rotQuantity) > 0);
 
 	const spellSelected = lootId > 0 && props.loots.filter(x => x.id === lootId)[0].isSpell;
 
@@ -38,10 +38,11 @@ export function CreateLootRequest(props: IContext) {
 			Quantity: spellSelected ? 1 : quantity,
 			Spell: spellSelected ? spell : null,
 			CurrentItem: currentItem,
+			RaidNight: props.raidNight,
 		};
 		setIsLoading(true);
 		try {
-			await axios.post<{}, AxiosPromise<ILootRequest>>('/CreateLootRequest', data);
+			await axios.post('/CreateLootRequest', data);
 		}
 		catch {
 			// DUPLICATE REQUEST ERROR MESSAGE
@@ -72,27 +73,29 @@ export function CreateLootRequest(props: IContext) {
 		<Alert variant='primary'>
 			<h4>Create Loot Request</h4>
 			<Form onSubmit={e => { e.preventDefault(); }}>
+				{!props.raidNight &&
+					<Row>
+						<Col xs={12} md={6}>
+							<Form.Group className="mb-3">
+								<Form.Label>ALT name (Leave blank if for main)</Form.Label>
+								<Form.Control type="text" placeholder="Enter name" value={altName} onChange={e => setAltName(e.target.value)} />
+							</Form.Group>
+						</Col>
+						<Col xs={12} md={6}>
+							<Form.Group className="mb-3">
+								<Form.Label>Class</Form.Label>
+								<Form.Select value={eqClass} onChange={e => setClass(e.target.value)}>
+									<option>Select Class</option>
+									{classes.map((item, i) =>
+										<option key={item} value={item}>{item}</option>
+									)}
+								</Form.Select>
+							</Form.Group>
+						</Col>
+					</Row>
+				}
 				<Row>
 					<Col xs={12} md={6}>
-						<Form.Group className="mb-3">
-							<Form.Label>ALT name (Leave blank if for main)</Form.Label>
-							<Form.Control type="text" placeholder="Enter name" value={altName} onChange={e => setAltName(e.target.value)} />
-						</Form.Group>
-					</Col>
-					<Col xs={12} md={6}>
-						<Form.Group className="mb-3">
-							<Form.Label>Class</Form.Label>
-							<Form.Select value={eqClass} onChange={e => setClass(e.target.value)}>
-								<option>Select Class</option>
-								{classes.map((item, i) =>
-									<option key={item} value={item}>{item}</option>
-								)}
-							</Form.Select>
-						</Form.Group>
-					</Col>
-				</Row>
-				<Row>
-				<Col xs={12} md={6}>
 						<Form.Group className="mb-3">
 							<Form.Label>Loot</Form.Label>
 							<Form.Select value={lootId} onChange={e => setLootLogic(Number(e.target.value))}>

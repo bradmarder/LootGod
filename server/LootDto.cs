@@ -3,7 +3,8 @@
 public record LootDto
 {
 	public required int Id { get; init; }
-	public required byte Quantity { get; init; }
+	public required byte RaidQuantity { get; init; }
+	public required byte RotQuantity { get; init; }
 	public required string Name { get; init; }
 
 	public virtual bool IsSpell =>

@@ -45,6 +45,7 @@ export function LootRequests(props: IContext) {
 							<th>Class</th>
 							<th>Loot</th>
 							<th>Quantity</th>
+							<th>RaidNight / Rot</th>
 							<th></th>
 						</tr>
 					</thead>
@@ -56,6 +57,7 @@ export function LootRequests(props: IContext) {
 								<td>{classes[item.class]}</td>
 								<td>{props.loots.find(x => x.id === item.lootId)?.name}</td>
 								<td>{item.spell || item.quantity}</td>
+								<td>{item.raidNight ? 'RAID' : 'ROT'}</td>
 								<td>
 									{props.lootLocked &&
 										<Alert variant={'danger'}>Loot Locked</Alert>

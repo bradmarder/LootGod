@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-import { Container, Row, Col, Button } from 'react-bootstrap';
+import { Container, Row, Col, Button, Alert } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import { HubConnectionBuilder } from '@microsoft/signalr';
@@ -26,6 +26,7 @@ axios.defaults.headers.common['Player-Key'] = key;
 axios.defaults.baseURL = process.env.REACT_APP_API_PATH;
 
 export default function App() {
+	const [raidNight, setRaidNight] = useState<boolean | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [isAdmin, setIsAdmin] = useState(false);
 	const [lootLock, setLootLock] = useState(false);
@@ -105,26 +106,57 @@ export default function App() {
 
 	return (
 		<Container fluid>
-			<h1>{process.env.REACT_APP_TITLE}</h1>
-			{true &&
+			{/* <h1>{process.env.REACT_APP_TITLE}</h1> */}
+			{raidNight != null &&
+				<>
+				<h1>{raidNight ? 'Raid' : 'Rot'} Loot</h1>
+				<h3>Refresh page to switch to raid/rot loots</h3>
+				</>
+			}
+			{raidNight == null &&
+				<>
+					<Row>
+					<Col xs={12} xl={6}>
+					<Alert variant={'primary'}>
+						<p>Show me <strong>RAID NIGHT</strong> loot. What does this mean? If you are in an active raid and fresh and hot loot is dropping, this is the button you want to click.
+						Click the wrong button or change your mind? No worries! This isn't permanent, simply refresh to page to select again.</p>
+						<p>(ADMINS!) Click this to create/update quantities and grant requests for <strong>RAID NIGHT</strong> loots only.</p>
+						<Button variant={'success'} onClick={() => setRaidNight(true)}>Show Raid Night Loot</Button>
+					</Alert>
+					</Col>
+					</Row>
+
+					<Row>
+					<Col xs={12} xl={6}>
+					<Alert variant={'danger'}>
+						<p>Show me <strong>ROT</strong> loot. This allows you to request junky rot loot that nobody wanted during a previous raid. You can request this loot for your alts or main.
+						Click the wrong button or change your mind? No worries! This isn't permanent, simply refresh to page to select again.</p>
+						<p>(ADMINS!) Click this to create/update quantities or grant requests for <strong>ROT</strong> loots only.</p>
+						<Button variant={'info'} onClick={() => setRaidNight(false)}>Show ROT Loot</Button>
+					</Alert>
+					</Col>
+					</Row>
+				</>
+			}
+			{raidNight != null &&
 				<Row>
 					<Col xs={12} xl={6}>
-						<CreateLootRequest requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock}></CreateLootRequest>
+						<CreateLootRequest requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight}></CreateLootRequest>
 						<br />
-						<LootRequests requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock}></LootRequests>
+						<LootRequests requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight}></LootRequests>
 						<br />
 						{isAdmin &&
-							<GrantedLoots requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock}></GrantedLoots>
+							<GrantedLoots requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight}></GrantedLoots>
 						}
 						{isAdmin &&
-							<ArchivedLoot requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock}></ArchivedLoot>
+							<ArchivedLoot requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight}></ArchivedLoot>
 						}
 					</Col>
 					<Col xs={12} xl={6}>
 						{isAdmin &&
 							<>
 								<Upload></Upload>
-								<CreateLoot loots={loots}></CreateLoot>
+								<CreateLoot loots={loots} raidNight={raidNight}></CreateLoot>
 								{lootLock &&
 									<Button variant={'success'} onClick={disableLootLock} disabled={loading}>Unlock/Enable Loot Requests</Button>
 								}
@@ -134,9 +166,9 @@ export default function App() {
 								<br /><br />
 							</>
 						}
-						<Loots requests={requests} loots={loots} isAdmin={isAdmin} spell={true}></Loots>
+						<Loots requests={requests} loots={loots} isAdmin={isAdmin} spell={true} raidNight={raidNight}></Loots>
 						<br />
-						<Loots requests={requests} loots={loots} isAdmin={isAdmin} spell={false}></Loots>
+						<Loots requests={requests} loots={loots} isAdmin={isAdmin} spell={false} raidNight={raidNight}></Loots>
 						<br />
 						<RaidAttendance isAdmin={isAdmin}></RaidAttendance>
 					</Col>
