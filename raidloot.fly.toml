@@ -7,7 +7,6 @@ processes = []
 
 [env]
   DATABASE_URL = "/mnt/guildLoot.db"
-  ROT_LOOT_URL = "https://rotloot.fly.dev"
 
 [experimental]
   allowed_public_ports = []
