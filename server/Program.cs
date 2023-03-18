@@ -300,7 +300,7 @@ app.MapPost("GrantLootRequest", async (LootGodContext db, LootService lootServic
 	await lootService.RefreshRequests(guildId);
 });
 
-app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootService) =>
+app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootService, bool raidNight) =>
 {
 	await lootService.EnsureAdminStatus();
 
@@ -312,10 +312,11 @@ app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootServ
 	var requests = await db.LootRequests
 		.Where(x => x.Player.GuildId == guildId)
 		.Where(x => !x.Archived)
+		.Where(x => x.RaidNight == raidNight)
 		.ToListAsync();
 	var loots = await db.Loots
 		.Where(x => x.GuildId == guildId)
-		.Where(x => x.RaidQuantity > 0)
+		.Where(x => (raidNight ? x.RaidQuantity : x.RotQuantity) > 0)
 		.ToListAsync();
 
 	foreach (var request in requests)
@@ -327,8 +328,16 @@ app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootServ
 		var grantedQuantity = requests
 			.Where(x => x.LootId == loot.Id && x.Granted)
 			.Sum(x => x.Quantity);
-		loot.RotQuantity += (byte)(loot.RaidQuantity - grantedQuantity);
-		loot.RaidQuantity = 0;
+
+		if (raidNight)
+		{
+			loot.RotQuantity += (byte)(loot.RaidQuantity - grantedQuantity);
+			loot.RaidQuantity = 0;
+		}
+		else
+		{
+			loot.RotQuantity -= (byte)grantedQuantity;
+		}
 	}
 
 	_ = await db.SaveChangesAsync();

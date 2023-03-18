@@ -21,7 +21,7 @@ export function GrantedLoots(props: IContext) {
 	const finishLootGranting = async () => {
 		setIsLoading(true);
 		try {
-			await axios.post('/FinishLootRequests');
+			await axios.post('/FinishLootRequests?raidNight=' + props.raidNight);
 		}
 		finally {
 			setIsLoading(false);
