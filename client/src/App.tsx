@@ -106,7 +106,6 @@ export default function App() {
 
 	return (
 		<Container fluid>
-			{/* <h1>{process.env.REACT_APP_TITLE}</h1> */}
 			{raidNight != null &&
 				<>
 				<h1>{raidNight ? 'Raid' : 'Rot'} Loot</h1>
