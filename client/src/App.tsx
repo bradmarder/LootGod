@@ -23,7 +23,6 @@ if (key == null || key === '') {
 }
 localStorage.setItem('key', key);
 axios.defaults.headers.common['Player-Key'] = key;
-axios.defaults.baseURL = process.env.REACT_APP_API_PATH;
 
 export default function App() {
 	const [raidNight, setRaidNight] = useState<boolean | null>(null);
@@ -81,7 +80,7 @@ export default function App() {
 
 	useEffect(() => {
 		const connection = new HubConnectionBuilder()
-			.withUrl(process.env.REACT_APP_API_PATH + '/lootHub?key=' + key)
+			.withUrl('/lootHub?key=' + key)
 			.configureLogging(2) // signalR.LogLevel.Information
 			.withAutomaticReconnect()
 			.build();

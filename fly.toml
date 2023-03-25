@@ -17,7 +17,6 @@ processes = []
   source = "loot"
 
 [build.args]
-  REACT_APP_API_PATH = ""
   REACT_APP_TITLE = "Raid Loot"
 
 [[services]]
@@ -40,8 +39,13 @@ processes = []
     handlers = ["tls", "http"]
     port = 443
 
-  [[services.tcp_checks]]
-    grace_period = "1s"
-    interval = "15s"
+  [[services.http_checks]]
+    interval = 30000
+    grace_period = "5s"
+    method = "get"
+    path = "/test"
+    protocol = "http"
     restart_limit = 0
-    timeout = "2s"
+    timeout = 3000
+    tls_skip_verify = false
+    [services.http_checks.headers]

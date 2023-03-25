@@ -12,17 +12,38 @@ var builder = WebApplication.CreateBuilder(args);
 var source = Environment.GetEnvironmentVariable("DATABASE_URL");
 var aspnetcore_urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
 using var httpClient = new HttpClient();
+using var cts = new CancellationTokenSource();
 
-var connString = new SqliteConnectionStringBuilder { DataSource = source };
+Console.CancelKeyPress += (o, e) =>
+{
+	e.Cancel = true;
+	cts.Cancel();
+};
+
+var useInMemoryDatabase = source is null;
+var connString = useInMemoryDatabase
+	? new SqliteConnectionStringBuilder
+	{
+		DataSource = ":memory:",
+		Cache = SqliteCacheMode.Shared,
+		Mode = SqliteOpenMode.Memory,
+	}
+	: new SqliteConnectionStringBuilder { DataSource = source };
+
+// required to keep in-memory database alive
+using var conn = new SqliteConnection(connString.ConnectionString);
+if (useInMemoryDatabase)
+{
+	conn.Open();
+}
+else
+{
+	conn.Dispose();
+}
+
 builder.Services.AddDbContextPool<LootGodContext>(x => x.UseSqlite(connString.ConnectionString));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-if (builder.Environment.IsDevelopment())
-{
-	builder.Services.AddCors(options =>
-		options.AddDefaultPolicy(policy =>
-			policy.AllowAnyMethod().AllowAnyHeader().AllowCredentials().SetIsOriginAllowed(x => true)));
-}
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddOutputCache();
 builder.Services.AddSignalR(e => e.EnableDetailedErrors = true);
@@ -53,17 +74,10 @@ app.UseExceptionHandler(opt =>
 });
 app.UseResponseCompression();
 app.UseDefaultFiles();
-if (app.Environment.IsProduction())
+app.UseStaticFiles(new StaticFileOptions
 {
-	app.UseStaticFiles(new StaticFileOptions
-	{
-		OnPrepareResponse = x => x.Context.Response.Headers.ContentSecurityPolicy = "default-src 'self'; child-src 'none';"
-	});
-}
-if (app.Environment.IsDevelopment())
-{
-	app.UseCors();
-}
+	OnPrepareResponse = x => x.Context.Response.Headers.ContentSecurityPolicy = "default-src 'self'; child-src 'none';"
+});
 app.UseSwagger();
 app.UseSwaggerUI();
 app.MapHub<LootHub>("/lootHub");
@@ -114,7 +128,7 @@ app.MapGet("GetArchivedLootRequests", async (LootGodContext db, LootService loot
 	return await db.LootRequests
 		.Where(x => x.Player.GuildId == guildId)
 		.Where(x => x.Archived)
-		.Where(x => name == null || EF.Functions.Like(x.AltName!, name) || EF.Functions.Like(x.Player.Name, name))
+		.Where(x => name == null || x.AltName!.StartsWith(name) || x.Player.Name.StartsWith(name))
 		.Where(x => lootId == null || x.LootId == lootId)
 		.OrderByDescending(x => x.Spell != null)
 		.ThenBy(x => x.LootId)
@@ -562,9 +576,9 @@ app.MapGet("GetPlayerAttendance", async (LootGodContext db, LootService lootServ
 			Admin = x.Key.Admin,
 			Rank = x.Key.RankId is null ? "unknown" : rankIdToNameMap[x.Key.RankId.Value],
 
-			_30 = Math.Round(100.0 * x.Value.Count(y => y > thirty) / thirtyDayMaxCount, 0, MidpointRounding.AwayFromZero),
-			_90 = Math.Round(100.0 * x.Value.Count(y => y > ninety) / ninetyDayMaxCount, 0, MidpointRounding.AwayFromZero),
-			_180 = Math.Round(100.0 * x.Value.Count() / oneHundredEightDayMaxCount, 0, MidpointRounding.AwayFromZero),
+			_30 = thirtyDayMaxCount == 0 ? 0 : Math.Round(100.0 * x.Value.Count(y => y > thirty) / thirtyDayMaxCount, 0, MidpointRounding.AwayFromZero),
+			_90 = ninetyDayMaxCount == 0 ? 0 : Math.Round(100.0 * x.Value.Count(y => y > ninety) / ninetyDayMaxCount, 0, MidpointRounding.AwayFromZero),
+			_180 = oneHundredEightDayMaxCount == 0 ? 0 : Math.Round(100.0 * x.Value.Count() / oneHundredEightDayMaxCount, 0, MidpointRounding.AwayFromZero),
 		})
 		.OrderBy(x => x.Name)
 		.ToArray();
@@ -602,6 +616,6 @@ app.MapGet("/GetPasswords", async (LootGodContext db, LootService lootService) =
 		fileDownloadName: "GuildPasswords-" + DateTimeOffset.UtcNow.ToUnixTimeSeconds() + ".txt");
 });
 
-await app.RunAsync();
+await app.RunAsync(cts.Token);
 
 public record CreateLoot(byte Quantity, string Name, bool RaidNight);

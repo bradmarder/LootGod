@@ -7,7 +7,6 @@ namespace LootGod;
 [Index(nameof(Name), nameof(GuildId), IsUnique = true)]
 public class Rank
 {
-
 	public Rank() { }
 	public Rank(string name, int guildId)
 	{
