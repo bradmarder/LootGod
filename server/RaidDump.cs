@@ -6,7 +6,6 @@ namespace LootGod;
 [PrimaryKey(nameof(Timestamp), nameof(PlayerId))]
 public class RaidDump
 {
-	public RaidDump() { }
 	public RaidDump(long timestamp, int playerId)
 	{
 		Timestamp = timestamp;

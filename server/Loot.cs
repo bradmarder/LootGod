@@ -39,7 +39,7 @@ public class Loot
 		"Calcified Bloodied Ore",
 	};
 
-	public Loot() { }
+	private Loot() { }
 	public Loot(string name, Expansion expansion, int guildId)
 	{
 		Name = name;

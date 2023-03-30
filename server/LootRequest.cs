@@ -8,7 +8,7 @@ namespace LootGod;
 [Index(nameof(Archived), nameof(Granted))]
 public class LootRequest
 {
-	public LootRequest() { }
+	private LootRequest() { }
 	public LootRequest(CreateLootRequest dto, string? ip, int playerId)
 	{
 		IP = ip;

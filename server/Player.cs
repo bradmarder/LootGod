@@ -36,7 +36,7 @@ public class Player
 		return new Guid(span);
 	}
 
-	public Player() { }
+	private Player() { }
 	public Player(string name, string eqClass, int guildId)
 	{
 		Name = name;
