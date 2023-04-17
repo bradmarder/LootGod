@@ -20,7 +20,6 @@ processes = []
   REACT_APP_TITLE = "Raid Loot"
 
 [[services]]
-  http_checks = []
   internal_port = 8080
   processes = ["app"]
   protocol = "tcp"
