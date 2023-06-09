@@ -426,6 +426,12 @@ app.MapPost("ImportGuildDump", async (LootGodContext db, LootService lootService
 			player.LastOnDate = dump.LastOnDate;
 			player.Level = dump.Level;
 			player.Alt = dump.Alt;
+
+			// guild leader should always be granted admin access
+			if (StringComparer.OrdinalIgnoreCase.Equals("Leader", dump.Rank))
+			{
+				player.Admin = true;
+			}
 		}
 		else
 		{
