@@ -4,6 +4,7 @@ app = "raidloot"
 kill_signal = "SIGINT"
 kill_timeout = 5
 processes = []
+primary_region = "ord"
 
 [env]
   DATABASE_URL = "/mnt/guildLoot.db"

@@ -2,6 +2,9 @@ using LootGod;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
+using Serilog.Context;
+using Serilog.Events;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
@@ -49,6 +52,17 @@ builder.Services.AddOutputCache();
 builder.Services.AddSignalR(e => e.EnableDetailedErrors = true);
 builder.Services.AddScoped<LootService>();
 builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
+var logger = new LoggerConfiguration()
+	.Enrich.FromLogContext()
+	.WriteTo.Console(outputTemplate: "[{Timestamp:u} {Level:u3}] {Message:lj} " + "{Properties:j}{NewLine}{Exception}")
+	.MinimumLevel.Override(nameof(Microsoft), LogEventLevel.Warning)
+	.MinimumLevel.Override(nameof(System), LogEventLevel.Warning)
+	.CreateLogger();
+builder.Services.AddLogging(x => x
+	.ClearProviders()
+	.AddSerilog(logger)
+	.Configure(y => y.ActivityTrackingOptions = ActivityTrackingOptions.None)
+);
 
 using var app = builder.Build();
 
@@ -68,7 +82,7 @@ app.UseExceptionHandler(opt =>
 		{
 			var err = $"Error: {ex.Error.Message} {ex.Error.StackTrace} {ex.Error.InnerException?.Message}";
 			await context.Response.WriteAsync(err);
-			await Console.Out.WriteAsync(err);
+			app.Logger.LogError(ex.Error, "");
 		}
 	});
 });
@@ -195,6 +209,12 @@ app.MapPost("CreateLootRequest", async (CreateLootRequest dto, LootGodContext db
 	_ = await db.SaveChangesAsync();
 
 	await lootService.RefreshRequests(guildId);
+
+	var player = await db.Players.Include(x => x.Guild).SingleAsync(x => x.Id == playerId);
+	using var __ = LogContext.PushProperty("IP", lootService.GetIPAddress());
+	using var ___ = LogContext.PushProperty("Name", player.Name);
+	using var ____ = LogContext.PushProperty("GuildName", player.Guild.Name);
+	app.Logger.LogInformation(nameof(CreateLootRequest));
 });
 
 app.MapPost("DeleteLootRequest", async (LootGodContext db, HttpContext context, LootService lootService) =>
@@ -367,7 +387,7 @@ app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootServ
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex.ToString());
+			app.Logger.LogError(ex, "");
 		}
 	}
 
@@ -391,6 +411,12 @@ app.MapPost("ImportGuildDump", async (LootGodContext db, LootService lootService
 		.Select(x => x.Split('\t'))
 		.Select(x => new GuildDumpPlayerOutput(x))
 		.ToArray();
+
+	// ensure not partial guild dump by checking a leader exists
+	if (!dumps.Any(x => StringComparer.OrdinalIgnoreCase.Equals("Leader", x.Rank)))
+	{
+		return TypedResults.BadRequest("Partial Guild Dump - Missing Leader Rank");
+	}
 
 	// create the new ranks
 	var existingRankNames = await db.Ranks
@@ -453,6 +479,8 @@ app.MapPost("ImportGuildDump", async (LootGodContext db, LootService lootService
 		.ToList();
 	db.Players.AddRange(dumpPlayers);
 	await db.SaveChangesAsync();
+
+	return Results.Ok();
 });
 
 app.MapPost("ImportRaidDump", async (LootGodContext db, LootService lootService, IFormFile file, int offset) =>
