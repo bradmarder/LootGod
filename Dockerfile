@@ -32,8 +32,10 @@ RUN dotnet restore --runtime alpine-x64
 # Copy everything else and build
 COPY server/. ./
 RUN dotnet publish -c Release -o out \
+	--no-restore \
 	--runtime alpine-x64 \
 	--self-contained true \
+	# /p:PublishTrimmed=true \
 	/p:PublishSingleFile=true
 
 # Build runtime image
@@ -45,5 +47,14 @@ COPY --from=node-build-env /app/build wwwroot
 # Uses port which is used by the actual application
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
+
+# For added security, you can opt out of the diagnostic pipeline. When you opt-out this allows the container to run as read-only.
+ENV DOTNET_EnableDiagnostics=0
+
+# Create/Run as user without root privileges
+# RUN adduser --disabled-password \
+#   --home /app \
+#   --gecos '' dotnetuser && chown -R dotnetuser /app
+# USER dotnetuser
 
 ENTRYPOINT ["./LootGod"]

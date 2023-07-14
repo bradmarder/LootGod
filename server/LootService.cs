@@ -73,7 +73,7 @@ public class LootService
 		return await _db.Players
 			.Where(x => x.Key == key)
 			.Select(x => x.Guild.RaidLootLocked)
-			.FirstOrDefaultAsync();
+			.SingleAsync();
 	}
 
 	public async Task EnsureAdminStatus()

@@ -1,5 +1,5 @@
 node_modules/
-bin/
-obj/
+**/[b|B]in/
+**/[O|o]bj/
 .dockerignore
-Dockerfile
+Dockerfile*

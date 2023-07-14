@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using Serilog.Context;
 using Serilog.Events;
 using System.Diagnostics;
 using System.Globalization;
@@ -45,10 +44,10 @@ else
 }
 
 builder.Services.AddDbContextPool<LootGodContext>(x => x.UseSqlite(connString.ConnectionString));
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+//builder.Services.AddEndpointsApiExplorer();
+//builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddOutputCache();
+//builder.Services.AddOutputCache();
 builder.Services.AddSignalR(e => e.EnableDetailedErrors = true);
 builder.Services.AddScoped<LootService>();
 builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
@@ -77,11 +76,11 @@ app.UseExceptionHandler(opt =>
 {
 	opt.Run(async context =>
 	{
+		await Task.CompletedTask;
+
 		var ex = context.Features.Get<IExceptionHandlerFeature>();
 		if (ex is not null)
 		{
-			var err = $"Error: {ex.Error.Message} {ex.Error.StackTrace} {ex.Error.InnerException?.Message}";
-			await context.Response.WriteAsync(err);
 			app.Logger.LogError(ex.Error, "");
 		}
 	});
@@ -90,12 +89,21 @@ app.UseResponseCompression();
 app.UseDefaultFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
-	OnPrepareResponse = x => x.Context.Response.Headers.ContentSecurityPolicy = "default-src 'self'; child-src 'none';"
+	OnPrepareResponse = x =>
+	{
+		x.Context.Response.Headers.ContentSecurityPolicy = "default-src 'self'; child-src 'none';";
+		x.Context.Response.Headers.XFrameOptions = "DENY";
+		x.Context.Response.Headers.Add("Referrer-Policy", "no-referrer");
+	}
 });
-app.UseSwagger();
-app.UseSwaggerUI();
+//if (!app.Environment.IsDevelopment())
+//{
+//	app.UseSwagger();
+//	app.UseSwaggerUI();
+//}
 app.MapHub<LootHub>("/lootHub");
-app.UseOutputCache();
+//app.UseOutputCache();
+app.UseMiddleware<LogMiddleware>();
 app.MapGet("/test", () => "Hello World!");
 
 //foreach (var item in StaticData.NosLoot)
@@ -114,16 +122,21 @@ app.MapPost("NewLootNoS", async (LootGodContext db, string name, int guildId) =>
 	db.Loots.Add(loot);
 	await db.SaveChangesAsync();
 });
-app.MapPost("GuildDiscord", async (LootGodContext db, string webhook, int guildId) =>
+
+/// TODO: remove guildId parameter, make part of UI
+app.MapPost("GuildDiscord", async (LootGodContext db, LootService lootService, string webhook, int guildId) =>
 {
+	await lootService.EnsureAdminStatus();
+
 	var uri = new Uri(webhook, UriKind.Absolute);
 	if (!StringComparer.OrdinalIgnoreCase.Equals(uri.Host, "discordapp.com"))
 	{
 		throw new Exception(webhook);
 	}
-	var guild = await db.Guilds.FirstOrDefaultAsync(x => x.Id == guildId);
-	guild!.DiscordWebhookUrl = webhook;
-	await db.SaveChangesAsync();
+
+	await db.Guilds
+		.Where(x => x.Id == guildId)
+		.ExecuteUpdateAsync(x => x.SetProperty(y => y.DiscordWebhookUrl, webhook));
 });
 
 app.MapGet("GetLootRequests", async (LootService lootService) =>
@@ -209,12 +222,6 @@ app.MapPost("CreateLootRequest", async (CreateLootRequest dto, LootGodContext db
 	_ = await db.SaveChangesAsync();
 
 	await lootService.RefreshRequests(guildId);
-
-	var player = await db.Players.Include(x => x.Guild).SingleAsync(x => x.Id == playerId);
-	using var __ = LogContext.PushProperty("IP", lootService.GetIPAddress());
-	using var ___ = LogContext.PushProperty("Name", player.Name);
-	using var ____ = LogContext.PushProperty("GuildName", player.Guild.Name);
-	app.Logger.LogInformation(nameof(CreateLootRequest));
 });
 
 app.MapPost("DeleteLootRequest", async (LootGodContext db, HttpContext context, LootService lootService) =>
@@ -222,10 +229,10 @@ app.MapPost("DeleteLootRequest", async (LootGodContext db, HttpContext context, 
 	await lootService.EnsureRaidLootUnlocked();
 
 	var id = int.Parse(context.Request.Query["id"]!);
-	var request = await db.LootRequests.FirstOrDefaultAsync(x => x.Id == id);
+	var request = await db.LootRequests.SingleAsync(x => x.Id == id);
 	var guildId = await lootService.GetGuildId();
 	var playerId = await lootService.GetPlayerId();
-	if (request?.PlayerId != playerId)
+	if (request.PlayerId != playerId)
 	{
 		throw new UnauthorizedAccessException($"PlayerId {playerId} does not have access to loot id {id}");
 	}
@@ -294,9 +301,9 @@ app.MapPost("ToggleLootLock", async (LootGodContext db, LootService lootService,
 	await lootService.EnsureAdminStatus();
 
 	var guildId = await lootService.GetGuildId();
-	var guild = await db.Guilds.FirstOrDefaultAsync(x => x.Id == guildId);
-	guild!.RaidLootLocked = enable;
-	_ = await db.SaveChangesAsync();
+	await db.Guilds
+		.Where(x => x.Id == guildId)
+		.ExecuteUpdateAsync(x => x.SetProperty(y => y.RaidLootLocked, enable));
 
 	await lootService.RefreshLock(guildId, enable);
 });
@@ -376,8 +383,8 @@ app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootServ
 
 	_ = await db.SaveChangesAsync();
 
-	var guild = await db.Guilds.FirstOrDefaultAsync(x => x.Id == guildId);
-	if (guild!.DiscordWebhookUrl is not null)
+	var guild = await db.Guilds.SingleAsync(x => x.Id == guildId);
+	if (guild.DiscordWebhookUrl is not null)
 	{
 		try
 		{
@@ -524,7 +531,7 @@ app.MapPost("ImportRaidDump", async (LootGodContext db, LootService lootService,
 
 	var raidDumps = (await db.Players
 		.Where(x => x.GuildId == guildId)
-		.Where(x => nameToClassMap.Keys.Contains(x.Name))
+		.Where(x => nameToClassMap.ContainsKey(x.Name))
 		.Select(x => x.Id)
 		.ToArrayAsync())
 		.Select(x => new RaidDump(timestamp, x))
