@@ -81,7 +81,7 @@ app.UseExceptionHandler(opt =>
 		var ex = context.Features.Get<IExceptionHandlerFeature>();
 		if (ex is not null)
 		{
-			app.Logger.LogError(ex.Error, "");
+			app.Logger.LogError(ex.Error, nameof(IExceptionHandlerFeature));
 		}
 	});
 });
@@ -295,6 +295,15 @@ app.MapPost("DecrementLootQuantity", async (LootGodContext db, int id, bool raid
 	await lootService.RefreshLoots(guildId);
 });
 
+app.MapPost("CreateGuild", async (LootGodContext db, LootService lootService) =>
+{
+	// require a guild dump?
+	// create single player with admin/leader, single guild, single rank, auto-login with new key, show key to user?
+	// require name of guild
+	// create tons of new loots
+	await db.SaveChangesAsync();
+});
+
 // TODO: raid/rot loot locking
 app.MapPost("ToggleLootLock", async (LootGodContext db, LootService lootService, bool enable) =>
 {
@@ -386,16 +395,7 @@ app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootServ
 	var guild = await db.Guilds.SingleAsync(x => x.Id == guildId);
 	if (guild.DiscordWebhookUrl is not null)
 	{
-		try
-		{
-			var json = new { content = $"```{Environment.NewLine}{output}{Environment.NewLine}```" };
-			var response = await httpClient.PostAsJsonAsync(guild.DiscordWebhookUrl, json);
-			response.EnsureSuccessStatusCode();
-		}
-		catch (Exception ex)
-		{
-			app.Logger.LogError(ex, "");
-		}
+		await lootService.DiscordWebhook(httpClient, output, guild.DiscordWebhookUrl);
 	}
 
 	var t1 = lootService.RefreshLoots(guildId);
@@ -531,7 +531,7 @@ app.MapPost("ImportRaidDump", async (LootGodContext db, LootService lootService,
 
 	var raidDumps = (await db.Players
 		.Where(x => x.GuildId == guildId)
-		.Where(x => nameToClassMap.ContainsKey(x.Name))
+		.Where(x => nameToClassMap.Keys.Contains(x.Name)) // ContainsKey cannot be translated by EFCore
 		.Select(x => x.Id)
 		.ToArrayAsync())
 		.Select(x => new RaidDump(timestamp, x))

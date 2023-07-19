@@ -5,12 +5,14 @@ namespace LootGod;
 
 public class LootService
 {
+	private readonly ILogger _logger;
 	private readonly LootGodContext _db;
 	private readonly IHubContext<LootHub> _hub;
 	private readonly IHttpContextAccessor _httpContextAccessor;
 
-	public LootService(LootGodContext db, IHubContext<LootHub> hub, IHttpContextAccessor httpContextAccessor)
+	public LootService(ILogger<LootService> logger, LootGodContext db, IHubContext<LootHub> hub, IHttpContextAccessor httpContextAccessor)
 	{
+		_logger = logger;
 		_db = db;
 		_hub = hub;
 		_httpContextAccessor = httpContextAccessor;
@@ -189,5 +191,38 @@ public class LootService
 		await _hub.Clients
 			.Group(guildId.ToString())
 			.SendAsync("requests", requests);
+	}
+
+	public async Task DiscordWebhook(HttpClient httpClient, string output, string discordWebhookUrl)
+	{
+		var json = new { content = $"```{Environment.NewLine}{output}{Environment.NewLine}```" };
+		HttpResponseMessage? response = null;
+		try
+		{
+			response = await httpClient.PostAsJsonAsync(discordWebhookUrl, json);
+			response.EnsureSuccessStatusCode();
+		}
+		catch (Exception ex)
+		{
+			var content = await TryReadContentAsync(response);
+			_logger.LogError(ex, content);
+		}
+		finally
+		{
+			response?.Dispose();
+		}
+	}
+
+	private async Task<string> TryReadContentAsync(HttpResponseMessage? response)
+	{
+		try
+		{
+			return response is null ? "" : await response.Content.ReadAsStringAsync();
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, nameof(TryReadContentAsync));
+			return "";
+		}
 	}
 }
