@@ -53,6 +53,7 @@ public class Player
 		Alt = dump.Alt;
 		Level = dump.Level;
 		LastOnDate = dump.LastOnDate;
+		Notes = dump.Notes;
 		Key = GetRandomGuid();
 	}
 
@@ -89,6 +90,8 @@ public class Player
 	[Required]
 	[StringLength(24, MinimumLength = 4)]
 	public string Name { get; set; } = null!;
+
+	public string? Notes { get; set; }
 
 	public EQClass Class { get; set; }
 

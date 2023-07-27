@@ -139,6 +139,11 @@ app.MapPost("GuildDiscord", async (LootGodContext db, LootService lootService, s
 		.ExecuteUpdateAsync(x => x.SetProperty(y => y.DiscordWebhookUrl, webhook));
 });
 
+app.MapGet("Vacuum", async (LootGodContext db) =>
+{
+	return await db.Database.ExecuteSqlRawAsync("VACUUM");
+});
+
 app.MapGet("GetLootRequests", async (LootService lootService) =>
 {
 	var guildId = await lootService.GetGuildId();
@@ -403,6 +408,25 @@ app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootServ
 	await Task.WhenAll(t1, t2);
 });
 
+app.MapPost("TransferGuildLeadership", async (LootGodContext db, LootService lootService, string name) =>
+{
+	await lootService.EnsureGuildLeader();
+
+	var guildId = await lootService.GetGuildId();
+	var leaderId = await lootService.GetPlayerId();
+	var oldLeader = await db.Players.SingleAsync(x => x.Id ==  leaderId);
+	var newLeader = await db.Players.SingleAsync(x => x.GuildId == guildId && x.Name == name);
+
+	newLeader.Admin = true;
+	newLeader.RankId = oldLeader.RankId;
+	oldLeader.RankId = null;
+
+	// should transfering leadership remove admin status?
+	// oldLeader.Admin = false;
+
+	await db.SaveChangesAsync();
+});
+
 app.MapPost("ImportGuildDump", async (LootGodContext db, LootService lootService, IFormFile file) =>
 {
 	await lootService.EnsureAdminStatus();
@@ -423,6 +447,15 @@ app.MapPost("ImportGuildDump", async (LootGodContext db, LootService lootService
 	if (!dumps.Any(x => StringComparer.OrdinalIgnoreCase.Equals("Leader", x.Rank)))
 	{
 		return TypedResults.BadRequest("Partial Guild Dump - Missing Leader Rank");
+	}
+
+	// ensure guild leader does not change (must use TransferGuildLeadership endpoint instead)
+	var existingLeader = await db.Players.SingleAsync(x => x.GuildId == guildId && x.Rank!.Name == "Leader");
+	if (!dumps.Any(x =>
+		StringComparer.OrdinalIgnoreCase.Equals(x.Name, existingLeader.Name)
+		&& StringComparer.OrdinalIgnoreCase.Equals(x.Rank, "Leader")))
+	{
+		return TypedResults.BadRequest("Cannot transfer guild leadership during a dump");
 	}
 
 	// create the new ranks
@@ -459,12 +492,7 @@ app.MapPost("ImportGuildDump", async (LootGodContext db, LootService lootService
 			player.LastOnDate = dump.LastOnDate;
 			player.Level = dump.Level;
 			player.Alt = dump.Alt;
-
-			// guild leader should always be granted admin access
-			if (StringComparer.OrdinalIgnoreCase.Equals("Leader", dump.Rank))
-			{
-				player.Admin = true;
-			}
+			player.Notes = dump.Notes;
 		}
 		else
 		{
@@ -610,16 +638,16 @@ app.MapGet("GetPlayerAttendance", async (LootGodContext db, LootService lootServ
 				.Select(y => DateTimeOffset.FromUnixTimeSeconds(y.Timestamp))
 				.Select(y => DateOnly.FromDateTime(y.DateTime))
 				.ToHashSet())
-		.Select(x => new
+		.Select(x => new RaidAttendanceDto
 		{
 			Name = x.Key.Name,
 			Hidden = x.Key.Hidden,
 			Admin = x.Key.Admin,
 			Rank = x.Key.RankId is null ? "unknown" : rankIdToNameMap[x.Key.RankId.Value],
 
-			_30 = thirtyDayMaxCount == 0 ? 0 : Math.Round(100.0 * x.Value.Count(y => y > thirty) / thirtyDayMaxCount, 0, MidpointRounding.AwayFromZero),
-			_90 = ninetyDayMaxCount == 0 ? 0 : Math.Round(100.0 * x.Value.Count(y => y > ninety) / ninetyDayMaxCount, 0, MidpointRounding.AwayFromZero),
-			_180 = oneHundredEightDayMaxCount == 0 ? 0 : Math.Round(100.0 * x.Value.Count() / oneHundredEightDayMaxCount, 0, MidpointRounding.AwayFromZero),
+			_30 = (byte)(thirtyDayMaxCount == 0 ? 0 : Math.Round(100d * x.Value.Count(y => y > thirty) / thirtyDayMaxCount, 0, MidpointRounding.AwayFromZero)),
+			_90 = (byte)(ninetyDayMaxCount == 0 ? 0 : Math.Round(100d * x.Value.Count(y => y > ninety) / ninetyDayMaxCount, 0, MidpointRounding.AwayFromZero)),
+			_180 = (byte)(oneHundredEightDayMaxCount == 0 ? 0 : Math.Round(100d * x.Value.Count() / oneHundredEightDayMaxCount, 0, MidpointRounding.AwayFromZero)),
 		})
 		.OrderBy(x => x.Name)
 		.ToArray();

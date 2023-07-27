@@ -34,7 +34,10 @@ COPY server/. ./
 RUN dotnet publish -c Release -o out \
 	--no-restore \
 	--runtime alpine-x64 \
+
+	# https://andrewlock.net/should-i-use-self-contained-or-framework-dependent-publishing-in-docker-images/
 	--self-contained true \
+
 	# /p:PublishTrimmed=true \
 	/p:PublishSingleFile=true
 

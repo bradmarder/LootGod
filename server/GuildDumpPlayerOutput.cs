@@ -8,4 +8,5 @@ public record GuildDumpPlayerOutput(string[] _output)
 	public string Rank => _output[3];
 	public bool Alt => _output[4] == "A";
 	public DateOnly LastOnDate => DateOnly.ParseExact(_output[5], "MM/dd/yy");
+	public string Notes => _output[13];
 }
