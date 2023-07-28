@@ -1,4 +1,4 @@
-FROM node:18.7.0-alpine AS node-build-env
+FROM node:alpine AS node-build-env
 
 # A directory within the virtualized Docker environment
 # Becomes more relevant when using Docker Compose later
@@ -7,11 +7,15 @@ WORKDIR /app
 # add `/app/node_modules/.bin` to $PATH
 ENV PATH /app/node_modules/.bin:$PATH
 
+# ensure that all frameworks and libraries are using the optimal settings for performance and security
+ENV NODE_ENV production
+
 # install app dependencies
+# --force is hacky but react-scripts isn't maintained...
 COPY /client/package.json ./
 COPY /client/package-lock.json ./
-RUN npm install --silent
-RUN npm install react-scripts -g --silent
+RUN npm ci --force
+RUN npm install react-scripts -g
 
 # Copies everything over to Docker environment
 COPY /client/ ./
