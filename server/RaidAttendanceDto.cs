@@ -2,11 +2,11 @@
 
 public record RaidAttendanceDto
 {
-	public string Name { get; init; } = null!;
-	public bool Hidden { get; init; }
-	public bool Admin { get; init; }
-	public string Rank { get; init; } = null!;
-	public byte _30 { get; init; }
-	public byte _90 { get; init; }
-	public byte _180 { get; init; }
+	public required string Name { get; init; }
+	public required bool Hidden { get; init; }
+	public required bool Admin { get; init; }
+	public required string Rank { get; init; }
+	public required byte _30 { get; init; }
+	public required byte _90 { get; init; }
+	public required byte _180 { get; init; }
 }
