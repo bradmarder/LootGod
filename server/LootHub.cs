@@ -21,6 +21,7 @@ public class LootHub : Hub
 	{
 		var key = Guid.Parse(Context.GetHttpContext()!.Request.Query["key"].ToString());
 		var player = await _db.Players
+			.AsNoTracking()
 			.Include(x => x.Guild)
 			.FirstOrDefaultAsync(x => x.Key == key);
 
