@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import './App.css';
-import { Table, Button } from 'react-bootstrap';
+import { Table, Button, FormCheck } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 
 export function RaidAttendance(props: { isAdmin: boolean }) {
 
 	const [isLoading, setIsLoading] = useState(true);
+	const [filter75, setFilter75] = useState(false);
 	const [ra, setRa] = useState<IRaidAttendance[]>([]);
 
 	const getRA = async () => {
@@ -50,6 +51,10 @@ export function RaidAttendance(props: { isAdmin: boolean }) {
 	return (
 		<>
 			<h3>Raid Attendance</h3>
+			<FormCheck id='reqForLabelClick'>
+				<FormCheck.Input checked={filter75} onChange={e => setFilter75(e.target.checked)} />
+				<FormCheck.Label>Show only players with 75%+ RA for past 30 days</FormCheck.Label>
+			</FormCheck>
 			<>
 				<Table striped bordered hover size="sm">
 					<thead>
@@ -68,7 +73,7 @@ export function RaidAttendance(props: { isAdmin: boolean }) {
 						</tr>
 					</thead>
 					<tbody>
-						{ra.filter(x => props.isAdmin ? true : !x.hidden).map((item, i) =>
+						{ra.filter(x => props.isAdmin ? true : !x.hidden).filter(x => !filter75 || x._30 >= 75).map((item, i) =>
 							<tr key={item.name}>
 								<td>{item.name}</td>
 								<td>{item.rank}</td>
