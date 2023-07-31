@@ -195,21 +195,32 @@ public class LootService
 
 	public async Task DiscordWebhook(HttpClient httpClient, string output, string discordWebhookUrl)
 	{
-		var json = new { content = $"```{Environment.NewLine}{output}{Environment.NewLine}```" };
-		HttpResponseMessage? response = null;
-		try
+		// A single bucket must be under the 2k max for discord (excludes backticks/newlines/emojis?)
+		// Assume 1_700 max characters per bucket to safely account for splitting lines evenly
+		var bucketCount = Math.Round(output.Length / 1_700d, MidpointRounding.ToPositiveInfinity);
+		var lines = output.Split(Environment.NewLine);
+		var maxLinesPerBucket = (int)Math.Round(lines.Length / bucketCount, MidpointRounding.ToPositiveInfinity);
+		var buckets = lines.Chunk(maxLinesPerBucket);
+
+		foreach (var bucket in buckets)
 		{
-			response = await httpClient.PostAsJsonAsync(discordWebhookUrl, json);
-			response.EnsureSuccessStatusCode();
-		}
-		catch (Exception ex)
-		{
-			var content = await TryReadContentAsync(response);
-			_logger.LogError(ex, content);
-		}
-		finally
-		{
-			response?.Dispose();
+			var data = string.Join(Environment.NewLine, bucket);
+			var json = new { content = $"```{Environment.NewLine}{data}{Environment.NewLine}```" };
+			HttpResponseMessage? response = null;
+			try
+			{
+				response = await httpClient.PostAsJsonAsync(discordWebhookUrl, json);
+				response.EnsureSuccessStatusCode();
+			}
+			catch (Exception ex)
+			{
+				var content = await TryReadContentAsync(response);
+				_logger.LogError(ex, content);
+			}
+			finally
+			{
+				response?.Dispose();
+			}
 		}
 	}
 
