@@ -38,9 +38,13 @@ export function Upload() {
 				<hr />
 				<Button variant='success' disabled={isLoading || file == null} onClick={uploadDump}>Upload</Button>
 				<hr />
-				{uploaded.map(x =>
-					<h6 key={x}>{x}</h6>
-				)}
+				{uploaded.length > 0 &&
+					<Alert variant='success'>
+						{uploaded.map(x =>
+							<h6 key={x}>{x}</h6>
+						)}
+					</Alert>
+				}
 				<a target="_blank" rel="noreferrer" href={'/GetPasswords?playerKey=' + localStorage.getItem('key')}>Download Master Password Links (Leader Only)</a>
 			</Form>
 		</Alert>
