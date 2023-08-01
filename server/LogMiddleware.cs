@@ -28,8 +28,8 @@ public class LogMiddleware
 			return;
 		}
 
-		var playerId = await service.GetPlayerId();
-		var player = await db.Players.Include(x => x.Guild).SingleAsync(x => x.Id == playerId);
+		var playerId = service.GetPlayerId();
+		var player = db.Players.Include(x => x.Guild).Single(x => x.Id == playerId);
 		using var _ = LogContext.PushProperty("IP", service.GetIPAddress());
 		using var __ = LogContext.PushProperty("Name", player.Name);
 		using var ___ = LogContext.PushProperty("GuildName", player.Guild.Name);

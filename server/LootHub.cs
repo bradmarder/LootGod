@@ -20,10 +20,10 @@ public class LootHub : Hub
 	public override async Task OnConnectedAsync()
 	{
 		var key = Guid.Parse(Context.GetHttpContext()!.Request.Query["key"].ToString());
-		var player = await _db.Players
+		var player = _db.Players
 			.AsNoTracking()
 			.Include(x => x.Guild)
-			.FirstOrDefaultAsync(x => x.Key == key);
+			.FirstOrDefault(x => x.Key == key);
 
 		if (player is not null)
 		{

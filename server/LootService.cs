@@ -28,85 +28,85 @@ public class LootService
 			? val
 			: _httpContextAccessor.HttpContext.Connection.RemoteIpAddress?.ToString();
 
-	public async Task<int> GetPlayerId()
+	public int GetPlayerId()
 	{
 		var key = GetPlayerKey();
 
-		return await _db.Players
+		return _db.Players
 			.Where(x => x.Key == key)
 			.Where(x => x.Active != false)
 			.Select(x => x.Id)
-			.FirstOrDefaultAsync();
+			.FirstOrDefault();
 	}
 
-	public async Task<int> GetGuildId()
+	public int GetGuildId()
 	{
 		var key = GetPlayerKey();
 
-		return await _db.Players
+		return _db.Players
 			.Where(x => x.Key == key)
 			.Where(x => x.Active != false)
 			.Select(x => x.GuildId)
-			.FirstOrDefaultAsync();
+			.FirstOrDefault();
 	}
 
-	public async Task<bool> GetAdminStatus()
+	public bool GetAdminStatus()
 	{
 		var key = GetPlayerKey();
 
-		return await _db.Players
+		return _db.Players
 			.Where(x => x.Key == key)
 			.Where(x => x.Active == true)
 			.Select(x => x.Admin)
-			.FirstOrDefaultAsync();
+			.FirstOrDefault();
 	}
 
-	public async Task<bool> IsGuildLeader()
+	public bool IsGuildLeader()
 	{
 		var key = GetPlayerKey();
 
-		return await _db.Players.AnyAsync(x => x.Key == key && x.Rank!.Name == "Leader");
+		return _db.Players.Any(x => x.Key == key && x.Rank!.Name == "Leader");
 	}
 
-	public async Task<bool> GetRaidLootLock()
+	public bool GetRaidLootLock()
 	{
 		var key = GetPlayerKey();
 
-		return await _db.Players
+		return _db.Players
 			.Where(x => x.Key == key)
 			.Select(x => x.Guild.RaidLootLocked)
-			.SingleAsync();
+			.Single();
 	}
 
-	public async Task EnsureAdminStatus()
+	public void EnsureAdminStatus()
 	{
-		if (!await GetAdminStatus())
+		if (!GetAdminStatus())
 		{
 			throw new UnauthorizedAccessException(GetPlayerKey().ToString());
 		}
 	}
 
-	public async Task EnsureGuildLeader()
+	public void EnsureGuildLeader()
 	{
-		if (!await IsGuildLeader())
+		if (!IsGuildLeader())
 		{
 			throw new UnauthorizedAccessException(GetPlayerKey().ToString());
 		}
 	}
 
-	public async Task EnsureRaidLootUnlocked()
+	public void EnsureRaidLootUnlocked()
 	{
-		if (await GetRaidLootLock())
+		if (GetRaidLootLock())
 		{
 			throw new Exception(GetPlayerKey().ToString());
 		}
 	}
 
-	public async Task<string> GetGrantedLootOutput()
+	public string GetGrantedLootOutput()
 	{
-		var guildId = await GetGuildId();
+		var guildId = GetGuildId();
 
-		var items = (await _db.LootRequests
+		var items = _db.LootRequests
 			.AsNoTracking()
 			.Include(x => x.Loot)
 			.Include(x => x.Player)
@@ -114,7 +114,7 @@ public class LootService
 			.Where(x => x.Granted && !x.Archived)
 			.OrderBy(x => x.LootId)
 			.ThenBy(x => x.AltName ?? x.Player.Name)
-			.ToListAsync())
+			.ToList()
 			.GroupBy(x => (x.LootId, x.AltName ?? x.Player.Name))
 			.Select(x =>
 			{
@@ -132,9 +132,9 @@ public class LootService
 			.SendAsync("lock", locked);
 	}
 
-	public async Task<LootDto[]> LoadLoots(int guildId)
+	public LootDto[] LoadLoots(int guildId)
 	{
-		return await _db.Loots
+		return _db.Loots
 			.Where(x => x.GuildId == guildId)
 			.Where(x => x.Expansion == Expansion.ToL || x.Expansion == Expansion.NoS)
 			.OrderBy(x => x.Name)
@@ -145,12 +145,12 @@ public class LootService
 				RaidQuantity = x.RaidQuantity,
 				RotQuantity = x.RotQuantity,
 			})
-			.ToArrayAsync();
+			.ToArray();
 	}
 
-	public async Task<LootRequestDto[]> LoadLootRequests(int guildId)
+	public LootRequestDto[] LoadLootRequests(int guildId)
 	{
-		return await _db.LootRequests
+		return _db.LootRequests
 			.Where(x => x.Player.GuildId == guildId)
 			.Where(x => !x.Archived)
 			.OrderByDescending(x => x.Spell != null)
@@ -172,12 +172,12 @@ public class LootService
 				Granted = x.Granted,
 				CurrentItem = x.CurrentItem,
 			})
-			.ToArrayAsync();
+			.ToArray();
 	}
 
 	public async Task RefreshLoots(int guildId)
 	{
-		var loots = await LoadLoots(guildId);
+		var loots = LoadLoots(guildId);
 
 		await _hub.Clients
 			.Group(guildId.ToString())
@@ -186,7 +186,7 @@ public class LootService
 
 	public async Task RefreshRequests(int guildId)
 	{
-		var requests = await LoadLootRequests(guildId);
+		var requests = LoadLootRequests(guildId);
 
 		await _hub.Clients
 			.Group(guildId.ToString())
