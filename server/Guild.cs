@@ -1,37 +1,39 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LootGod;
 
+[Index(nameof(Name), IsUnique = true)]
 public class Guild
 {
+	private Guild() { }
+	public Guild(string name)
+	{
+		Name = name;
+	}
+
+	[Key]
 	public int Id { get; set; }
 
-	[StringLength(255)]
+	[StringLength(255, MinimumLength = 3)]
 	public string Name { get; set; } = null!;
-
-	[StringLength(255)]
-	public string Server { get; set; } = null!;
 
 	public DateTime CreatedDate { get; set; }
 
-	public bool RaidLootLocked { get; set; }
+	public bool LootLocked { get; set; }
 
-	public bool RotLootLocked { get; set; }
-
+	// TODO: cannot delete FK column, need to re-create table
 	public int? LeaderId { get; set; }
 
 	public string? DiscordWebhookUrl { get; set; }
 
-	[ForeignKey(nameof(LeaderId))]
-	public virtual Player? Leader { get; set; } = null!;
-
 	[InverseProperty(nameof(Player.Guild))]
-	public virtual ICollection<Player> Players { get; } = null!;
+	public virtual List<Player> Players { get; } = new();
 
 	[InverseProperty(nameof(Loot.Guild))]
-	public virtual ICollection<Loot> Loots { get; } = null!;
+	public virtual List<Loot> Loots { get; } = new();
 
 	[InverseProperty(nameof(Rank.Guild))]
-	public virtual ICollection<Rank> Ranks { get; } = null!;
+	public virtual List<Rank> Ranks { get; } = new();
 }

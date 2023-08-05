@@ -8,6 +8,11 @@ namespace LootGod;
 public class Rank
 {
 	private Rank() { }
+	public Rank(string name, Guild guild)
+	{
+		Name = name;
+		Guild = guild;
+	}
 	public Rank(string name, int guildId)
 	{
 		Name = name;
@@ -29,5 +34,5 @@ public class Rank
 	public virtual Guild Guild { get; set; } = null!;
 
 	[InverseProperty(nameof(Player.Rank))]
-	public virtual ICollection<Player> Players { get; } = null!;
+	public virtual List<Player> Players { get; } = new();
 }

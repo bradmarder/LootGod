@@ -11,10 +11,20 @@ using System.Net;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-var source = Environment.GetEnvironmentVariable("DATABASE_URL");
-var aspnetcore_urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+var adminKey = Environment.GetEnvironmentVariable("ADMIN_KEY")!;
+var backup = Environment.GetEnvironmentVariable("BACKUP_URL")!;
+var source = Environment.GetEnvironmentVariable("DATABASE_URL")!;
+var aspnetcore_urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS")!;
 using var httpClient = new HttpClient();
 using var cts = new CancellationTokenSource();
+
+void EnsureOwner(string key)
+{
+	if (key != adminKey)
+	{
+		throw new UnauthorizedAccessException(key);
+	}
+}
 
 Console.CancelKeyPress += (o, e) =>
 {
@@ -48,7 +58,7 @@ builder.Services.AddDbContextPool<LootGodContext>(x => x.UseSqlite(connString.Co
 //builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 //builder.Services.AddOutputCache();
-builder.Services.AddSignalR(e => e.EnableDetailedErrors = true);
+builder.Services.AddSignalR();
 builder.Services.AddScoped<LootService>();
 builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
 var logger = new LoggerConfiguration()
@@ -106,25 +116,7 @@ app.MapHub<LootHub>("/lootHub");
 app.UseMiddleware<LogMiddleware>();
 app.MapGet("/test", () => "Hello World!");
 
-//foreach (var item in StaticData.NosLoot)
-//{
-//	if (!db.Loots.Any(x => x.GuildId == 2 && x.Name == item))
-//	{
-//		db.Loots.Add(new(item, Expansion.NoS, 2));
-//	}
-//}
-
-//_ = await db.SaveChangesAsync();
-
-app.MapPost("NewLootNoS", (LootGodContext db, string name, int guildId) =>
-{
-	var loot = new Loot(name, Expansion.NoS, guildId) { RaidQuantity = 1 };
-	db.Loots.Add(loot);
-	db.SaveChanges();
-});
-
-/// TODO: remove guildId parameter, make part of UI
-app.MapPost("GuildDiscord", (LootGodContext db, LootService lootService, string webhook, int guildId) =>
+app.MapPost("GuildDiscord", (LootGodContext db, LootService lootService, string webhook) =>
 {
 	lootService.EnsureAdminStatus();
 
@@ -134,14 +126,31 @@ app.MapPost("GuildDiscord", (LootGodContext db, LootService lootService, string 
 		throw new Exception(webhook);
 	}
 
+	var guildId = lootService.GetGuildId();
 	db.Guilds
 		.Where(x => x.Id == guildId)
 		.ExecuteUpdate(x => x.SetProperty(y => y.DiscordWebhookUrl, webhook));
 });
 
-app.MapGet("Vacuum", (LootGodContext db) =>
+app.MapGet("Vacuum", (LootGodContext db, string key) =>
 {
+	EnsureOwner(key);
 	return db.Database.ExecuteSqlRaw("VACUUM");
+});
+
+app.MapGet("Backup", (LootGodContext db, string key) =>
+{
+	EnsureOwner(key);
+	db.Database.ExecuteSqlRaw($"VACUUM INTO '{backup}'");
+	var stream = File.OpenRead(backup);
+	var name = $"backup-{DateTimeOffset.UnixEpoch.ToUnixTimeSeconds()}.db";
+	return Results.Stream(stream, fileDownloadName: name);
+});
+
+app.MapGet("DeleteBackup", (string key) =>
+{
+	EnsureOwner(key);
+	File.Delete(backup);
 });
 
 app.MapGet("GetLootRequests", (LootService lootService) =>
@@ -300,13 +309,20 @@ app.MapPost("DecrementLootQuantity", async (LootGodContext db, int id, bool raid
 	await lootService.RefreshLoots(guildId);
 });
 
-app.MapPost("CreateGuild", (LootGodContext db, LootService lootService) =>
+app.MapPost("CreateGuild", (LootGodContext db, string leaderName, string guildName) =>
 {
-	// require a guild dump?
-	// create single player with admin/leader, single guild, single rank, auto-login with new key, show key to user?
-	// require name of guild
-	// create tons of new loots
+	var lootTemplate = db.Loots
+		.AsNoTracking()
+		.Where(x => x.GuildId == 1)
+		.ToArray();
+	var player = new Player(leaderName, guildName);
+	var loots = lootTemplate.Select(x => new Loot(x.Name, x.Expansion, player.Guild));
+	db.Loots.AddRange(loots);
+	db.Players.Add(player);
 	db.SaveChanges();
+
+	// TODO: connect with signalR
+	return player.Key;
 });
 
 // TODO: raid/rot loot locking
@@ -317,15 +333,10 @@ app.MapPost("ToggleLootLock", async (LootGodContext db, LootService lootService,
 	var guildId = lootService.GetGuildId();
 	db.Guilds
 		.Where(x => x.Id == guildId)
-		.ExecuteUpdate(x => x.SetProperty(y => y.RaidLootLocked, enable));
+		.ExecuteUpdate(x => x.SetProperty(y => y.LootLocked, enable));
 
 	await lootService.RefreshLock(guildId, enable);
 });
-
-//app.MapGet("GetPlayerData", async (LootService lootService) =>
-//{
-//	return null;
-//});
 
 app.MapGet("GetLootLock", (LootService lootService) =>
 {
@@ -595,7 +606,7 @@ app.MapPost("BulkImportRaidDump", async (LootGodContext db, LootService lootServ
 			{ content, "file", entry.FullName }
 		};
 		form.Headers.Add("Player-Key", playerKey!.ToString());
-		var port = aspnetcore_urls!.Split(':').Last();
+		var port = aspnetcore_urls.Split(':').Last();
 		var res = await httpClient.PostAsync($"http://{IPAddress.Loopback}:{port}/ImportRaidDump?offset={offset}", form);
 		res.EnsureSuccessStatusCode();
 	}

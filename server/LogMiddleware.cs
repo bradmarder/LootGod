@@ -29,12 +29,15 @@ public class LogMiddleware
 		}
 
 		var playerId = service.GetPlayerId();
-		var player = db.Players.Include(x => x.Guild).Single(x => x.Id == playerId);
+		var player = db.Players
+			.AsNoTracking()
+			.Include(x => x.Guild)
+			.Single(x => x.Id == playerId);
 		using var _ = LogContext.PushProperty("IP", service.GetIPAddress());
 		using var __ = LogContext.PushProperty("Name", player.Name);
 		using var ___ = LogContext.PushProperty("GuildName", player.Guild.Name);
 		using var ____ = LogContext.PushProperty("Path", context.Request.Path.Value);
-		_logger.LogInformation("POST");
+		_logger.LogInformation("POST " + context.Request.Path);
 
 		await _next(context);
 	}

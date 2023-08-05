@@ -74,7 +74,7 @@ public class LootService
 
 		return _db.Players
 			.Where(x => x.Key == key)
-			.Select(x => x.Guild.RaidLootLocked)
+			.Select(x => x.Guild.LootLocked)
 			.Single();
 	}
 

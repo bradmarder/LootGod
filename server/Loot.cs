@@ -47,6 +47,13 @@ public class Loot
 		GuildId = guildId;
 	}
 
+	public Loot(string name, Expansion expansion, Guild guild)
+	{
+		Name = name;
+		Expansion = expansion;
+		Guild = guild;
+	}
+
 	[Key]
 	public int Id { get; set; }
 
@@ -66,5 +73,5 @@ public class Loot
 	public virtual Guild? Guild { get; set; } = null!;
 
 	[InverseProperty(nameof(LootRequest.Loot))]
-	public virtual ICollection<LootRequest> LootRequests { get; } = null!;
+	public virtual List<LootRequest> LootRequests { get; } = new();
 }

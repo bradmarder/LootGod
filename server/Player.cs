@@ -37,6 +37,24 @@ public class Player
 	}
 
 	private Player() { }
+
+	/// <summary>
+	/// Guild leader signup ctor
+	/// </summary>
+	public Player(string leaderName, string guildName)
+	{
+		Name = leaderName;
+		Active = true;
+		Admin = true;
+		Key = GetRandomGuid();
+		Class = EQClass.Bard;
+		Guild = new(guildName);
+		Rank = new("Leader", Guild);
+	}
+
+	/// <summary>
+	/// Raid dump ctor
+	/// </summary>
 	public Player(string name, string eqClass, int guildId)
 	{
 		Name = name;
@@ -44,6 +62,10 @@ public class Player
 		GuildId = guildId;
 		Key = GetRandomGuid();
 	}
+
+	/// <summary>
+	/// Guild dump ctor
+	/// </summary>
 	public Player(GuildDumpPlayerOutput dump, int guildId)
 	{
 		GuildId = guildId;
@@ -77,13 +99,10 @@ public class Player
 	/// default true, set to false if guild dump with no player
 	/// </summary>
 	public bool? Active { get; set; }
+
 	public DateOnly? LastOnDate { get; set; }
 
 	public int GuildId { get; set; }
-	
-	// or multiple guilds with IsActive?
-	// unique by Name/Guild/Server
-	// Guild/Admin is one entity?
 
 	public DateTime CreatedDate { get; set; }
 
@@ -106,14 +125,14 @@ public class Player
 	public bool Hidden { get; set; }
 
 	[ForeignKey(nameof(RankId))]
-	public virtual Rank? Rank { get; set; } = null!;
+	public virtual Rank? Rank { get; set; }
 
 	[ForeignKey(nameof(GuildId))]
 	public virtual Guild Guild { get; set; } = null!;
 
 	[InverseProperty(nameof(RaidDump.Player))]
-	public virtual ICollection<RaidDump> RaidDumps { get; } = null!;
+	public virtual List<RaidDump> RaidDumps { get; } = new();
 
 	[InverseProperty(nameof(LootRequest.Player))]
-	public virtual ICollection<LootRequest> LootRequests { get; } = null!;
+	public virtual List<LootRequest> LootRequests { get; } = new();
 }
