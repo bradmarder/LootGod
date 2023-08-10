@@ -1,7 +1,4 @@
 FROM node:alpine AS node-build-env
-
-# A directory within the virtualized Docker environment
-# Becomes more relevant when using Docker Compose later
 WORKDIR /app
 
 # add `/app/node_modules/.bin` to $PATH
@@ -28,6 +25,8 @@ RUN npm run build
 
 FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine AS build-env
 WORKDIR /app
+
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 # Copy csproj and restore as distinct layers
 COPY server/*.csproj ./

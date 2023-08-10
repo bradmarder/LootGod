@@ -4,8 +4,8 @@
 	"private": true,
 	"proxy": "http://localhost:5000",
 	"dependencies": {
-		"@microsoft/signalr": "7.0.9",
-		"@types/react": "18.2.17",
+		"@microsoft/signalr": "7.0.10",
+		"@types/react": "18.2.19",
 		"@types/react-dom": "18.2.7",
 		"axios": "1.4.0",
 		"bootstrap": "5.3.1",

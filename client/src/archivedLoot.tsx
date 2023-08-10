@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './App.css';
-import { Row, Col, Button, Form, Table } from 'react-bootstrap';
+import { Row, Col, Button, Form, Table, FormCheck } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import classes from './eqClasses';
@@ -8,6 +8,7 @@ import classes from './eqClasses';
 export function ArchivedLoot(props: IContext) {
 
 	const [isLoading, setIsLoading] = useState(false);
+	const [granted, setGranted] = useState(false);
 	const [requests, setRequests] = useState<ILootRequest[]>([]);
 	const [name, setName] = useState('');
 	const [lootId, setLootId] = useState('');
@@ -33,6 +34,10 @@ export function ArchivedLoot(props: IContext) {
 							<Form.Label>Character Name</Form.Label>
 							<Form.Control type="text" placeholder="Enter name" value={name} onChange={e => setName(e.target.value)} />
 						</Form.Group>
+						<FormCheck id='reqForLabelClick2'>
+							<FormCheck.Input checked={granted} onChange={e => setGranted(e.target.checked)} />
+							<FormCheck.Label>Show only granted requests</FormCheck.Label>
+						</FormCheck>
 					</Col>
 					<Col>
 						<Form.Group>
@@ -64,7 +69,7 @@ export function ArchivedLoot(props: IContext) {
 						</tr>
 					</thead>
 					<tbody>
-						{requests.map((item) =>
+						{requests.filter(x => !granted || x.granted).map((item) =>
 							<tr key={item.id}>
 								<td>{item.altName || item.mainName}</td>
 								<td>{item.isAlt ? 'Alt' : 'Main'}</td>

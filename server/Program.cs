@@ -91,7 +91,7 @@ app.UseExceptionHandler(opt =>
 		var ex = context.Features.Get<IExceptionHandlerFeature>();
 		if (ex is not null)
 		{
-			app.Logger.LogError(ex.Error, nameof(IExceptionHandlerFeature));
+			app.Logger.LogError(ex.Error, context.Request.Path);
 		}
 	});
 });
@@ -230,6 +230,14 @@ app.MapPost("CreateLootRequest", async (CreateLootRequest dto, LootGodContext db
 
 	var guildId = lootService.GetGuildId();
 	var playerId = lootService.GetPlayerId();
+
+	// remove AltName if it matches main name
+	var playerName = db.Players.Single(x => x.Id == playerId).Name;
+	if (StringComparer.OrdinalIgnoreCase.Equals(playerName, dto.AltName?.Trim()))
+	{
+		dto = dto with { AltName = null };
+	}
+
 	var ip = lootService.GetIPAddress();
 	var item = new LootRequest(dto, ip, playerId);
 	_ = db.LootRequests.Add(item);
