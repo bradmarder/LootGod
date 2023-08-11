@@ -3,7 +3,7 @@ import './App.css';
 import { Container, Row, Col, Button, Alert } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
-import { HubConnectionBuilder } from '@microsoft/signalr';
+import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import { LootRequests } from './lootRequests';
 import { CreateLootRequest } from './createLootRequest';
 import { CreateLoot } from './createLoot';
@@ -23,6 +23,7 @@ if (key == null || key === '') {
 }
 localStorage.setItem('key', key);
 axios.defaults.headers.common['Player-Key'] = key;
+axios.defaults.baseURL = 'api/';
 
 export default function App() {
 	const [raidNight, setRaidNight] = useState<boolean | null>(null);
@@ -32,39 +33,41 @@ export default function App() {
 	const [requests, setRequests] = useState<ILootRequest[]>([]);
 	const [loots, setLoots] = useState<ILoot[]>([]);
 
-	const getAdminStatus = async (signal: AbortSignal) => {
-		const res = await axios.get<boolean>('/GetAdminStatus', { signal });
-		setIsAdmin(res.data);
+	const getAdminStatus = (signal: AbortSignal) => {
+		axios
+			.get<boolean>('/GetAdminStatus', { signal })
+			.then(x => setIsAdmin(x.data))
+			.catch(() => { });
 	};
-	const getLoots = async (signal: AbortSignal) => {
-		const res = await axios.get<ILoot[]>('/GetLoots', { signal });
-		setLoots(res.data);
+	const getLoots = (signal: AbortSignal) => {
+		axios
+			.get<ILoot[]>('/GetLoots', { signal })
+			.then(x => setLoots(x.data))
+			.catch(() => { });
 	};
-	const getLootRequests = async (signal: AbortSignal) => {
-		const res = await axios.get<ILootRequest[]>('/GetLootRequests', { signal });
-		setRequests(res.data);
+	const getLootRequests = (signal: AbortSignal) => {
+		axios
+			.get<ILootRequest[]>('/GetLootRequests', { signal })
+			.then(x => setRequests(x.data))
+			.catch(() => { });
 	};
-	const getLootLock = async (signal: AbortSignal) => {
-		const res = await axios.get<boolean>('/GetLootLock', { signal });
-		setLootLock(res.data);
+	const getLootLock = (signal: AbortSignal) => {
+		axios
+			.get<boolean>('/GetLootLock', { signal })
+			.then(x => setLootLock(x.data))
+			.catch(() => { });
 	};
-	const enableLootLock = async () => {
+	const enableLootLock = () => {
 		setLoading(true);
-		try {
-			await axios.post('/ToggleLootLock?enable=true');
-		}
-		finally {
-			setLoading(false);
-		}
+		axios
+			.post('/ToggleLootLock?enable=true')
+			.finally(() => setLoading(false));
 	};
-	const disableLootLock = async () => {
+	const disableLootLock = () => {
 		setLoading(true);
-		try {
-			await axios.post('/ToggleLootLock?enable=false');
-		}
-		finally {
-			setLoading(false);
-		}
+		axios
+			.post('/ToggleLootLock?enable=false')
+			.finally(() => setLoading(false));
 	};
 
 	useEffect(() => {
@@ -80,21 +83,15 @@ export default function App() {
 
 	useEffect(() => {
 		const connection = new HubConnectionBuilder()
-			.withUrl('/lootHub?key=' + key)
-			.configureLogging(2) // signalR.LogLevel.Information
+			.withUrl('/ws/lootHub?key=' + key)
+			.configureLogging(LogLevel.Information)
 			.withAutomaticReconnect()
 			.build();
 
-		connection.on("lock", (lootLock: boolean) => {
-			setLootLock(lootLock);
-		});
-		connection.on("loots", (loots: ILoot[]) => {
-			setLoots(loots);
-		});
-		connection.on("requests", (requests: ILootRequest[]) => {
-			setRequests(requests);
-		});
-		connection.onclose(error => {
+		connection.on("lock", setLootLock);
+		connection.on("loots", setLoots);
+		connection.on("requests", setRequests);
+		connection.onclose(_error => {
 			alert('Connection to the server has dropped. Can you reload the page please? Thank you.');
 		});
 

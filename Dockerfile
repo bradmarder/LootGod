@@ -1,24 +1,16 @@
 FROM node:alpine AS node-build-env
 WORKDIR /app
 
-# add `/app/node_modules/.bin` to $PATH
-ENV PATH /app/node_modules/.bin:$PATH
-
 # ensure that all frameworks and libraries are using the optimal settings for performance and security
-ENV NODE_ENV production
+# ENV NODE_ENV production
 
 # install app dependencies
-# --force is hacky but react-scripts isn't maintained...
 COPY /client/package.json ./
 COPY /client/package-lock.json ./
-RUN npm ci --force
-RUN npm install react-scripts -g
+RUN npm ci
 
 # Copies everything over to Docker environment
 COPY /client/ ./
-
-# required ENV variable when compiling the bundle
-ARG REACT_APP_TITLE
 
 # compile the production bundle
 RUN npm run build
@@ -37,18 +29,17 @@ COPY server/. ./
 RUN dotnet publish -c Release -o out \
 	--no-restore \
 	--runtime alpine-x64 \
-
-	# https://andrewlock.net/should-i-use-self-contained-or-framework-dependent-publishing-in-docker-images/
 	--self-contained true \
-
-	# /p:PublishTrimmed=true \
 	/p:PublishSingleFile=true
+
+# /p:PublishTrimmed=true \
+# https://andrewlock.net/should-i-use-self-contained-or-framework-dependent-publishing-in-docker-images/
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/runtime-deps:7.0-alpine
 WORKDIR /app
 COPY --from=build-env /app/out .
-COPY --from=node-build-env /app/build wwwroot
+COPY --from=node-build-env /app/dist wwwroot
 
 # Uses port which is used by the actual application
 ENV ASPNETCORE_URLS=http://+:8080

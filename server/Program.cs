@@ -54,10 +54,7 @@ else
 }
 
 builder.Services.AddDbContextPool<LootGodContext>(x => x.UseSqlite(connString.ConnectionString));
-//builder.Services.AddEndpointsApiExplorer();
-//builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
-//builder.Services.AddOutputCache();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<LootService>();
 builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
@@ -106,15 +103,10 @@ app.UseStaticFiles(new StaticFileOptions
 		x.Context.Response.Headers.Add("Referrer-Policy", "no-referrer");
 	}
 });
-//if (!app.Environment.IsDevelopment())
-//{
-//	app.UseSwagger();
-//	app.UseSwaggerUI();
-//}
-app.MapHub<LootHub>("/lootHub");
-//app.UseOutputCache();
+app.MapHub<LootHub>("/ws/lootHub");
+app.UsePathBase("/api");
 app.UseMiddleware<LogMiddleware>();
-app.MapGet("/test", () => "Hello World!");
+app.MapGet("test", () => "Hello World!");
 
 app.MapPost("GuildDiscord", (LootGodContext db, LootService lootService, string webhook) =>
 {
@@ -684,7 +676,7 @@ app.MapGet("GetGrantedLootOutput", (LootService lootService) =>
 		fileDownloadName: "RaidLootOutput-" + DateTimeOffset.UtcNow.ToUnixTimeSeconds() + ".txt");
 });
 
-app.MapGet("/GetPasswords", (LootGodContext db, LootService lootService) =>
+app.MapGet("GetPasswords", (LootGodContext db, LootService lootService) =>
 {
 	lootService.EnsureGuildLeader();
 

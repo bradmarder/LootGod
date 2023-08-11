@@ -3,3 +3,6 @@ node_modules/
 **/[O|o]bj/
 .dockerignore
 Dockerfile*
+.parcel-cache
+build/
+dist/

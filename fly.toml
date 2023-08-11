@@ -18,9 +18,6 @@ primary_region = "ord"
   destination = "/mnt"
   source = "loot"
 
-[build.args]
-  REACT_APP_TITLE = "Raid Loot"
-
 [[services]]
   internal_port = 8080
   processes = ["app"]
@@ -44,7 +41,7 @@ primary_region = "ord"
     interval = 30000
     grace_period = "5s"
     method = "get"
-    path = "/test"
+    path = "/api/test"
     protocol = "http"
     restart_limit = 0
     timeout = 3000
