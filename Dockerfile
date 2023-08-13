@@ -1,18 +1,9 @@
 FROM node:alpine AS node-build-env
 WORKDIR /app
-
-# ensure that all frameworks and libraries are using the optimal settings for performance and security
-# ENV NODE_ENV production
-
-# install app dependencies
 COPY /client/package.json ./
 COPY /client/package-lock.json ./
 RUN npm ci
-
-# Copies everything over to Docker environment
 COPY /client/ ./
-
-# compile the production bundle
 RUN npm run build
 
 FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine AS build-env
@@ -24,7 +15,6 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 COPY server/*.csproj ./
 RUN dotnet restore --runtime alpine-x64
 
-# Copy everything else and build
 COPY server/. ./
 RUN dotnet publish -c Release -o out \
 	--no-restore \
@@ -40,18 +30,10 @@ FROM mcr.microsoft.com/dotnet/runtime-deps:7.0-alpine
 WORKDIR /app
 COPY --from=build-env /app/out .
 COPY --from=node-build-env /app/dist wwwroot
-
-# Uses port which is used by the actual application
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
 # For added security, you can opt out of the diagnostic pipeline. When you opt-out this allows the container to run as read-only.
 ENV DOTNET_EnableDiagnostics=0
-
-# Create/Run as user without root privileges
-# RUN adduser --disabled-password \
-#   --home /app \
-#   --gecos '' dotnetuser && chown -R dotnetuser /app
-# USER dotnetuser
 
 ENTRYPOINT ["./LootGod"]
