@@ -100,7 +100,7 @@ export default function Loots(props: IContext) {
 									<a href={'https://www.raidloot.com/items?view=List&name=' + item.name} target='_blank' rel='noreferrer'>{item.name}</a>
 								}
 								{props.spell && item.name}
-								&nbsp;| {props.raidNight ? item.raidQuantity : item.rotQuantity} available | {lootRequests.filter(x => x.lootId === item.id).length} request(s)</Accordion.Header>
+								&nbsp;| {props.raidNight ? item.raidQuantity : item.rotQuantity} available | {lootRequests.filter(x => x.lootId === item.id && x.granted).length} granted | {lootRequests.filter(x => x.lootId === item.id).length} request(s)</Accordion.Header>
 							<Accordion.Body>
 								{props.isAdmin &&
 									<>
