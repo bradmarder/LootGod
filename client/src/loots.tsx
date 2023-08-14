@@ -9,44 +9,32 @@ export default function Loots(props: IContext) {
 
 	const [isLoading, setIsLoading] = useState(false);
 
-	const grantLootRequest = async (id: number) => {
+	const grantLootRequest = (id: number) => {
 		setIsLoading(true);
-		try {
-			await axios.post('/GrantLootRequest?id=' + id + '&grant=true');
-		}
-		finally {
-			setIsLoading(false);
-		}
+		axios
+			.post('/GrantLootRequest?id=' + id + '&grant=true')
+			.finally(() => setIsLoading(false));
 	}
 
-	const incrementLoot = async (id: number) => {
+	const incrementLoot = (id: number) => {
 		setIsLoading(true);
-		try {
-			await axios.post('/IncrementLootQuantity?id=' + id+ '&raidNight=' + props.raidNight);
-		}
-		finally {
-			setIsLoading(false);
-		}
+		axios
+			.post('/IncrementLootQuantity?id=' + id+ '&raidNight=' + props.raidNight)
+			.finally(() => setIsLoading(false));
 	}
 
-	const decrementLoot = async (id: number) => {
+	const decrementLoot = (id: number) => {
 		setIsLoading(true);
-		try {
-			await axios.post('/DecrementLootQuantity?id=' + id + '&raidNight=' + props.raidNight);
-		}
-		finally {
-			setIsLoading(false);
-		}
+		axios
+			.post('/DecrementLootQuantity?id=' + id + '&raidNight=' + props.raidNight)
+			.finally(() => setIsLoading(false));
 	}
 
-	const ungrantLootRequest = async (id: number) => {
+	const ungrantLootRequest = (id: number) => {
 		setIsLoading(true);
-		try {
-			await axios.post('/GrantLootRequest?id=' + id + '&grant=false');
-		}
-		finally {
-			setIsLoading(false);
-		}
+		axios
+			.post('/GrantLootRequest?id=' + id + '&grant=false')
+			.finally(() => setIsLoading(false));
 	};
 
 	const lootRequests = props.requests.filter(x => props.raidNight === x.raidNight);

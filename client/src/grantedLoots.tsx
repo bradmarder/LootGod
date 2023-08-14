@@ -9,23 +9,17 @@ export function GrantedLoots(props: IContext) {
 
 	const [isLoading, setIsLoading] = useState(false);
 
-	const ungrantLootRequest = async (id: number) => {
+	const ungrantLootRequest = (id: number) => {
 		setIsLoading(true);
-		try {
-			await axios.post('/GrantLootRequest?id=' + id + '&grant=false');
-		}
-		finally {
-			setIsLoading(false);
-		}
+		axios
+			.post('/GrantLootRequest?id=' + id + '&grant=false')
+			.then(() => setIsLoading(false));
 	};
-	const finishLootGranting = async () => {
+	const finishLootGranting =  () => {
 		setIsLoading(true);
-		try {
-			await axios.post('/FinishLootRequests?raidNight=' + props.raidNight);
-		}
-		finally {
-			setIsLoading(false);
-		}
+		axios
+			.post('/FinishLootRequests?raidNight=' + props.raidNight)
+			.then(() => setIsLoading(false));
 	};
 
 	const grantedLootRequests = useMemo(() =>

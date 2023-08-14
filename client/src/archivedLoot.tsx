@@ -13,15 +13,16 @@ export function ArchivedLoot(props: IContext) {
 	const [name, setName] = useState('');
 	const [lootId, setLootId] = useState('');
 
-	const getLootRequests = async () => {
+	const getLootRequests = () => {
 		setIsLoading(true);
 		const params = {
 			name: name || null,
 			lootId: lootId || null,
 		};
-		const res = await axios.get<ILootRequest[]>('/GetArchivedLootRequests', { params });
-		setRequests(res.data);
-		setIsLoading(false);
+		axios
+			.get<ILootRequest[]>('/GetArchivedLootRequests', { params })
+			.then(res => setRequests(res.data))
+			.finally(() => setIsLoading(false));
 	};
 
 	return (
