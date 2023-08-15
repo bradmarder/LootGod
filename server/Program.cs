@@ -135,7 +135,7 @@ app.MapGet("Backup", (LootGodContext db, string key) =>
 	EnsureOwner(key);
 	db.Database.ExecuteSqlRaw($"VACUUM INTO '{backup}'");
 	var stream = File.OpenRead(backup);
-	var name = $"backup-{DateTimeOffset.UnixEpoch.ToUnixTimeSeconds()}.db";
+	var name = $"backup-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}.db";
 	return Results.Stream(stream, fileDownloadName: name);
 });
 
@@ -309,13 +309,13 @@ app.MapPost("DecrementLootQuantity", async (LootGodContext db, int id, bool raid
 	await lootService.RefreshLoots(guildId);
 });
 
-app.MapPost("CreateGuild", (LootGodContext db, string leaderName, string guildName) =>
+app.MapPost("CreateGuild", (LootGodContext db, string leaderName, string guildName, Server server) =>
 {
 	var lootTemplate = db.Loots
 		.AsNoTracking()
 		.Where(x => x.GuildId == 1)
 		.ToArray();
-	var player = new Player(leaderName, guildName);
+	var player = new Player(leaderName, guildName, server);
 	var loots = lootTemplate.Select(x => new Loot(x.Name, x.Expansion, player.Guild));
 	db.Loots.AddRange(loots);
 	db.Players.Add(player);

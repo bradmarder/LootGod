@@ -16,14 +16,11 @@ export function LootRequests(props: IContext) {
 			.then(x => setPlayerId(x.data));
 	}, []);
 
-	const deleteLootRequest = async (id: number) => {
+	const deleteLootRequest = (id: number) => {
 		setIsLoading(true);
-		try {
-			await axios.post('/DeleteLootRequest?id=' + id);
-		}
-		finally {
-			setIsLoading(false);
-		}
+		axios
+			.post('/DeleteLootRequest?id=' + id)
+			.finally(() => setIsLoading(false));
 	};
 
 	const myLootRequests = useMemo(() =>

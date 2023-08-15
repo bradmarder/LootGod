@@ -15,38 +15,7 @@ public enum Expansion : byte
 [Index(nameof(Name), nameof(GuildId), IsUnique = true)]
 public class Loot
 {
-	public static readonly HashSet<string> SpellPrefixes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-	{
-		"Minor",
-		"Lesser",
-		"Median",
-		"Greater",
-		"Glowing",
-		"Captured",
-	};
-
-	public static readonly HashSet<string> SpellSuffixes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-	{
-		"Rune",
-		"Ethernere",
-		"Shadowscribed Parchment",
-		"Shar Vahl",
-	};
-
-	public static readonly HashSet<string> Nuggets = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-	{
-		"Diamondized Restless Ore",
-		"Calcified Bloodied Ore",
-	};
-
 	private Loot() { }
-	public Loot(string name, Expansion expansion, int guildId)
-	{
-		Name = name;
-		Expansion = expansion;
-		GuildId = guildId;
-	}
-
 	public Loot(string name, Expansion expansion, Guild guild)
 	{
 		Name = name;

@@ -41,14 +41,14 @@ public class Player
 	/// <summary>
 	/// Guild leader signup ctor
 	/// </summary>
-	public Player(string leaderName, string guildName)
+	public Player(string leaderName, string guildName, Server server)
 	{
 		Name = leaderName;
 		Active = true;
 		Admin = true;
 		Key = GetRandomGuid();
 		Class = EQClass.Bard;
-		Guild = new(guildName);
+		Guild = new(guildName, server);
 		Rank = new("Leader", Guild);
 	}
 
