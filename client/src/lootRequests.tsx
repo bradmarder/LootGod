@@ -1,11 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
-import './App.css';
 import { Alert, Button, Table } from 'react-bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import classes from './eqClasses';
 
-export function LootRequests(props: IContext) {
+export default function LootRequests(props: IContext) {
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [playerId, setPlayerId] = useState(0);

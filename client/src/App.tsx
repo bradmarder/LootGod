@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react';
-import './App.css';
 import { Container, Row, Col, Button, Alert } from 'react-bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import axios from 'axios';
 import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
-import { LootRequests } from './lootRequests';
-import { CreateLootRequest } from './createLootRequest';
-import { CreateLoot } from './createLoot';
+import axios from 'axios';
+import LootRequests from './lootRequests';
+import CreateLootRequest from './createLootRequest';
+import CreateLoot from './createLoot';
 import Loots from './loots';
-import { GrantedLoots } from './grantedLoots';
-import { ArchivedLoot } from './archivedLoot';
-import { RaidAttendance } from './raidAttendance';
-import { Upload } from './upload';
+import GrantedLoots from './grantedLoots';
+import ArchivedLoot from './archivedLoot';
+import RaidAttendance from './raidAttendance';
+import Upload from './upload';
+import 'bootstrap/dist/css/bootstrap.min.css'
 
 const params = new Proxy(new URLSearchParams(window.location.search), {
 	get: (searchParams, prop) => searchParams.get(prop as string),
@@ -32,7 +31,9 @@ export default function App() {
 	const [lootLock, setLootLock] = useState(false);
 	const [requests, setRequests] = useState<ILootRequest[]>([]);
 	const [loots, setLoots] = useState<ILoot[]>([]);
+	const [cacheKey, setCacheKey] = useState(0);
 
+	const refreshCache = () => setCacheKey(Date.now());
 	const getAdminStatus = (signal: AbortSignal) => {
 		axios
 			.get<boolean>('/GetAdminStatus', { signal })
@@ -150,7 +151,7 @@ export default function App() {
 					<Col xs={12} xl={6}>
 						{isAdmin &&
 							<>
-								<Upload></Upload>
+								<Upload refreshCache={refreshCache}></Upload>
 								<CreateLoot loots={loots} raidNight={raidNight}></CreateLoot>
 								{lootLock &&
 									<Button variant={'success'} onClick={disableLootLock} disabled={loading}>Unlock/Enable Loot Requests</Button>
@@ -165,7 +166,7 @@ export default function App() {
 						<br />
 						<Loots requests={requests} loots={loots} isAdmin={isAdmin} spell={false} raidNight={raidNight}></Loots>
 						<br />
-						<RaidAttendance isAdmin={isAdmin}></RaidAttendance>
+						<RaidAttendance isAdmin={isAdmin} cacheKey={cacheKey}></RaidAttendance>
 					</Col>
 				</Row>
 			}

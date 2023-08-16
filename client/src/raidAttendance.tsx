@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import './App.css';
 import { Table, Button, FormCheck } from 'react-bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 
-export function RaidAttendance(props: { isAdmin: boolean }) {
+export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: number }) {
 
 	const [isLoading, setIsLoading] = useState(true);
 	const [filter75, setFilter75] = useState(false);
@@ -46,7 +44,7 @@ export function RaidAttendance(props: { isAdmin: boolean }) {
 
 	useEffect(() => {
 		getRA();
-	}, []);
+	}, [props.cacheKey]);
 
 	return (
 		<>

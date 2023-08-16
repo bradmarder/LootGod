@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import './App.css';
 import { Alert, Button, Form } from 'react-bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 
 export interface ILoginProps {

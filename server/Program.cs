@@ -11,10 +11,10 @@ using System.Net;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-var adminKey = Environment.GetEnvironmentVariable("ADMIN_KEY")!;
-var backup = Environment.GetEnvironmentVariable("BACKUP_URL")!;
-var source = Environment.GetEnvironmentVariable("DATABASE_URL")!;
-var aspnetcore_urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS")!;
+var adminKey = builder.Configuration["ADMIN_KEY"]!;
+var backup = builder.Configuration["BACKUP_URL"]!;
+var source = builder.Configuration["DATABASE_URL"]!;
+var aspnetcore_urls = builder.Configuration["ASPNETCORE_URLS"]!;
 using var httpClient = new HttpClient();
 using var cts = new CancellationTokenSource();
 

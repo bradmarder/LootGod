@@ -1,11 +1,9 @@
 import { useState, useMemo } from 'react';
-import './App.css';
 import { Alert, Button, Table } from 'react-bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import classes from './eqClasses';
 
-export function GrantedLoots(props: IContext) {
+export default function GrantedLoots(props: IContext) {
 
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -34,7 +32,7 @@ export function GrantedLoots(props: IContext) {
 			}
 			{grantedLootRequests.length > 0 &&
 				<>
-					<a target="_blank" rel="noreferrer" href={'/GetGrantedLootOutput?playerKey=' + localStorage.getItem('key')}>Download Granted Loot Output Text File (for discord)</a>
+					<a target="_blank" rel="noreferrer" href={'/api/GetGrantedLootOutput?playerKey=' + localStorage.getItem('key')}>Download Granted Loot Output Text File (for discord)</a>
 					<Table striped bordered hover size="sm">
 						<thead>
 							<tr>
@@ -62,7 +60,7 @@ export function GrantedLoots(props: IContext) {
 						</tbody>
 					</Table>
 					<Alert variant={'warning'}>
-						<strong>WARNING!</strong> This archives all active loot requests and subtracts granted quantities. If you have a Discord webhook set, this will also
+						<strong>WARNING!</strong> This archives all active loot requests and resets quantities. If you have a Discord webhook set, this will also
 						post the granted loot output to that channel.
 						<br />
 						<Button variant={'success'} disabled={isLoading} onClick={finishLootGranting}>Finish Granting Loots</Button>

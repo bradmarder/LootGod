@@ -1,12 +1,10 @@
 import { useState } from 'react';
-import './App.css';
 import { Row, Col, Alert, Button, Form } from 'react-bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import classes from './eqClasses';
 import { EQClass } from './eqClass';
 
-export function CreateLootRequest(props: IContext) {
+export default function CreateLootRequest(props: IContext) {
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [altName, setAltName] = useState('');

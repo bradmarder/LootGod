@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import './App.css';
 import { Alert, Button, Form } from 'react-bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 
-export function Upload() {
+export default function Upload(props: { refreshCache: () => void }) {
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [key, setKey] = useState(0);
@@ -21,6 +19,7 @@ export function Upload() {
 			formData.append("file", file!);
 			await axios.post(endpoint + '?offset=' + new Date().getTimezoneOffset(), formData);
 			setUploaded([...uploaded, file!.name]);
+			props.refreshCache();
 		}
 		finally {
 			setFile(null);
@@ -45,7 +44,7 @@ export function Upload() {
 						)}
 					</Alert>
 				}
-				<a target="_blank" rel="noreferrer" href={'/GetPasswords?playerKey=' + localStorage.getItem('key')}>Download Master Password Links (Leader Only)</a>
+				<a target="_blank" rel="noreferrer" href={'/api/GetPasswords?playerKey=' + localStorage.getItem('key')}>Download Master Password Links (Leader Only)</a>
 			</Form>
 		</Alert>
 	);

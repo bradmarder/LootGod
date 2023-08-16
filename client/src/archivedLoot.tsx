@@ -1,11 +1,9 @@
 import { useState } from 'react';
-import './App.css';
 import { Row, Col, Button, Form, Table, FormCheck } from 'react-bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import classes from './eqClasses';
 
-export function ArchivedLoot(props: IContext) {
+export default function ArchivedLoot(props: IContext) {
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [granted, setGranted] = useState(false);
@@ -66,7 +64,7 @@ export function ArchivedLoot(props: IContext) {
 							<th>Upgrading From</th>
 							<th>Granted?</th>
 							<th>Date</th>
-							<tr>RaidNight / Rot</tr>
+							<th>RaidNight / Rot</th>
 						</tr>
 					</thead>
 					<tbody>
