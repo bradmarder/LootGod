@@ -136,7 +136,7 @@ public class LootService
 	{
 		return _db.Loots
 			.Where(x => x.GuildId == guildId)
-			.Where(x => x.Expansion == Expansion.ToL || x.Expansion == Expansion.NoS)
+			.Where(x => x.Expansion == Expansion.NoS)
 			.OrderBy(x => x.Name)
 			.Select(x => new LootDto
 			{

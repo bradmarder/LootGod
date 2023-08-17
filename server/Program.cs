@@ -314,6 +314,7 @@ app.MapPost("CreateGuild", (LootGodContext db, string leaderName, string guildNa
 	var lootTemplate = db.Loots
 		.AsNoTracking()
 		.Where(x => x.GuildId == 1)
+		.Where(x => x.Expansion == Expansion.NoS)
 		.ToArray();
 	var player = new Player(leaderName, guildName, server);
 	var loots = lootTemplate.Select(x => new Loot(x.Name, x.Expansion, player.Guild));
@@ -607,7 +608,7 @@ app.MapPost("BulkImportRaidDump", async (LootGodContext db, LootService lootServ
 		};
 		form.Headers.Add("Player-Key", playerKey!.ToString());
 		var port = aspnetcore_urls.Split(':').Last();
-		var res = await httpClient.PostAsync($"http://{IPAddress.Loopback}:{port}/ImportRaidDump?offset={offset}", form);
+		var res = await httpClient.PostAsync($"http://{IPAddress.Loopback}:{port}/api/ImportRaidDump?offset={offset}", form);
 		res.EnsureSuccessStatusCode();
 	}
 });

@@ -50,7 +50,7 @@ export default function ArchivedLoot(props: IContext) {
 						</Form.Group>
 					</Col>
 				</Row>
-				<Button variant='success' disabled={isLoading} onClick={getLootRequests}>Search</Button>
+				<Button variant='success' disabled={isLoading || (name === '' && lootId === '')} onClick={getLootRequests}>Search</Button>
 			</Form>
 			{requests.length > 0 &&
 				<Table striped bordered hover size="sm">
