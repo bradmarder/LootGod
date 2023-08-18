@@ -106,7 +106,7 @@ public class LootService
 	{
 		var guildId = GetGuildId();
 
-		var items = _db.LootRequests
+		var grantedLoot = _db.LootRequests
 			.AsNoTracking()
 			.Include(x => x.Loot)
 			.Include(x => x.Player)
@@ -120,9 +120,22 @@ public class LootService
 			{
 				var request = x.First();
 				return $"{request.Loot.Name} | {request.AltName ?? request.Player.Name} | x{x.Sum(y => y.Quantity)}";
-			});
+			})
+			.ToArray();
 
-		return string.Join(Environment.NewLine, items);
+		var rotLoot = _db.Loots
+			.Where(x => x.GuildId == guildId)
+			.Where(x => x.RaidQuantity > 0)
+			.Select(x => new
+			{
+				x.Name,
+				Quantity = x.RaidQuantity - x.LootRequests.Count(x => x.Granted && !x.Archived)
+			})
+			.Where(x => x.Quantity > 0)
+			.Select(x => $"{x.Name} | ROT | {x.Quantity}")
+			.ToArray();
+
+		return string.Join(Environment.NewLine, grantedLoot.Concat(rotLoot));
 	}
 
 	public async Task RefreshLock(int guildId, bool locked)
@@ -195,6 +208,8 @@ public class LootService
 
 	public async Task DiscordWebhook(HttpClient httpClient, string output, string discordWebhookUrl)
 	{
+		const string syntax = "isbl";
+
 		// A single bucket must be under the 2k max for discord (excludes backticks/newlines/emojis?)
 		// Assume 1_700 max characters per bucket to safely account for splitting lines evenly
 		var bucketCount = Math.Round(output.Length / 1_700d, MidpointRounding.ToPositiveInfinity);
@@ -205,7 +220,7 @@ public class LootService
 		foreach (var bucket in buckets)
 		{
 			var data = string.Join(Environment.NewLine, bucket);
-			var json = new { content = $"```{Environment.NewLine}{data}{Environment.NewLine}```" };
+			var json = new { content = $"```{syntax}{Environment.NewLine}{data}{Environment.NewLine}```" };
 			HttpResponseMessage? response = null;
 			try
 			{
