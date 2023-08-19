@@ -12,9 +12,9 @@ public class RaidDump
 		PlayerId = playerId;
 	}
 
-	public long Timestamp { get; set; }
+	public long Timestamp { get; private set; }
 
-	public int PlayerId { get; set; }
+	public int PlayerId { get; private set; }
 
 	[ForeignKey(nameof(PlayerId))]
 	public virtual Player Player { get; set; } = null!;

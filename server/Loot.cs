@@ -24,7 +24,7 @@ public class Loot
 	}
 
 	[Key]
-	public int Id { get; set; }
+	public int Id { get; private set; }
 
 	public Expansion Expansion { get; set; }
 

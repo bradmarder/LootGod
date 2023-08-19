@@ -20,7 +20,7 @@ public class Rank
 	}
 
 	[Key]
-	public int Id { get; set; }
+	public int Id { get; private set; }
 
 	public int GuildId { get; set; }
 

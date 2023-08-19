@@ -28,7 +28,7 @@ public class LootRequest
 	}
 
 	[Key]
-	public int Id { get; set; }
+	public int Id { get; private set; }
 
 	public DateTime CreatedDate { get; set; }
 

@@ -16,7 +16,7 @@ public class Guild
 	}
 
 	[Key]
-	public int Id { get; set; }
+	public int Id { get; private set; }
 
 	[StringLength(255, MinimumLength = 3)]
 	public string Name { get; set; } = null!;
