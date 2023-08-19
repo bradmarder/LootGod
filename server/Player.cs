@@ -9,7 +9,7 @@ namespace LootGod;
 [Index(nameof(Key), IsUnique = true)]
 public class Player
 {
-	public static readonly IReadOnlyDictionary<string, EQClass> ClassNameToEnumMap = new Dictionary<string, EQClass>
+	private static readonly IReadOnlyDictionary<string, EQClass> _classNameToEnumMap = new Dictionary<string, EQClass>
 	{
 		["Bard"] = EQClass.Bard,
 		["Beastlord"] = EQClass.Beastlord,
@@ -58,7 +58,7 @@ public class Player
 	public Player(string name, string eqClass, int guildId)
 	{
 		Name = name;
-		Class = ClassNameToEnumMap[eqClass];
+		Class = _classNameToEnumMap[eqClass];
 		GuildId = guildId;
 		Key = GetRandomGuid();
 	}
@@ -71,7 +71,7 @@ public class Player
 		GuildId = guildId;
 		Active = true;
 		Name = dump.Name;
-		Class = ClassNameToEnumMap[dump.Class];
+		Class = _classNameToEnumMap[dump.Class];
 		Alt = dump.Alt;
 		Level = dump.Level;
 		LastOnDate = dump.LastOnDate;
@@ -80,7 +80,7 @@ public class Player
 	}
 
 	[Key]
-	public int Id { get; set; }
+	public int Id { get; private set; }
 
 	public bool Admin { get; set; }
 
@@ -124,6 +124,11 @@ public class Player
 	/// </summary>
 	public bool Hidden { get; set; }
 
+	public int? MainId { get; set; }
+
+	[ForeignKey(nameof(MainId))]
+	public virtual Player? Main { get; set; }
+
 	[ForeignKey(nameof(RankId))]
 	public virtual Rank? Rank { get; set; }
 
@@ -135,4 +140,7 @@ public class Player
 
 	[InverseProperty(nameof(LootRequest.Player))]
 	public virtual List<LootRequest> LootRequests { get; } = new();
+
+	[InverseProperty(nameof(Main))]
+	public virtual List<Player> Alts { get; } = new();
 }

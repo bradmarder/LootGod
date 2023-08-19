@@ -326,7 +326,6 @@ app.MapPost("CreateGuild", (LootGodContext db, string leaderName, string guildNa
 	return player.Key;
 });
 
-// TODO: raid/rot loot locking
 app.MapPost("ToggleLootLock", async (LootGodContext db, LootService lootService, bool enable) =>
 {
 	lootService.EnsureAdminStatus();
@@ -337,6 +336,32 @@ app.MapPost("ToggleLootLock", async (LootGodContext db, LootService lootService,
 		.ExecuteUpdate(x => x.SetProperty(y => y.LootLocked, enable));
 
 	await lootService.RefreshLock(guildId, enable);
+});
+
+app.MapGet("GetLinkedAlts", (LootGodContext db, LootService lootService) =>
+{
+	var playerId = lootService.GetPlayerId();
+	var guildId = lootService.GetGuildId();
+
+	return db.Players
+		.Where(x => x.GuildId == guildId)
+		.Where(x => x.MainId == playerId)
+		.Select(x => x.Name)
+		.ToArray();
+});
+
+app.MapPost("LinkAlt", (LootGodContext db, LootService lootService, string altName) =>
+{
+	var playerId = lootService.GetPlayerId();
+	var guildId = lootService.GetGuildId();
+	var validAltName = char.ToUpperInvariant(altName[0]) + altName.Substring(1).ToLowerInvariant();
+
+	return db.Players
+		.Where(x => x.GuildId == guildId)
+		.Where(x => x.Alt == true)
+		.Where(x => x.MainId == null)
+		.Where(x => x.Name == validAltName)
+		.ExecuteUpdate(x => x.SetProperty(y => y.MainId, playerId));
 });
 
 app.MapGet("GetLootLock", (LootService lootService) =>
@@ -624,7 +649,10 @@ app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService) =
 
 	var playerMap = db.Players
 		.Where(x => x.GuildId == guildId)
-		.ToDictionary(x => x.Id, x => (x.Name, x.RankId, x.Hidden, x.Admin));
+		.ToDictionary(x => x.Id, x => (x.Name, x.MainId, x.RankId, x.Hidden, x.Admin));
+	var altMainMap = playerMap
+		.Where(x => x.Value.MainId is not null)
+		.ToDictionary(x => x.Key, x => x.Value.MainId!.Value);
 	var rankIdToNameMap = db.Ranks
 		.Where(x => x.GuildId == guildId)
 		.ToDictionary(x => x.Id, x => x.Name);
@@ -643,6 +671,9 @@ app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService) =
 	var thirtyDayMaxCount = uniqueDates.Count(x => x > thirty);
 
 	return dumps
+		.Select(x => altMainMap.TryGetValue(x.PlayerId, out var mainId)
+			? new RaidDump(x.Timestamp, mainId)
+			: x)
 		.GroupBy(x => x.PlayerId)
 		.ToDictionary(
 			x => playerMap[x.Key],

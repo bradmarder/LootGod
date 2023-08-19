@@ -10,6 +10,7 @@ import GrantedLoots from './grantedLoots';
 import ArchivedLoot from './archivedLoot';
 import RaidAttendance from './raidAttendance';
 import Upload from './upload';
+import LinkAlt from './linkAlt';
 import 'bootstrap/dist/css/bootstrap.min.css'
 
 const params = new Proxy(new URLSearchParams(window.location.search), {
@@ -92,10 +93,7 @@ export default function App() {
 		connection.on("lock", setLootLock);
 		connection.on("loots", setLoots);
 		connection.on("requests", setRequests);
-		connection.onclose(_error => {
-			alert('Connection to the server has dropped. Can you reload the page please? Thank you.');
-		});
-
+		connection.onclose(x => console.error(x || 'HubConnection.onclose'));
 		connection.start();
 
 		return () => { connection.stop(); }
@@ -104,10 +102,7 @@ export default function App() {
 	return (
 		<Container fluid>
 			{raidNight != null &&
-				<>
 				<h1>{raidNight ? 'Raid' : 'Rot'} Loot</h1>
-				<h3>Refresh page to switch to raid/rot loots</h3>
-				</>
 			}
 			{raidNight == null &&
 				<>
@@ -140,6 +135,8 @@ export default function App() {
 						<CreateLootRequest requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight}></CreateLootRequest>
 						<br />
 						<LootRequests requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight}></LootRequests>
+						<br />
+						<LinkAlt></LinkAlt>
 						<br />
 						{isAdmin &&
 							<GrantedLoots requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight}></GrantedLoots>
