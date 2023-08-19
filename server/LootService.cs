@@ -132,7 +132,7 @@ public class LootService
 				Quantity = x.RaidQuantity - x.LootRequests.Count(x => x.Granted && !x.Archived)
 			})
 			.Where(x => x.Quantity > 0)
-			.Select(x => $"{x.Name} | ROT | {x.Quantity}")
+			.Select(x => $"{x.Name} | ROT | x{x.Quantity}")
 			.ToArray();
 
 		return string.Join(Environment.NewLine, grantedLoot.Concat(rotLoot));
@@ -208,7 +208,7 @@ public class LootService
 
 	public async Task DiscordWebhook(HttpClient httpClient, string output, string discordWebhookUrl)
 	{
-		const string syntax = "isbl";
+		const string syntax = "coq";
 
 		// A single bucket must be under the 2k max for discord (excludes backticks/newlines/emojis?)
 		// Assume 1_700 max characters per bucket to safely account for splitting lines evenly
