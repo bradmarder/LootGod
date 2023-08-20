@@ -4,7 +4,7 @@
 	"private": true,
 	"dependencies": {
 		"@microsoft/signalr": "7.0.10",
-		"@types/react": "18.2.19",
+		"@types/react": "18.2.20",
 		"@types/react-dom": "18.2.7",
 		"axios": "1.4.0",
 		"bootstrap": "5.3.1",
@@ -25,9 +25,8 @@
 		]
 	},
 	"devDependencies": {
-		"@parcel/packager-raw-url": "^2.9.3",
-		"buffer": "^6.0.3",
-		"parcel": "latest",
-		"process": "^0.11.10"
+		"buffer": "6.0.3",
+		"parcel": "2.9.3",
+		"process": "0.11.10"
 	}
 }

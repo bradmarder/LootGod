@@ -110,7 +110,7 @@ app.MapGet("test", () => "Hello World!");
 
 app.MapPost("GuildDiscord", (LootGodContext db, LootService lootService, string webhook) =>
 {
-	lootService.EnsureAdminStatus();
+	lootService.EnsureGuildLeader();
 
 	var uri = new Uri(webhook, UriKind.Absolute);
 	if (!StringComparer.OrdinalIgnoreCase.Equals(uri.Host, "discordapp.com"))
@@ -183,6 +183,24 @@ app.MapGet("GetArchivedLootRequests", (LootGodContext db, LootService lootServic
 			CurrentItem = x.CurrentItem,
 		})
 		.ToArray();
+});
+
+app.MapGet("FreeTrade", (LootGodContext db, LootService lootService) =>
+{
+	var guildId = lootService.GetGuildId();
+
+	return db.Guilds.Any(x => x.Id == guildId && x.Server == Server.FirionaVie);
+});
+
+app.MapGet("GetDiscordWebhook", (LootGodContext db, LootService lootService) =>
+{
+	lootService.EnsureGuildLeader();
+	var guildId = lootService.GetGuildId();
+
+	return db.Guilds
+		.Where(x => x.Id == guildId)
+		.Select(x => x.DiscordWebhookUrl)
+		.FirstOrDefault();
 });
 
 app.MapGet("GetLoots", (LootService lootService) =>
@@ -309,21 +327,20 @@ app.MapPost("DecrementLootQuantity", async (LootGodContext db, int id, bool raid
 	await lootService.RefreshLoots(guildId);
 });
 
-app.MapPost("CreateGuild", (LootGodContext db, string leaderName, string guildName, Server server) =>
+app.MapPost("CreateGuild", (LootGodContext db, CreateGuild dto) =>
 {
 	var lootTemplate = db.Loots
 		.AsNoTracking()
 		.Where(x => x.GuildId == 1)
 		.Where(x => x.Expansion == Expansion.NoS)
 		.ToArray();
-	var player = new Player(leaderName, guildName, server);
+	var player = new Player(dto.LeaderName, dto.GuildName, dto.Server);
 	var loots = lootTemplate.Select(x => new Loot(x.Name, x.Expansion, player.Guild));
 	db.Loots.AddRange(loots);
 	db.Players.Add(player);
 	db.SaveChanges();
 
-	// TODO: connect with signalR
-	return player.Key;
+	return player.Key!.Value;
 });
 
 app.MapPost("ToggleLootLock", async (LootGodContext db, LootService lootService, bool enable) =>
@@ -377,6 +394,11 @@ app.MapGet("GetPlayerId", (LootService lootService) =>
 app.MapGet("GetAdminStatus", (LootService lootService) =>
 {
 	return lootService.GetAdminStatus();
+});
+
+app.MapGet("GetLeaderStatus", (LootService lootService) =>
+{
+	return lootService.IsGuildLeader();
 });
 
 app.MapPost("GrantLootRequest", async (LootGodContext db, LootService lootService, int id, bool grant) =>
@@ -731,3 +753,4 @@ app.MapGet("GetPasswords", (LootGodContext db, LootService lootService) =>
 await app.RunAsync(cts.Token);
 
 public record CreateLoot(byte Quantity, string Name, bool RaidNight);
+public record CreateGuild(string LeaderName, string GuildName, Server Server);

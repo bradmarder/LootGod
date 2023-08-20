@@ -11,6 +11,7 @@ import ArchivedLoot from './archivedLoot';
 import RaidAttendance from './raidAttendance';
 import Upload from './upload';
 import LinkAlt from './linkAlt';
+import LeaderModule from './leaderModule';
 import 'bootstrap/dist/css/bootstrap.min.css'
 
 const params = new Proxy(new URLSearchParams(window.location.search), {
@@ -29,6 +30,7 @@ export default function App() {
 	const [raidNight, setRaidNight] = useState<boolean | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [isAdmin, setIsAdmin] = useState(false);
+	const [isLeader, setIsLeader] = useState(false);
 	const [lootLock, setLootLock] = useState(false);
 	const [requests, setRequests] = useState<ILootRequest[]>([]);
 	const [loots, setLoots] = useState<ILoot[]>([]);
@@ -39,6 +41,12 @@ export default function App() {
 		axios
 			.get<boolean>('/GetAdminStatus', { signal })
 			.then(x => setIsAdmin(x.data))
+			.catch(() => { });
+	};
+	const getLeaderStatus = (signal: AbortSignal) => {
+		axios
+			.get<boolean>('/GetLeaderStatus', { signal })
+			.then(x => setIsLeader(x.data))
 			.catch(() => { });
 	};
 	const getLoots = (signal: AbortSignal) => {
@@ -79,6 +87,7 @@ export default function App() {
 		getLoots(controller.signal);
 		getLootLock(controller.signal);
 		getLootRequests(controller.signal);
+		getLeaderStatus(controller.signal);
 
 		return () => controller.abort();
 	}, []);
@@ -157,6 +166,9 @@ export default function App() {
 									<Button variant={'danger'} onClick={enableLootLock} disabled={loading}>Lock/Disable Loot Requests</Button>
 								}
 								<br /><br />
+								{isLeader &&
+									<LeaderModule></LeaderModule>
+								}
 							</>
 						}
 						<Loots requests={requests} loots={loots} isAdmin={isAdmin} spell={true} raidNight={raidNight}></Loots>
