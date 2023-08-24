@@ -8,13 +8,13 @@ RUN npm run build
 
 FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine AS build-env
 WORKDIR /app
-ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
-COPY server/*.csproj ./
-RUN dotnet restore --runtime alpine-x64
+COPY server/LootGod.csproj ./
+ARG RUNTIME=alpine-x64
+RUN dotnet restore --runtime $RUNTIME
 COPY server/. ./
 RUN dotnet publish -c Release -o out \
 	--no-restore \
-	--runtime alpine-x64 \
+	--runtime $RUNTIME \
 	--self-contained true \
 	/p:PublishSingleFile=true
 

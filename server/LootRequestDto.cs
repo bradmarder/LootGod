@@ -10,6 +10,7 @@ public record LootRequestDto
 	public required string? Spell { get; init; }
 	public required EQClass Class { get; init; }
 	public required int LootId { get; init; }
+	public required string LootName { get; init; }
 	public required int Quantity { get; init; }
 	public required bool RaidNight { get; init; }
 	public required bool IsAlt { get; init; }

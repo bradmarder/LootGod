@@ -1,5 +1,6 @@
 using LootGod;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -69,6 +70,15 @@ builder.Services.AddLogging(x => x
 	.AddSerilog(logger)
 	.Configure(y => y.ActivityTrackingOptions = ActivityTrackingOptions.None)
 );
+builder.Services.AddRateLimiter(rateLimiterOptions =>
+{
+	rateLimiterOptions.AddFixedWindowLimiter("SingleDailyUsage", x =>
+	{
+		x.PermitLimit = 1;
+		x.QueueLimit = 0;
+		x.Window = TimeSpan.FromDays(1);
+	});
+});
 
 using var app = builder.Build();
 
@@ -176,6 +186,7 @@ app.MapGet("GetArchivedLootRequests", (LootGodContext db, LootService lootServic
 			Class = x.Class ?? x.Player.Class,
 			Spell = x.Spell,
 			LootId = x.LootId,
+			LootName = x.Loot.Name,
 			Quantity = x.Quantity,
 			RaidNight = x.RaidNight,
 			IsAlt = x.IsAlt,
@@ -341,7 +352,8 @@ app.MapPost("CreateGuild", (LootGodContext db, CreateGuild dto) =>
 	db.SaveChanges();
 
 	return player.Key!.Value;
-});
+})
+.RequireRateLimiting("SingleDailyUsage");
 
 app.MapPost("ToggleLootLock", async (LootGodContext db, LootService lootService, bool enable) =>
 {
@@ -475,6 +487,8 @@ app.MapPost("TransferGuildLeadership", (LootGodContext db, LootService lootServi
 	var leaderId = lootService.GetPlayerId();
 	var oldLeader = db.Players.Single(x => x.Id ==  leaderId);
 	var newLeader = db.Players.Single(x => x.GuildId == guildId && x.Name == name);
+
+	if (oldLeader.Id == newLeader.Id) { throw new Exception("cannot transfer leadership to self?!"); }
 
 	newLeader.Admin = true;
 	newLeader.RankId = oldLeader.RankId;

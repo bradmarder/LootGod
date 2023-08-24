@@ -78,7 +78,7 @@ export default function CreateLootRequest(props: IContext) {
 						<Col xs={12} md={6}>
 							<Form.Group className="mb-3">
 								<Form.Label>ALT name (Leave blank if for main)</Form.Label>
-								<Form.Control type="text" placeholder="Enter name" value={altName} onChange={e => setAltName(e.target.value)} />
+								<Form.Control type="text" placeholder="Enter ALT name" value={altName} onChange={e => setAltName(e.target.value)} />
 							</Form.Group>
 						</Col>
 						<Col xs={12} md={6}>

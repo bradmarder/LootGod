@@ -49,14 +49,9 @@ export default function Loots(props: IContext) {
 				.map(x => x.quantity)
 				.reduce((x, y) => x + y, 0);
 
-			// clone object to prevent mutating original and causing issues
-			const ref = JSON.parse(JSON.stringify(item)) as ILoot;
-			if (props.raidNight) {
-				ref.raidQuantity -= grantedLootQty;
-			} else {
-				ref.rotQuantity -= grantedLootQty;
-			}
-			return ref;
+			return props.raidNight
+				? { ...item, raidQuantity: item.raidQuantity - grantedLootQty }
+				: { ...item, rotQuantity: item.rotQuantity - grantedLootQty };
 		});
 
 	const getText = (req: ILootRequest) =>

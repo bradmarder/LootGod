@@ -179,6 +179,7 @@ public class LootService
 				Class = x.Class ?? x.Player.Class,
 				Spell = x.Spell,
 				LootId = x.LootId,
+				LootName = x.Loot.Name,
 				Quantity = x.Quantity,
 				RaidNight = x.RaidNight,
 				IsAlt = x.IsAlt,

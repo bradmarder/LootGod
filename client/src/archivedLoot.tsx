@@ -73,7 +73,7 @@ export default function ArchivedLoot(props: IContext) {
 								<td>{item.altName || item.mainName}</td>
 								<td>{item.isAlt ? 'Alt' : 'Main'}</td>
 								<td>{classes[item.class]}</td>
-								<td>{props.loots.find(x => x.id === item.lootId)?.name ?? 'old xpac loot'}</td>
+								<td>{item.lootName}</td>
 								<td>{item.spell || item.quantity}</td>
 								<td>{item.currentItem}</td>
 								<td className={item.granted ? 'text-success' : 'text-danger'}>{item.granted ? "yes" : "no"}</td>

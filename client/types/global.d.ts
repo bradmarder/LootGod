@@ -1,8 +1,8 @@
 declare interface ILoot {
 	readonly id: number;
 	readonly name: string;
-	raidQuantity: number;
-	rotQuantity: number;
+	readonly raidQuantity: number;
+	readonly rotQuantity: number;
 	readonly isSpell: boolean;
 }
 declare interface ILootRequest {
@@ -14,6 +14,7 @@ declare interface ILootRequest {
 	readonly spell: string | null;
 	readonly class: EQClass;
 	readonly lootId: number;
+	readonly lootName: string;
 	readonly quantity: number;
 	readonly raidNight: boolean;
 	readonly isAlt: boolean;

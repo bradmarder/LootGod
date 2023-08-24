@@ -50,7 +50,7 @@ export default function GrantedLoots(props: IContext) {
 									<td><strong>{item.mainName}</strong> - {item.altName}</td>
 									<td>{item.isAlt ? 'Alt' : 'Main'}</td>
 									<td>{classes[item.class]}</td>
-									<td>{props.loots.find(x => x.id === item.lootId)?.name}</td>
+									<td>{item.lootName}</td>
 									<td>{item.spell || item.quantity}</td>
 									<td>
 										<Button variant='danger' disabled={isLoading} onClick={() => ungrantLootRequest(item.id)}>Ungrant</Button>
