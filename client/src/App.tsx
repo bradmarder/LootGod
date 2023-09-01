@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { Container, Row, Col, Button, Alert } from 'react-bootstrap';
 import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import axios from 'axios';
@@ -79,6 +80,15 @@ export default function App() {
 			.post('/ToggleLootLock?enable=false')
 			.finally(() => setLoading(false));
 	};
+	const transitionRaidNight = (raid: boolean) => {
+		if (!(document as any).startViewTransition) {
+			return setRaidNight(raid);
+		}
+		(document as any).startViewTransition(() => {
+			flushSync(() => setRaidNight(raid));
+			return new Promise(resolve => setTimeout(resolve, 100));
+		});
+	};
 
 	useEffect(() => {
 		const controller = new AbortController();
@@ -121,7 +131,7 @@ export default function App() {
 						<p>Show me <strong>RAID NIGHT</strong> loot. What does this mean? If you are in an active raid and fresh and hot loot is dropping, this is the button you want to click.
 						Click the wrong button or change your mind? No worries! This isn't permanent, simply refresh to page to select again.</p>
 						<p>(ADMINS!) Click this to create/update quantities and grant requests for <strong>RAID NIGHT</strong> loots only.</p>
-						<Button variant={'success'} onClick={() => setRaidNight(true)}>Show Raid Night Loot</Button>
+						<Button variant={'success'} onClick={() => transitionRaidNight(true)}>Show Raid Night Loot</Button>
 					</Alert>
 					</Col>
 					</Row>
@@ -132,7 +142,7 @@ export default function App() {
 						<p>Show me <strong>ROT</strong> loot. This allows you to request junky rot loot that nobody wanted during a previous raid. You can request this loot for your alts or main.
 						Click the wrong button or change your mind? No worries! This isn't permanent, simply refresh to page to select again.</p>
 						<p>(ADMINS!) Click this to create/update quantities or grant requests for <strong>ROT</strong> loots only.</p>
-						<Button variant={'info'} onClick={() => setRaidNight(false)}>Show ROT Loot</Button>
+						<Button variant={'info'} onClick={() => transitionRaidNight(false)}>Show ROT Loot</Button>
 					</Alert>
 					</Col>
 					</Row>

@@ -8,10 +8,11 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 	const [filter75, setFilter75] = useState(false);
 	const [ra, setRa] = useState<IRaidAttendance[]>([]);
 
-	const getRA = async () => {
-		const res = await axios.get<IRaidAttendance[]>('/GetPlayerAttendance');
-		setRa(res.data);
-		setIsLoading(false);
+	const getRA = () => {
+		axios
+			.get<IRaidAttendance[]>('/GetPlayerAttendance')
+			.then(x => setRa(x.data))
+			.finally(() => setIsLoading(false));
 	};
 
 	const getTextColor = (ra: number) => {
@@ -20,31 +21,21 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 			: 'text-danger';
 	};
 
-	const toggleHidden = async (name: string) => {
+	const toggleHidden = (name: string) => {
 		setIsLoading(true);
-		try {
-			await axios.post('/ToggleHiddenPlayer?playerName=' + name);
-			await getRA();
-		}
-		finally {
-			setIsLoading(false);
-		}
+		axios
+			.post('/ToggleHiddenPlayer?playerName=' + name)
+			.then(getRA);
 	};
 
-	const toggleAdmin = async (name: string) => {
+	const toggleAdmin = (name: string) => {
 		setIsLoading(true);
-		try {
-			await axios.post('/TogglePlayerAdmin?playerName=' + name);
-			await getRA();
-		}
-		finally {
-			setIsLoading(false);
-		}
+		axios
+			.post('/TogglePlayerAdmin?playerName=' + name)
+			.then(getRA);
 	};
 
-	useEffect(() => {
-		getRA();
-	}, [props.cacheKey]);
+	useEffect(getRA, [props.cacheKey]);
 
 	return (
 		<>
