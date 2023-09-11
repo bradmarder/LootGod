@@ -10,6 +10,7 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 var adminKey = builder.Configuration["ADMIN_KEY"]!;
@@ -59,6 +60,10 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<LootService>();
 builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+	options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 var logger = new LoggerConfiguration()
 	.Enrich.FromLogContext()
 	.WriteTo.Console(outputTemplate: "[{Timestamp:u} {Level:u3}] {Message:lj} " + "{Properties:j}{NewLine}{Exception}")
@@ -210,7 +215,7 @@ app.MapGet("GetDiscordWebhook", (LootGodContext db, LootService lootService) =>
 
 	return db.Guilds
 		.Where(x => x.Id == guildId)
-		.Select(x => x.DiscordWebhookUrl)
+		.Select(x => x.DiscordWebhookUrl ?? "")
 		.FirstOrDefault();
 });
 

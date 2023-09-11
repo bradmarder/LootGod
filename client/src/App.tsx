@@ -14,17 +14,17 @@ import Upload from './upload';
 import LinkAlt from './linkAlt';
 import LeaderModule from './leaderModule';
 import 'bootstrap/dist/css/bootstrap.min.css'
+import CreateGuild from './createGuild';
 
 const params = new Proxy(new URLSearchParams(window.location.search), {
 	get: (searchParams, prop) => searchParams.get(prop as string),
 });
 const key = (params as any).key || localStorage.getItem('key');
-if (key == null || key === '') {
-	alert('Must have a player key. Ask your guild for one.');
-	throw new Error();
+const hasKey = key?.length > 0;
+if (hasKey) {
+	localStorage.setItem('key', key);
+	axios.defaults.headers.common['Player-Key'] = key;
 }
-localStorage.setItem('key', key);
-axios.defaults.headers.common['Player-Key'] = key;
 axios.defaults.baseURL = 'api/';
 
 export default function App() {
@@ -36,6 +36,7 @@ export default function App() {
 	const [requests, setRequests] = useState<ILootRequest[]>([]);
 	const [loots, setLoots] = useState<ILoot[]>([]);
 	const [cacheKey, setCacheKey] = useState(0);
+	const [intro, setIntro] = useState(!hasKey);
 
 	const refreshCache = () => setCacheKey(Date.now());
 	const getAdminStatus = (signal: AbortSignal) => {
@@ -86,11 +87,13 @@ export default function App() {
 		}
 		(document as any).startViewTransition(() => {
 			flushSync(() => setRaidNight(raid));
-			return new Promise(resolve => setTimeout(resolve, 100));
+			return new Promise(resolve => setTimeout(resolve, 50));
 		});
 	};
 
 	useEffect(() => {
+		if (intro) { return; }
+
 		const controller = new AbortController();
 
 		getAdminStatus(controller.signal);
@@ -100,11 +103,13 @@ export default function App() {
 		getLeaderStatus(controller.signal);
 
 		return () => controller.abort();
-	}, []);
+	}, [intro]);
 
 	useEffect(() => {
+		if (intro) { return; }
+
 		const connection = new HubConnectionBuilder()
-			.withUrl('/ws/lootHub?key=' + key)
+			.withUrl('/ws/lootHub?key=' + localStorage.getItem('key'))
 			.configureLogging(LogLevel.Information)
 			.withAutomaticReconnect()
 			.build();
@@ -116,14 +121,26 @@ export default function App() {
 		connection.start();
 
 		return () => { connection.stop(); }
-	}, []);
+	}, [intro]);
+
+	const createGuildCallback = () => {
+		setIsAdmin(true);
+		setIntro(false);
+	};
 
 	return (
 		<Container fluid>
-			{raidNight != null &&
+			{intro &&
+				<Row>
+				<Col xs={12} xl={6}>
+				<CreateGuild finish={createGuildCallback}></CreateGuild>
+				</Col>
+				</Row>
+			}
+			{!intro && raidNight != null &&
 				<h1>{raidNight ? 'Raid' : 'Rot'} Loot</h1>
 			}
-			{raidNight == null &&
+			{!intro && raidNight == null &&
 				<>
 					<Row>
 					<Col xs={12} xl={6}>
