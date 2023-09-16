@@ -119,7 +119,7 @@ public class LootService
 			.Select(x =>
 			{
 				var request = x.First();
-				return $"{request.Loot.Name} | {request.AltName ?? request.Player.Name} | x{x.Sum(y => y.Quantity)}";
+				return new LootOutput(request.Loot.Name, request.AltName ?? request.Player.Name, x.Sum(y => y.Quantity));
 			})
 			.ToArray();
 
@@ -129,14 +129,23 @@ public class LootService
 			.Select(x => new
 			{
 				x.Name,
-				Quantity = x.RaidQuantity - x.LootRequests.Count(x => x.Granted && !x.Archived)
+				Quantity = x.RaidQuantity - x.LootRequests.Count(x => x.Granted && !x.Archived),
 			})
 			.Where(x => x.Quantity > 0)
-			.Select(x => $"{x.Name} | ROT | x{x.Quantity}")
+			.Select(x => new LootOutput(x.Name, "ROT", x.Quantity))
 			.ToArray();
 
-		return string.Join(Environment.NewLine, grantedLoot.Concat(rotLoot));
+		var lootAndRot = grantedLoot.Concat(rotLoot).ToArray();
+		if (lootAndRot.Length == 0) { return ""; }
+		var maxLoot = lootAndRot.Max(x => x.Loot.Length);
+		var maxName = lootAndRot.Max(x => x.Name.Length);
+		var format = $"{{0,-{maxLoot + 1}}} | {{1,-{maxName + 2}}} | x{{2}}";
+		var output = lootAndRot.Select(x => string.Format(format, x.Loot, x.Name, x.Quantity));
+
+		return string.Join(Environment.NewLine, output);
 	}
+
+	public record LootOutput(string Loot, string Name, int Quantity);
 
 	public async Task RefreshLock(int guildId, bool locked)
 	{
