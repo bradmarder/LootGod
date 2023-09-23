@@ -12,7 +12,7 @@ export default function CreateGuild(props: { finish: () => void }) {
 
 	const createGuild = () => {
 		setIsLoading(true);
-		const data = { LeaderName, GuildName, Server };
+		const data = { LeaderName, GuildName, Server: Number(Server) };
 		axios
 			.post<string>('/CreateGuild', data)
 			.then(x => {
@@ -38,8 +38,8 @@ export default function CreateGuild(props: { finish: () => void }) {
 					<Form.Label>Server</Form.Label>
 					<Form.Select value={Server} onChange={e => setServer(e.target.value)}>
 						<option value=''>Select Server</option>
-						{servers.map(x =>
-							<option key={x} value={x}>{x}</option>
+						{[...servers].map(([k, v]) =>
+							<option key={k} value={k}>{v}</option>
 						)}
 					</Form.Select>
 				</Form.Group>

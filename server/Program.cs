@@ -60,10 +60,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<LootService>();
 builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
-builder.Services.ConfigureHttpJsonOptions(options =>
-{
-	options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
-});
+
 var logger = new LoggerConfiguration()
 	.Enrich.FromLogContext()
 	.WriteTo.Console(outputTemplate: "[{Timestamp:u} {Level:u3}] {Message:lj} " + "{Properties:j}{NewLine}{Exception}")
@@ -75,6 +72,7 @@ builder.Services.AddLogging(x => x
 	.AddSerilog(logger)
 	.Configure(y => y.ActivityTrackingOptions = ActivityTrackingOptions.None)
 );
+
 builder.Services.AddRateLimiter(rateLimiterOptions =>
 {
 	rateLimiterOptions.AddFixedWindowLimiter("SingleDailyUsage", x =>
@@ -150,7 +148,8 @@ app.MapGet("Backup", (LootGodContext db, string key) =>
 	EnsureOwner(key);
 	db.Database.ExecuteSqlRaw($"VACUUM INTO '{backup}'");
 	var stream = File.OpenRead(backup);
-	var name = $"backup-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}.db";
+	var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+	var name = $"backup-{now}.db";
 	return Results.Stream(stream, fileDownloadName: name);
 });
 
@@ -683,14 +682,16 @@ app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService) =
 {
 	var guildId = lootService.GetGuildId();
 	var oneHundredEightyDaysAgo = DateTimeOffset.UtcNow.AddDays(-180).ToUnixTimeSeconds();
-	var ninetyDaysAgo = DateTime.UtcNow.AddDays(-90);
-	var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
-	var ninety = DateOnly.FromDateTime(ninetyDaysAgo);
-	var thirty = DateOnly.FromDateTime(thirtyDaysAgo);
+	var ninety = DateTime.UtcNow.AddDays(-90);
+	var thirty = DateTime.UtcNow.AddDays(-30);
+	var ninetyDaysAgo = DateOnly.FromDateTime(ninety);
+	var thirtyDaysAgo = DateOnly.FromDateTime(thirty);
 
 	var playerMap = db.Players
+		.AsNoTracking()
 		.Where(x => x.GuildId == guildId)
-		.ToDictionary(x => x.Id, x => (x.Name, x.MainId, x.RankId, x.Hidden, x.Admin));
+		.Where(x => x.Active == true)
+		.ToDictionary(x => x.Id, x => x);
 	var altMainMap = playerMap
 		.Where(x => x.Value.MainId is not null)
 		.ToDictionary(x => x.Key, x => x.Value.MainId!.Value);
@@ -708,10 +709,10 @@ app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService) =
 		.Select(x => DateOnly.FromDateTime(x.DateTime))
 		.ToHashSet();
 	var oneHundredEightDayMaxCount = uniqueDates.Count;
-	var ninetyDayMaxCount = uniqueDates.Count(x => x > ninety);
-	var thirtyDayMaxCount = uniqueDates.Count(x => x > thirty);
+	var ninetyDayMaxCount = uniqueDates.Count(x => x > ninetyDaysAgo);
+	var thirtyDayMaxCount = uniqueDates.Count(x => x > thirtyDaysAgo);
 
-	return dumps
+	var raidPlayers = dumps
 		.Select(x => altMainMap.TryGetValue(x.PlayerId, out var mainId)
 			? new RaidDump(x.Timestamp, mainId)
 			: x)
@@ -721,7 +722,17 @@ app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService) =
 			x => x
 				.Select(y => DateTimeOffset.FromUnixTimeSeconds(y.Timestamp))
 				.Select(y => DateOnly.FromDateTime(y.DateTime))
-				.ToHashSet())
+				.ToHashSet());
+
+	// if there are zero raid dumps for mains, include them in RA
+	playerMap
+		.Select(x => x.Value)
+		.Where(x => x.MainId is null)
+		.Where(x => x.Alt != true)
+		.ToList()
+		.ForEach(x => raidPlayers.TryAdd(x, new()));
+
+	return raidPlayers
 		.Select(x => new RaidAttendanceDto
 		{
 			Name = x.Key.Name,
@@ -729,8 +740,8 @@ app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService) =
 			Admin = x.Key.Admin,
 			Rank = x.Key.RankId is null ? "unknown" : rankIdToNameMap[x.Key.RankId.Value],
 
-			_30 = (byte)(thirtyDayMaxCount == 0 ? 0 : Math.Round(100d * x.Value.Count(y => y > thirty) / thirtyDayMaxCount, 0, MidpointRounding.AwayFromZero)),
-			_90 = (byte)(ninetyDayMaxCount == 0 ? 0 : Math.Round(100d * x.Value.Count(y => y > ninety) / ninetyDayMaxCount, 0, MidpointRounding.AwayFromZero)),
+			_30 = (byte)(thirtyDayMaxCount == 0 ? 0 : Math.Round(100d * x.Value.Count(y => y > thirtyDaysAgo) / thirtyDayMaxCount, 0, MidpointRounding.AwayFromZero)),
+			_90 = (byte)(ninetyDayMaxCount == 0 ? 0 : Math.Round(100d * x.Value.Count(y => y > ninetyDaysAgo) / ninetyDayMaxCount, 0, MidpointRounding.AwayFromZero)),
 			_180 = (byte)(oneHundredEightDayMaxCount == 0 ? 0 : Math.Round(100d * x.Value.Count() / oneHundredEightDayMaxCount, 0, MidpointRounding.AwayFromZero)),
 		})
 		.OrderBy(x => x.Name)
@@ -743,10 +754,11 @@ app.MapGet("GetGrantedLootOutput", (LootService lootService) =>
 
 	var output = lootService.GetGrantedLootOutput();
 	var bytes = Encoding.UTF8.GetBytes(output);
+	var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
 	return Results.File(bytes,
 		contentType: "text/plain",
-		fileDownloadName: "RaidLootOutput-" + DateTimeOffset.UtcNow.ToUnixTimeSeconds() + ".txt");
+		fileDownloadName: $"RaidLootOutput-{now}.txt");
 });
 
 app.MapGet("GetPasswords", (LootGodContext db, LootService lootService) =>
@@ -763,10 +775,11 @@ app.MapGet("GetPasswords", (LootGodContext db, LootService lootService) =>
 		.ToArray();
 	var data = string.Join(Environment.NewLine, namePasswordsMap);
 	var bytes = Encoding.UTF8.GetBytes(data);
+	var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
 	return Results.File(bytes,
 		contentType: "text/plain",
-		fileDownloadName: "GuildPasswords-" + DateTimeOffset.UtcNow.ToUnixTimeSeconds() + ".txt");
+		fileDownloadName: $"GuildPasswords-{now}.txt");
 });
 
 await app.RunAsync(cts.Token);
