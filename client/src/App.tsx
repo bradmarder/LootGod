@@ -36,9 +36,11 @@ export default function App() {
 	const [requests, setRequests] = useState<ILootRequest[]>([]);
 	const [loots, setLoots] = useState<ILoot[]>([]);
 	const [cacheKey, setCacheKey] = useState(0);
+	const [linkedAltsCacheKey, setLinkedAltsCacheKey] = useState(0);
 	const [intro, setIntro] = useState(!hasKey);
 
 	const refreshCache = () => setCacheKey(Date.now());
+	const refreshLinkedAltsCacheKey = () => setLinkedAltsCacheKey(Date.now());
 	const getAdminStatus = (signal: AbortSignal) => {
 		axios
 			.get<boolean>('/GetAdminStatus', { signal })
@@ -168,11 +170,11 @@ export default function App() {
 			{raidNight != null &&
 				<Row>
 					<Col xs={12} xl={6}>
-						<CreateLootRequest requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight}></CreateLootRequest>
+						<CreateLootRequest requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight} linkedAltsCacheKey={linkedAltsCacheKey}></CreateLootRequest>
 						<br />
 						<LootRequests requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight}></LootRequests>
 						<br />
-						<LinkAlt></LinkAlt>
+						<LinkAlt refreshLinkedAltsCacheKey={refreshLinkedAltsCacheKey}></LinkAlt>
 						<br />
 						{isAdmin &&
 							<GrantedLoots requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight}></GrantedLoots>

@@ -10,7 +10,6 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
-using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 var adminKey = builder.Configuration["ADMIN_KEY"]!;
@@ -725,12 +724,12 @@ app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService) =
 				.ToHashSet());
 
 	// if there are zero raid dumps for mains, include them in RA
-	playerMap
-		.Select(x => x.Value)
-		.Where(x => x.MainId is null)
-		.Where(x => x.Alt != true)
-		.ToList()
-		.ForEach(x => raidPlayers.TryAdd(x, new()));
+	//playerMap
+	//	.Select(x => x.Value)
+	//	.Where(x => x.MainId is null)
+	//	.Where(x => x.Alt != true)
+	//	.ToList()
+	//	.ForEach(x => raidPlayers.TryAdd(x, new()));
 
 	return raidPlayers
 		.Select(x => new RaidAttendanceDto

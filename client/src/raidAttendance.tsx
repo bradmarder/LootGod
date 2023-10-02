@@ -40,6 +40,10 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 	return (
 		<>
 			<h3>Raid Attendance</h3>
+			<FormCheck>
+				<FormCheck.Input checked={true} disabled={true} />
+				<FormCheck.Label>Show only players with *ANY* RA for past 180 days</FormCheck.Label>
+			</FormCheck>
 			<FormCheck id='reqForLabelClick'>
 				<FormCheck.Input checked={filter75} onChange={e => setFilter75(e.target.checked)} />
 				<FormCheck.Label>Show only players with 75%+ RA for past 30 days</FormCheck.Label>

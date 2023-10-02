@@ -28,6 +28,7 @@ declare interface IContext {
 	readonly requests: ReadonlyArray<ILootRequest>;
 	readonly spell?: boolean;
 	readonly lootLocked?: boolean;
+	readonly linkedAltsCacheKey?: number;
 }
 declare interface ILootLock {
 	readonly lock: boolean;

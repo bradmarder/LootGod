@@ -1,25 +1,27 @@
 {
 	"compilerOptions": {
-		"target": "ES6",
-		"lib": [
-			"dom",
-			"dom.iterable",
-			"esnext"
-		],
+		"esModuleInterop": true,
 		"skipLibCheck": true,
-		"strict": true,
-		"alwaysStrict": true,
+		"target": "es2022",
+		"verbatimModuleSyntax": true,
+		"allowJs": true,
+		"moduleDetection": "force",
 		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"allowUnusedLabels": false,
+		"allowUnreachableCode": false,
+		"exactOptionalPropertyTypes": true,
 		"noFallthroughCasesInSwitch": true,
+		"noImplicitOverride": true,
+		"noImplicitReturns": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noUncheckedIndexedAccess": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
 		"module": "esnext",
-		"moduleResolution": "node",
-		"resolveJsonModule": true,
-		"isolatedModules": true,
+		"moduleResolution": "Node",
 		"noEmit": true,
-		"jsx": "react-jsx"
-	},
-	"include": [
-		"src",
-		"types/global.d.ts"
-	]
+		"jsx": "react-jsx",
+		"lib": ["es2022", "dom", "dom.iterable"]
+	}
 }

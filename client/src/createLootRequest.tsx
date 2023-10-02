@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Row, Col, Alert, Button, Form } from 'react-bootstrap';
 import axios from 'axios';
 import classes from './eqClasses';
@@ -6,13 +6,14 @@ import { EQClass } from './eqClass';
 
 export default function CreateLootRequest(props: IContext) {
 
-	const [isLoading, setIsLoading] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
 	const [altName, setAltName] = useState('');
 	const [spell, setSpell] = useState('');
 	const [currentItem, setCurrentItem] = useState('');
 	const [quantity, setQuantity] = useState(1);
 	const [eqClass, setClass] = useState('');
 	const [lootId, setLootId] = useState(0);
+	const [linkedAlts, setLinkedAlts] = useState<string[]>([]);
 
 	const hasQtyLoots = props.loots.filter(x => (props.raidNight ? x.raidQuantity : x.rotQuantity) > 0);
 
@@ -68,6 +69,13 @@ export default function CreateLootRequest(props: IContext) {
 
 		setLootId(lootId);
 	};
+	const loadLinkedAlts = () => {
+        axios
+            .get<string[]>('/GetLinkedAlts')
+            .then(x => setLinkedAlts(x.data))
+            .finally(() => setIsLoading(false));
+    };
+    useEffect(loadLinkedAlts, [props.linkedAltsCacheKey]);
 
 	return (
 		<Alert variant='primary'>
@@ -77,8 +85,13 @@ export default function CreateLootRequest(props: IContext) {
 					<Row>
 						<Col xs={12} md={6}>
 							<Form.Group className="mb-3">
-								<Form.Label>ALT name (Leave blank if for main)</Form.Label>
-								<Form.Control type="text" placeholder="Enter ALT name" value={altName} onChange={e => setAltName(e.target.value)} />
+								<Form.Label>Main / Alt (Alts must be guild tagged and linked to you)</Form.Label>
+								<Form.Select value={altName} onChange={e => setAltName(e.target.value)}>
+									<option value=''>Main</option>
+									{linkedAlts.map(name =>
+										<option key={name} value={name}>{name}</option>
+									)}
+								</Form.Select>
 							</Form.Group>
 						</Col>
 						<Col xs={12} md={6}>
@@ -86,7 +99,7 @@ export default function CreateLootRequest(props: IContext) {
 								<Form.Label>Class</Form.Label>
 								<Form.Select value={eqClass} onChange={e => setClass(e.target.value)}>
 									<option>Select Class</option>
-									{classes.map((item, i) =>
+									{classes.map(item =>
 										<option key={item} value={item}>{item}</option>
 									)}
 								</Form.Select>

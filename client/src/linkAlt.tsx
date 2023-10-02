@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Alert, Button, Form, ListGroup } from 'react-bootstrap';
 import axios from 'axios';
 
-export default function LinkAlt() {
+export default function LinkAlt(props: { refreshLinkedAltsCacheKey: () => void }) {
 
 	const [isLoading, setIsLoading] = useState(true);
 	const [altName, setAltName] = useState('');
@@ -18,6 +18,7 @@ export default function LinkAlt() {
                 setResult(x.data);
                 setAltName('');
                 loadLinkedAlts();
+                props.refreshLinkedAltsCacheKey();
             })
             .finally(() => setIsLoading(false));
 	};
@@ -27,7 +28,7 @@ export default function LinkAlt() {
             .then(x => setLinkedAlts(x.data))
             .finally(() => setIsLoading(false));
     };
-    useEffect(() => loadLinkedAlts(), []);
+    useEffect(loadLinkedAlts, []);
 
 	return (
 		<Alert variant='dark'>
