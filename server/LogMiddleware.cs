@@ -3,19 +3,8 @@ using Serilog.Context;
 
 namespace LootGod;
 
-public class LogMiddleware
+public class LogMiddleware(RequestDelegate _next, ILogger<LogMiddleware> _logger, IServiceScopeFactory _scopeFactory)
 {
-	private readonly RequestDelegate _next;
-	private readonly ILogger _logger;
-	private readonly IServiceScopeFactory _scopeFactory;
-
-	public LogMiddleware(RequestDelegate next, ILogger<LogMiddleware> logger, IServiceScopeFactory scopeFactory)
-	{
-		_next = next;
-		_logger = logger;
-		_scopeFactory = scopeFactory;
-	}
-
 	public async Task InvokeAsync(HttpContext context)
 	{
 		await using var scope = _scopeFactory.CreateAsyncScope();

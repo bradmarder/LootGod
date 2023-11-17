@@ -6,10 +6,10 @@ RUN npm ci
 COPY /client/ ./
 RUN npm run build
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine AS api
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS api
 WORKDIR /app
 COPY server/LootGod.csproj ./
-ARG RUNTIME=alpine-x64
+ARG RUNTIME=linux-musl-x64
 RUN dotnet restore --runtime $RUNTIME
 COPY server/. ./
 RUN dotnet publish -c Release -o out \
@@ -18,7 +18,7 @@ RUN dotnet publish -c Release -o out \
 	--self-contained true \
 	/p:PublishSingleFile=true
 
-FROM mcr.microsoft.com/dotnet/runtime-deps:7.0-alpine
+FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-alpine
 WORKDIR /app
 COPY --from=api /app/out .
 COPY --from=client /app/dist wwwroot

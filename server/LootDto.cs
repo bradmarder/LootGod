@@ -1,8 +1,10 @@
-﻿namespace LootGod;
+﻿using System.Collections.Frozen;
+
+namespace LootGod;
 
 public record LootDto
 {
-	private static readonly HashSet<string> _spellPrefixes = new(StringComparer.OrdinalIgnoreCase)
+	private static readonly FrozenSet<string> _spellPrefixes = new[]
 	{
 		"Minor",
 		"Lesser",
@@ -10,19 +12,21 @@ public record LootDto
 		"Greater",
 		"Glowing",
 		"Captured",
-	};
-	private static readonly HashSet<string> _spellSuffixes = new(StringComparer.OrdinalIgnoreCase)
+	}.ToFrozenSet();
+
+	private static readonly FrozenSet<string> _spellSuffixes = new[]
 	{
 		"Rune",
 		"Ethernere",
 		"Shadowscribed Parchment",
 		"Shar Vahl",
-	};
-	private static readonly HashSet<string> _nuggets = new(StringComparer.OrdinalIgnoreCase)
+	}.ToFrozenSet();
+
+	private static readonly FrozenSet<string> _nuggets = new[]
 	{
 		"Diamondized Restless Ore",
 		"Calcified Bloodied Ore",
-	};
+	}.ToFrozenSet();
 
 	public required int Id { get; init; }
 	public required byte RaidQuantity { get; init; }

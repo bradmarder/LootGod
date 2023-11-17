@@ -3,21 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LootGod;
 
-public class LootService
+public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHubContext<LootHub> _hub, IHttpContextAccessor _httpContextAccessor)
 {
-	private readonly ILogger _logger;
-	private readonly LootGodContext _db;
-	private readonly IHubContext<LootHub> _hub;
-	private readonly IHttpContextAccessor _httpContextAccessor;
-
-	public LootService(ILogger<LootService> logger, LootGodContext db, IHubContext<LootHub> hub, IHttpContextAccessor httpContextAccessor)
-	{
-		_logger = logger;
-		_db = db;
-		_hub = hub;
-		_httpContextAccessor = httpContextAccessor;
-	}
-
 	public Guid? GetPlayerKey() =>
 		_httpContextAccessor.HttpContext!.Request.Headers.TryGetValue("Player-Key", out var headerKey) ? Guid.Parse(headerKey.ToString())
 		: _httpContextAccessor.HttpContext!.Request.Query.TryGetValue("playerKey", out var queryKey) ? Guid.Parse(queryKey.ToString())

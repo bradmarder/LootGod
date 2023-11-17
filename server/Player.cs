@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.Frozen;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Security.Cryptography;
@@ -9,7 +10,7 @@ namespace LootGod;
 [Index(nameof(Key), IsUnique = true)]
 public class Player
 {
-	private static readonly IReadOnlyDictionary<string, EQClass> _classNameToEnumMap = new Dictionary<string, EQClass>
+	private static readonly FrozenDictionary<string, EQClass> _classNameToEnumMap = new Dictionary<string, EQClass>
 	{
 		["Bard"] = EQClass.Bard,
 		["Beastlord"] = EQClass.Beastlord,
@@ -27,7 +28,7 @@ public class Player
 		["Shaman"] = EQClass.Shaman,
 		["Warrior"] = EQClass.Warrior,
 		["Wizard"] = EQClass.Wizard,
-	};
+	}.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
 	static Guid GetRandomGuid()
 	{

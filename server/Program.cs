@@ -112,7 +112,7 @@ app.UseStaticFiles(new StaticFileOptions
 	{
 		x.Context.Response.Headers.ContentSecurityPolicy = "default-src 'self'; child-src 'none';";
 		x.Context.Response.Headers.XFrameOptions = "DENY";
-		x.Context.Response.Headers.Add("Referrer-Policy", "no-referrer");
+		x.Context.Response.Headers["Referrer-Policy"] = "no-referrer";
 	}
 });
 app.MapHub<LootHub>("/ws/lootHub");
@@ -145,7 +145,7 @@ app.MapGet("Vacuum", (LootGodContext db, string key) =>
 app.MapGet("Backup", (LootGodContext db, string key) =>
 {
 	EnsureOwner(key);
-	db.Database.ExecuteSqlRaw($"VACUUM INTO '{backup}'");
+	db.Database.ExecuteSql($"VACUUM INTO '{backup}'");
 	var stream = File.OpenRead(backup);
 	var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 	var name = $"backup-{now}.db";
@@ -592,7 +592,7 @@ app.MapPost("ImportGuildDump", async (LootGodContext db, LootService lootService
 	db.SaveChanges();
 
 	return Results.Ok();
-});
+}).DisableAntiforgery();
 
 app.MapPost("ImportRaidDump", async (LootGodContext db, LootService lootService, IFormFile file, int offset) =>
 {
@@ -649,7 +649,7 @@ app.MapPost("ImportRaidDump", async (LootGodContext db, LootService lootService,
 		db.SaveChanges();
 	}
 	catch (DbUpdateException) { }
-});
+}).DisableAntiforgery();
 
 app.MapPost("BulkImportRaidDump", async (LootGodContext db, LootService lootService, IFormFile file, int offset) =>
 {
@@ -675,7 +675,7 @@ app.MapPost("BulkImportRaidDump", async (LootGodContext db, LootService lootServ
 		var res = await httpClient.PostAsync($"http://{IPAddress.Loopback}:{port}/api/ImportRaidDump?offset={offset}", form);
 		res.EnsureSuccessStatusCode();
 	}
-});
+}).DisableAntiforgery();
 
 app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService) =>
 {
@@ -741,7 +741,7 @@ app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService) =
 
 			_30 = (byte)(thirtyDayMaxCount == 0 ? 0 : Math.Round(100d * x.Value.Count(y => y > thirtyDaysAgo) / thirtyDayMaxCount, 0, MidpointRounding.AwayFromZero)),
 			_90 = (byte)(ninetyDayMaxCount == 0 ? 0 : Math.Round(100d * x.Value.Count(y => y > ninetyDaysAgo) / ninetyDayMaxCount, 0, MidpointRounding.AwayFromZero)),
-			_180 = (byte)(oneHundredEightDayMaxCount == 0 ? 0 : Math.Round(100d * x.Value.Count() / oneHundredEightDayMaxCount, 0, MidpointRounding.AwayFromZero)),
+			_180 = (byte)(oneHundredEightDayMaxCount == 0 ? 0 : Math.Round(100d * x.Value.Count / oneHundredEightDayMaxCount, 0, MidpointRounding.AwayFromZero)),
 		})
 		.OrderBy(x => x.Name)
 		.ToArray();

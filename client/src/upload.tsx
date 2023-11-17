@@ -6,7 +6,7 @@ export default function Upload(props: { refreshCache: () => void }) {
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [key, setKey] = useState(0);
-	const [file, setFile] = useState<File | null>(null);
+	const [file, setFile] = useState<File | undefined>(undefined);
 	const [uploaded, setUploaded] = useState<string[]>([]);
 
 	const uploadDump = async () => {
@@ -22,7 +22,7 @@ export default function Upload(props: { refreshCache: () => void }) {
 			props.refreshCache();
 		}
 		finally {
-			setFile(null);
+			setFile(undefined);
 			setKey(key + 1);
 			setIsLoading(false);
 		}

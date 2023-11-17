@@ -4,19 +4,8 @@ using Serilog.Context;
 
 namespace LootGod;
 
-public class LootHub : Hub
+public class LootHub(LootGodContext _db, LootService _service, ILogger<LootHub> _logger) : Hub
 {
-	private readonly LootGodContext _db;
-	private readonly LootService _service;
-	private readonly ILogger _logger;
-
-	public LootHub(LootGodContext db, LootService service, ILogger<LootHub> logger)
-	{
-		_db = db;
-		_service = service;
-		_logger = logger;
-	}
-
 	public override async Task OnConnectedAsync()
 	{
 		var key = Guid.Parse(Context.GetHttpContext()!.Request.Query["key"].ToString());
