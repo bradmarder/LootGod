@@ -114,6 +114,7 @@ export default function App() {
 			.withUrl('/ws/lootHub?key=' + localStorage.getItem('key'))
 			.configureLogging(LogLevel.Information)
 			.withAutomaticReconnect()
+			.withStatefulReconnect()
 			.build();
 
 		connection.on("lock", setLootLock);

@@ -11,7 +11,7 @@ using System.IO.Compression;
 using System.Net;
 using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateSlimBuilder(args);
 var adminKey = builder.Configuration["ADMIN_KEY"]!;
 var backup = builder.Configuration["BACKUP_URL"]!;
 var source = builder.Configuration["DATABASE_URL"]!;
@@ -54,7 +54,7 @@ else
 	conn.Dispose();
 }
 
-builder.Services.AddDbContextPool<LootGodContext>(x => x.UseSqlite(connString.ConnectionString));
+builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite(connString.ConnectionString));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<LootService>();
@@ -115,10 +115,10 @@ app.UseStaticFiles(new StaticFileOptions
 		x.Context.Response.Headers["Referrer-Policy"] = "no-referrer";
 	}
 });
-app.MapHub<LootHub>("/ws/lootHub");
+app.MapHub<LootHub>("/ws/lootHub", x => x.AllowStatefulReconnects = true);
 app.UsePathBase("/api");
 app.UseMiddleware<LogMiddleware>();
-app.MapGet("test", () => "Hello World!");
+app.MapGet("test", () => "Hello World!").ShortCircuit();
 
 app.MapPost("GuildDiscord", (LootGodContext db, LootService lootService, string webhook) =>
 {
@@ -672,7 +672,7 @@ app.MapPost("BulkImportRaidDump", async (LootGodContext db, LootService lootServ
 		};
 		form.Headers.Add("Player-Key", playerKey!.ToString());
 		var port = aspnetcore_urls.Split(':').Last();
-		var res = await httpClient.PostAsync($"http://{IPAddress.Loopback}:{port}/api/ImportRaidDump?offset={offset}", form);
+		using var res = await httpClient.PostAsync($"http://{IPAddress.Loopback}:{port}/api/ImportRaidDump?offset={offset}", form);
 		res.EnsureSuccessStatusCode();
 	}
 }).DisableAntiforgery();
