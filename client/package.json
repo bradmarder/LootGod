@@ -3,20 +3,19 @@
 	"version": "1.0.0",
 	"private": true,
 	"dependencies": {
-		"@microsoft/signalr": "8.0.0",
-		"@types/react": "18.2.37",
-		"@types/react-dom": "18.2.15",
-		"axios": "1.6.2",
+		"@types/react": "18.2.52",
+		"@types/react-dom": "18.2.18",
+		"axios": "1.6.7",
 		"bootstrap": "5.3.2",
 		"react": "18.2.0",
-		"react-bootstrap": "2.9.1",
+		"react-bootstrap": "2.10.0",
 		"react-dom": "18.2.0",
-		"typescript": "5.2.2"
+		"typescript": "5.3.3"
 	},
 	"source": "public/index.html",
 	"browserslist": "> 0.5%, last 2 versions, not dead",
 	"scripts": {
-		"start": "parcel --https --port 1234 --hmr-port 1236",
+		"start": "parcel --port 1234 --cert %HOMEPATH%\\localhost.pem --key %HOMEPATH%\\localhost.key",
 		"build": "parcel build --no-source-maps"
 	},
 	"eslintConfig": {
@@ -26,7 +25,7 @@
 	},
 	"devDependencies": {
 		"buffer": "6.0.3",
-		"parcel": "2.10.3",
+		"parcel": "2.11.0",
 		"process": "0.11.10"
 	}
 }
