@@ -40,7 +40,7 @@ public class LootRequest
 	/// <summary>
 	/// Required only if loot type is a spell or nugget
 	/// </summary>
-	[MaxLength(255)]
+	[StringLength(255)]
 	public string? Spell { get; set; }
 
 	public EQClass? Class { get; set; }
@@ -58,7 +58,7 @@ public class LootRequest
 	[Range(1, 255)]
 	public byte Quantity { get; set; }
 
-	[MaxLength(255)]
+	[StringLength(255)]
 	public string CurrentItem { get; set; } = null!;
 
 	public virtual bool IsAlt => AltName is not null;

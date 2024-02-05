@@ -4,12 +4,5 @@
 		"pathRewrite": {
 			"^/api": "/api"
 		}
-	},
-	"/ws": {
-		"ws": true,
-		"target": "http://localhost:5000/",
-		"pathRewrite": {
-			"^/ws": "/ws"
-		}
 	}
 }

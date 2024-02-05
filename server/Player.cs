@@ -10,7 +10,7 @@ namespace LootGod;
 [Index(nameof(Key), IsUnique = true)]
 public class Player
 {
-	private static readonly FrozenDictionary<string, EQClass> _classNameToEnumMap = new Dictionary<string, EQClass>
+	public static readonly FrozenDictionary<string, EQClass> _classNameToEnumMap = new Dictionary<string, EQClass>
 	{
 		["Bard"] = EQClass.Bard,
 		["Beastlord"] = EQClass.Beastlord,
@@ -48,7 +48,7 @@ public class Player
 		Active = true;
 		Admin = true;
 		Key = GetRandomGuid();
-		Class = EQClass.Bard;
+		Class = EQClass.Bard; // TODO: FIX THIS!!! class isn't updated ever
 		Guild = new(guildName, server);
 		Rank = new("Leader", Guild);
 	}

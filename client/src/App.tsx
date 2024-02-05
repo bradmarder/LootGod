@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Container, Row, Col, Button, Alert } from 'react-bootstrap';
-import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import axios from 'axios';
 import LootRequests from './lootRequests';
 import CreateLootRequest from './createLootRequest';
@@ -30,6 +29,7 @@ axios.defaults.baseURL = 'api/';
 export default function App() {
 	const [raidNight, setRaidNight] = useState<boolean | null>(null);
 	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState(false);
 	const [isAdmin, setIsAdmin] = useState(false);
 	const [isLeader, setIsLeader] = useState(false);
 	const [lootLock, setLootLock] = useState(false);
@@ -110,20 +110,17 @@ export default function App() {
 	useEffect(() => {
 		if (intro) { return; }
 
-		const connection = new HubConnectionBuilder()
-			.withUrl('/ws/lootHub?key=' + localStorage.getItem('key'))
-			.configureLogging(LogLevel.Information)
-			.withAutomaticReconnect()
-			.withStatefulReconnect()
-			.build();
+		const eventSource = new EventSource('/api/SSE?playerKey=' + localStorage.getItem('key'));
+		eventSource.addEventListener('lock', e => setLootLock(e.data == 'True'));
+		eventSource.addEventListener('loots', e => setLoots(JSON.parse(e.data)));
+		eventSource.addEventListener('requests', e => setRequests(JSON.parse(e.data)));
+		eventSource.onopen = () => console.log('SSE connection established');
+		eventSource.onerror = () => {
+			console.error('SSE connection error');
+			setError(true);
+		};
 
-		connection.on("lock", setLootLock);
-		connection.on("loots", setLoots);
-		connection.on("requests", setRequests);
-		connection.onclose(x => console.error(x || 'HubConnection.onclose'));
-		connection.start();
-
-		return () => { connection.stop(); }
+		return () => eventSource.close();
 	}, [intro]);
 
 	const createGuildCallback = () => {
@@ -133,17 +130,26 @@ export default function App() {
 
 	return (
 		<Container fluid>
-			{intro &&
+			{error &&
+				<Row>
+				<Col xs={12} xl={6}>
+				<Alert variant={'danger'}>
+					<p>Disconnected from the server, please refresh the page</p>
+				</Alert>
+				</Col>
+				</Row>
+			}
+			{!error && intro &&
 				<Row>
 				<Col xs={12} xl={6}>
 				<CreateGuild finish={createGuildCallback}></CreateGuild>
 				</Col>
 				</Row>
 			}
-			{!intro && raidNight != null &&
+			{!error && !intro && raidNight != null &&
 				<h1>{raidNight ? 'Raid' : 'Rot'} Loot</h1>
 			}
-			{!intro && raidNight == null &&
+			{!error && !intro && raidNight == null &&
 				<>
 					<Row>
 					<Col xs={12} xl={6}>
@@ -168,7 +174,7 @@ export default function App() {
 					</Row>
 				</>
 			}
-			{raidNight != null &&
+			{!error && raidNight != null &&
 				<Row>
 					<Col xs={12} xl={6}>
 						<CreateLootRequest requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight} linkedAltsCacheKey={linkedAltsCacheKey}></CreateLootRequest>

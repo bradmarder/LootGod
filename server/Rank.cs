@@ -27,7 +27,7 @@ public class Rank
 	public DateTime CreatedDate { get; set; }
 
 	[Required]
-	[MaxLength(byte.MaxValue)]
+	[StringLength(byte.MaxValue)]
 	public string Name { get; set; } = null!;
 
 	[ForeignKey(nameof(GuildId))]

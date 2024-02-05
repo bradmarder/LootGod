@@ -1,10 +1,19 @@
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Concurrent;
+using System.Text.Json;
+using System.Threading.Channels;
 
 namespace LootGod;
 
-public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHubContext<LootHub> _hub, IHttpContextAccessor _httpContextAccessor)
+public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttpContextAccessor _httpContextAccessor)
 {
+	private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+	private static readonly Channel<string> PayloadChannel = Channel.CreateUnbounded<string>(new() { SingleReader = true, SingleWriter = false });
+	private static readonly ConcurrentDictionary<string, (int GuildId, HttpResponse Response)> Payloads = new();
+
+	//var info = System.Text.Json.Serialization.Metadata.JsonTypeInfo.CreateJsonTypeInfo<string>(new JsonSerializerOptions());
+	//await JsonSerializer.SerializeAsync(ctx.Response.Body, item, typeof(LootDto), SourceGenerationContext.Default, ct);
+
 	public Guid? GetPlayerKey() =>
 		_httpContextAccessor.HttpContext!.Request.Headers.TryGetValue("Player-Key", out var headerKey) ? Guid.Parse(headerKey.ToString())
 		: _httpContextAccessor.HttpContext!.Request.Query.TryGetValue("playerKey", out var queryKey) ? Guid.Parse(queryKey.ToString())
@@ -134,18 +143,77 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHubC
 
 	public record LootOutput(string Loot, string Name, int Quantity);
 
+	public void AddPayloadConnection(string connectionId, int guildId, HttpResponse response)
+	{
+		Payloads.TryAdd(connectionId, (guildId, response));
+
+		var key = GetPlayerKey();
+		var player = _db.Players
+			.AsNoTracking()
+			.Include(x => x.Guild)
+			.FirstOrDefault(x => x.Key == key);
+
+		if (player is not null)
+		{
+			using var _ = _logger.BeginScope(new
+			{ 
+				IP = GetIPAddress(),
+				Name = player.Name,
+				GuildName = player.Guild.Name,
+			});
+			_logger.LogWarning(nameof(AddPayloadConnection));
+		}
+	}
+
+	public void RemovePayloadConnection(string connectionId)
+	{
+		_logger.LogWarning("REMOVE PAYLOAD " + connectionId);
+		Payloads.Remove(connectionId, out _);
+	}
+
+	public async Task DeliverPayloads()
+	{
+		await foreach (var data in PayloadChannel.Reader.ReadAllAsync())
+		{
+			var chunks = data.Split('|');
+			var guildId = int.Parse(chunks[0]);
+			var start = DateTime.UtcNow;
+
+			foreach (var payload in Payloads)
+			{
+				if (payload.Value.GuildId == guildId)
+				{
+					try
+					{
+						//await payload.Response.WriteAsync($"id: {id++}\n", ct);
+						await payload.Value.Response.WriteAsync($"event: {chunks[1]}\n");
+						await payload.Value.Response.WriteAsync($"data: {chunks[2]}\n");
+						await payload.Value.Response.WriteAsync("\n\n");
+						await payload.Value.Response.Body.FlushAsync();
+					}
+					catch (Exception ex)
+					{
+						_logger.LogError(ex, "Orphan connection removed");
+						RemovePayloadConnection(payload.Key);
+					}
+				}
+			}
+
+			var duration = DateTime.UtcNow - start;
+			_logger.LogWarning($"Payload loop for '{chunks[1]}' completed in {(long)duration.TotalMilliseconds}ms");
+		}
+	}
+
 	public async Task RefreshLock(int guildId, bool locked)
 	{
-		await _hub.Clients
-			.Group(guildId.ToString())
-			.SendAsync("lock", locked);
+		await PayloadChannel.Writer.WriteAsync(guildId + "|lock|" + locked.ToString());
 	}
 
 	public LootDto[] LoadLoots(int guildId)
 	{
 		return _db.Loots
 			.Where(x => x.GuildId == guildId)
-			.Where(x => x.Expansion == Expansion.NoS)
+			.Where(x => x.Expansion == Expansion.NoS || x.Expansion == Expansion.LS)
 			.OrderBy(x => x.Name)
 			.Select(x => new LootDto
 			{
@@ -188,19 +256,15 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHubC
 	public async Task RefreshLoots(int guildId)
 	{
 		var loots = LoadLoots(guildId);
-
-		await _hub.Clients
-			.Group(guildId.ToString())
-			.SendAsync("loots", loots);
+		var json = JsonSerializer.Serialize(loots, _jsonOptions);
+		await PayloadChannel.Writer.WriteAsync(guildId + "|loots|" + json);
 	}
 
 	public async Task RefreshRequests(int guildId)
 	{
 		var requests = LoadLootRequests(guildId);
-
-		await _hub.Clients
-			.Group(guildId.ToString())
-			.SendAsync("requests", requests);
+		var json = JsonSerializer.Serialize(requests, _jsonOptions);
+		await PayloadChannel.Writer.WriteAsync(guildId + "|requests|" + json);
 	}
 
 	public async Task DiscordWebhook(HttpClient httpClient, string output, string discordWebhookUrl)

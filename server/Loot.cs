@@ -9,6 +9,7 @@ public enum Expansion : byte
 	CoV = 0,
 	ToL = 1,
 	NoS = 3,
+	LS = 4,
 }
 
 [Index(nameof(Expansion), nameof(GuildId))]
@@ -35,7 +36,7 @@ public class Loot
 	public int GuildId { get; set; }
 
 	[Required]
-	[MaxLength(255)]
+	[StringLength(255)]
 	public string Name { get; set; } = null!;
 
 	[ForeignKey(nameof(GuildId))]
@@ -44,3 +45,20 @@ public class Loot
 	[InverseProperty(nameof(LootRequest.Loot))]
 	public virtual List<LootRequest> LootRequests { get; } = new();
 }
+
+//[Index(nameof(LootId), nameof(GuildId), IsUnique = true)]
+//public class GuildLoot
+//{
+//	private GuildLoot() { }
+
+//	public int LootId { get; set; }
+//	public int GuildId { get; set; }
+//	public byte RaidQuantity { get; set; }
+//	public byte RotQuantity { get; set; }
+
+//	[ForeignKey(nameof(GuildId))]
+//	public virtual Guild Guild { get; set; } = null!;
+
+//	[ForeignKey(nameof(LootId))]
+//	public virtual Loot Loot { get; set; } = null!;
+//}

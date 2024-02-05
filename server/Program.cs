@@ -3,19 +3,17 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
-using Serilog.Events;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 var adminKey = builder.Configuration["ADMIN_KEY"]!;
 var backup = builder.Configuration["BACKUP_URL"]!;
 var source = builder.Configuration["DATABASE_URL"]!;
-var aspnetcore_urls = builder.Configuration["ASPNETCORE_URLS"]!;
 using var httpClient = new HttpClient();
 using var cts = new CancellationTokenSource();
 
@@ -54,21 +52,29 @@ else
 	conn.Dispose();
 }
 
+builder.WebHost.UseKestrelCore();
+builder.Services.AddRoutingCore();
 builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite(connString.ConnectionString));
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddSignalR();
 builder.Services.AddScoped<LootService>();
 builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+	options.SerializerOptions.TypeInfoResolverChain.Insert(0, LootSerializerContext.Default);
+	options.SerializerOptions.TypeInfoResolverChain.Insert(0, LootRequestSerializerContext.Default);
+	options.SerializerOptions.TypeInfoResolverChain.Insert(0, RaidAttendanceSerializerContext.Default);
+});
 
-var logger = new LoggerConfiguration()
-	.Enrich.FromLogContext()
-	.WriteTo.Console(outputTemplate: "[{Timestamp:u} {Level:u3}] {Message:lj} " + "{Properties:j}{NewLine}{Exception}")
-	.MinimumLevel.Override(nameof(Microsoft), LogEventLevel.Warning)
-	.MinimumLevel.Override(nameof(System), LogEventLevel.Warning)
-	.CreateLogger();
+//var logger = new LoggerConfiguration()
+//	.Enrich.FromLogContext()
+//	.WriteTo.Console(outputTemplate: "[{Timestamp:u} {Level:u3}] {Message:lj} " + "{Properties:j}{NewLine}{Exception}")
+//	.MinimumLevel.Override(nameof(Microsoft), LogEventLevel.Warning)
+//	.MinimumLevel.Override(nameof(System), LogEventLevel.Warning)
+//	.CreateLogger();
 builder.Services.AddLogging(x => x
 	.ClearProviders()
-	.AddSerilog(logger)
+	.AddSimpleConsole(x => { x.SingleLine = true; x.TimestampFormat = "yyyy-MM-dd HH:mm:ss "; x.IncludeScopes = true; })
+	.SetMinimumLevel(LogLevel.Warning)
 	.Configure(y => y.ActivityTrackingOptions = ActivityTrackingOptions.None)
 );
 
@@ -89,6 +95,10 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 	var db = scope.ServiceProvider.GetRequiredService<LootGodContext>();
 
 	db.Database.EnsureCreated();
+
+	_ = scope.ServiceProvider
+		.GetRequiredService<LootService>()
+		.DeliverPayloads();
 }
 
 app.UseExceptionHandler(opt =>
@@ -115,10 +125,30 @@ app.UseStaticFiles(new StaticFileOptions
 		x.Context.Response.Headers["Referrer-Policy"] = "no-referrer";
 	}
 });
-app.MapHub<LootHub>("/ws/lootHub", x => x.AllowStatefulReconnects = true);
 app.UsePathBase("/api");
 app.UseMiddleware<LogMiddleware>();
 app.MapGet("test", () => "Hello World!").ShortCircuit();
+
+app.MapGet("/SSE", async (HttpContext ctx, LootService service) =>
+{
+	var ct = ctx.RequestAborted;
+	var guildId = service.GetGuildId();
+
+	//ctx.Response.Headers.Append("Cache-Control", "no-store");
+	ctx.Response.Headers.Append("Content-Type", "text/event-stream");
+	await ctx.Response.WriteAsync($"data: empty\n\n\n", ct);
+	await ctx.Response.Body.FlushAsync(ct);
+
+	var connectionId = ctx.Connection.Id;
+	service.AddPayloadConnection(connectionId, guildId, ctx.Response);
+	ct.Register(() =>
+	{
+		Console.WriteLine("CT CANCEL");
+		service.RemovePayloadConnection(connectionId);
+	});
+
+	await Task.Delay(TimeSpan.FromMilliseconds(-1), ct);
+});
 
 app.MapPost("GuildDiscord", (LootGodContext db, LootService lootService, string webhook) =>
 {
@@ -197,6 +227,17 @@ app.MapGet("GetArchivedLootRequests", (LootGodContext db, LootService lootServic
 			CurrentItem = x.CurrentItem,
 		})
 		.ToArray();
+});
+
+app.MapPost("CreateLoot", (LootGodContext db, string name) =>
+{
+	var guilds = db.Guilds.ToList();
+	foreach (var g in guilds)
+	{
+		var loot = new Loot(name, Expansion.LS, g);
+		db.Loots.Add(loot);
+	}
+	db.SaveChanges();
 });
 
 app.MapGet("FreeTrade", (LootGodContext db, LootService lootService) =>
@@ -346,7 +387,7 @@ app.MapPost("CreateGuild", (LootGodContext db, CreateGuild dto) =>
 	var lootTemplate = db.Loots
 		.AsNoTracking()
 		.Where(x => x.GuildId == 1)
-		.Where(x => x.Expansion == Expansion.NoS)
+		.Where(x => x.Expansion == Expansion.NoS || x.Expansion == Expansion.LS)
 		.ToArray();
 	var player = new Player(dto.LeaderName, dto.GuildName, dto.Server);
 	var loots = lootTemplate.Select(x => new Loot(x.Name, x.Expansion, player.Guild));
@@ -569,6 +610,9 @@ app.MapPost("ImportGuildDump", async (LootGodContext db, LootService lootService
 			player.Level = dump.Level;
 			player.Alt = dump.Alt;
 			player.Notes = dump.Notes;
+
+			// TODO: shouldn't be necessary, bug with Kyoto class defaulting to Bard
+			player.Class = Player._classNameToEnumMap[dump.Class];
 		}
 		else
 		{
@@ -671,8 +715,7 @@ app.MapPost("BulkImportRaidDump", async (LootGodContext db, LootService lootServ
 			{ content, "file", entry.FullName }
 		};
 		form.Headers.Add("Player-Key", playerKey!.ToString());
-		var port = aspnetcore_urls.Split(':').Last();
-		using var res = await httpClient.PostAsync($"http://{IPAddress.Loopback}:{port}/api/ImportRaidDump?offset={offset}", form);
+		using var res = await httpClient.PostAsync($"http://{IPAddress.Loopback}:{8080}/api/ImportRaidDump?offset={offset}", form);
 		res.EnsureSuccessStatusCode();
 	}
 }).DisableAntiforgery();
@@ -785,3 +828,24 @@ await app.RunAsync(cts.Token);
 
 public record CreateLoot(byte Quantity, string Name, bool RaidNight);
 public record CreateGuild(string LeaderName, string GuildName, Server Server);
+
+[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSerializable(typeof(LootDto))]
+internal partial class SourceGenerationContext : JsonSerializerContext
+{
+}
+
+[JsonSerializable(typeof(LootDto[]))]
+internal partial class LootSerializerContext : JsonSerializerContext
+{
+}
+
+[JsonSerializable(typeof(LootRequestDto[]))]
+internal partial class LootRequestSerializerContext : JsonSerializerContext
+{
+}
+
+[JsonSerializable(typeof(RaidAttendanceDto[]))]
+internal partial class RaidAttendanceSerializerContext : JsonSerializerContext
+{
+}

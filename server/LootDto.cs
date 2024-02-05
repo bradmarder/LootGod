@@ -20,6 +20,7 @@ public record LootDto
 		"Ethernere",
 		"Shadowscribed Parchment",
 		"Shar Vahl",
+		"Emblem of the Forge",
 	}.ToFrozenSet();
 
 	private static readonly FrozenSet<string> _nuggets = new[]
