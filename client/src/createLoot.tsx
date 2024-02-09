@@ -35,7 +35,7 @@ export default function CreateLoot(props: { loots: ILoot[], raidNight: boolean }
 							<Form.Label>Name</Form.Label>
 							<Form.Select value={createLootName} onChange={e => setCreateLootName(e.target.value)}>
 								<option>Select Loot</option>
-								{props.loots.map((item, i) =>
+								{props.loots.map(item =>
 									<option key={item.id} value={item.name}>{item.name}</option>
 								)}
 							</Form.Select>

@@ -8,7 +8,6 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
-using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 var adminKey = builder.Configuration["ADMIN_KEY"]!;
@@ -58,22 +57,14 @@ builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite(connString.Connec
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<LootService>();
 builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
-builder.Services.ConfigureHttpJsonOptions(options =>
-{
-	options.SerializerOptions.TypeInfoResolverChain.Insert(0, LootSerializerContext.Default);
-	options.SerializerOptions.TypeInfoResolverChain.Insert(0, LootRequestSerializerContext.Default);
-	options.SerializerOptions.TypeInfoResolverChain.Insert(0, RaidAttendanceSerializerContext.Default);
-});
-
-//var logger = new LoggerConfiguration()
-//	.Enrich.FromLogContext()
-//	.WriteTo.Console(outputTemplate: "[{Timestamp:u} {Level:u3}] {Message:lj} " + "{Properties:j}{NewLine}{Exception}")
-//	.MinimumLevel.Override(nameof(Microsoft), LogEventLevel.Warning)
-//	.MinimumLevel.Override(nameof(System), LogEventLevel.Warning)
-//	.CreateLogger();
 builder.Services.AddLogging(x => x
 	.ClearProviders()
-	.AddSimpleConsole(x => { x.SingleLine = true; x.TimestampFormat = "yyyy-MM-dd HH:mm:ss "; x.IncludeScopes = true; })
+	.AddSimpleConsole(x =>
+	{
+		x.SingleLine = true;
+		x.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
+		x.IncludeScopes = true;
+	})
 	.SetMinimumLevel(LogLevel.Warning)
 	.Configure(y => y.ActivityTrackingOptions = ActivityTrackingOptions.None)
 );
@@ -828,24 +819,3 @@ await app.RunAsync(cts.Token);
 
 public record CreateLoot(byte Quantity, string Name, bool RaidNight);
 public record CreateGuild(string LeaderName, string GuildName, Server Server);
-
-[JsonSourceGenerationOptions(WriteIndented = true)]
-[JsonSerializable(typeof(LootDto))]
-internal partial class SourceGenerationContext : JsonSerializerContext
-{
-}
-
-[JsonSerializable(typeof(LootDto[]))]
-internal partial class LootSerializerContext : JsonSerializerContext
-{
-}
-
-[JsonSerializable(typeof(LootRequestDto[]))]
-internal partial class LootRequestSerializerContext : JsonSerializerContext
-{
-}
-
-[JsonSerializable(typeof(RaidAttendanceDto[]))]
-internal partial class RaidAttendanceSerializerContext : JsonSerializerContext
-{
-}

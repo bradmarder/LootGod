@@ -7,12 +7,15 @@ namespace LootGod;
 
 public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttpContextAccessor _httpContextAccessor)
 {
-	private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-	private static readonly Channel<string> PayloadChannel = Channel.CreateUnbounded<string>(new() { SingleReader = true, SingleWriter = false });
-	private static readonly ConcurrentDictionary<string, (int GuildId, HttpResponse Response)> Payloads = new();
+	private record ConnectionPayload(int GuildId, HttpResponse Response)
+	{
+		public int EventId { get; set; } = 1;
+	}
+	private record Element(int GuildId, string Event, string JsonData);
 
-	//var info = System.Text.Json.Serialization.Metadata.JsonTypeInfo.CreateJsonTypeInfo<string>(new JsonSerializerOptions());
-	//await JsonSerializer.SerializeAsync(ctx.Response.Body, item, typeof(LootDto), SourceGenerationContext.Default, ct);
+	private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+	private static readonly Channel<Element> PayloadChannel = Channel.CreateUnbounded<Element>(new() { SingleReader = true, SingleWriter = false });
+	private static readonly ConcurrentDictionary<string, ConnectionPayload> Payloads = new();
 
 	public Guid? GetPlayerKey() =>
 		_httpContextAccessor.HttpContext!.Request.Headers.TryGetValue("Player-Key", out var headerKey) ? Guid.Parse(headerKey.ToString())
@@ -145,7 +148,8 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 
 	public void AddPayloadConnection(string connectionId, int guildId, HttpResponse response)
 	{
-		Payloads.TryAdd(connectionId, (guildId, response));
+		var payload = new ConnectionPayload(guildId, response);
+		Payloads.TryAdd(connectionId, payload);
 
 		var key = GetPlayerKey();
 		var player = _db.Players
@@ -173,23 +177,22 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 
 	public async Task DeliverPayloads()
 	{
-		await foreach (var data in PayloadChannel.Reader.ReadAllAsync())
+		await foreach (var element in PayloadChannel.Reader.ReadAllAsync())
 		{
-			var chunks = data.Split('|');
-			var guildId = int.Parse(chunks[0]);
 			var start = DateTime.UtcNow;
 
 			foreach (var payload in Payloads)
 			{
-				if (payload.Value.GuildId == guildId)
+				if (payload.Value.GuildId == element.GuildId)
 				{
 					try
 					{
-						//await payload.Response.WriteAsync($"id: {id++}\n", ct);
-						await payload.Value.Response.WriteAsync($"event: {chunks[1]}\n");
-						await payload.Value.Response.WriteAsync($"data: {chunks[2]}\n");
-						await payload.Value.Response.WriteAsync("\n\n");
-						await payload.Value.Response.Body.FlushAsync();
+						var res = payload.Value.Response;
+						await res.WriteAsync($"event: {element.Event}\n");
+						await res.WriteAsync($"data: {element.JsonData}\n");
+						await res.WriteAsync($"id: {payload.Value.EventId++}\n");
+						await res.WriteAsync("\n\n");
+						await res.Body.FlushAsync();
 					}
 					catch (Exception ex)
 					{
@@ -200,13 +203,15 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 			}
 
 			var duration = DateTime.UtcNow - start;
-			_logger.LogWarning($"Payload loop for '{chunks[1]}' completed in {(long)duration.TotalMilliseconds}ms");
+			_logger.LogWarning($"Payload loop for '{element.Event}' completed in {(long)duration.TotalMilliseconds}ms");
 		}
 	}
 
 	public async Task RefreshLock(int guildId, bool locked)
 	{
-		await PayloadChannel.Writer.WriteAsync(guildId + "|lock|" + locked.ToString());
+		var element = new Element(guildId, "lock", locked.ToString());
+
+		await PayloadChannel.Writer.WriteAsync(element);
 	}
 
 	public LootDto[] LoadLoots(int guildId)
@@ -257,14 +262,18 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 	{
 		var loots = LoadLoots(guildId);
 		var json = JsonSerializer.Serialize(loots, _jsonOptions);
-		await PayloadChannel.Writer.WriteAsync(guildId + "|loots|" + json);
+		var element = new Element(guildId, "loots", json);
+
+		await PayloadChannel.Writer.WriteAsync(element);
 	}
 
 	public async Task RefreshRequests(int guildId)
 	{
 		var requests = LoadLootRequests(guildId);
 		var json = JsonSerializer.Serialize(requests, _jsonOptions);
-		await PayloadChannel.Writer.WriteAsync(guildId + "|requests|" + json);
+		var element = new Element(guildId, "requests", json);
+
+		await PayloadChannel.Writer.WriteAsync(element);
 	}
 
 	public async Task DiscordWebhook(HttpClient httpClient, string output, string discordWebhookUrl)

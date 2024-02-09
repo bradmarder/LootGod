@@ -14,6 +14,7 @@ import LinkAlt from './linkAlt';
 import LeaderModule from './leaderModule';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import CreateGuild from './createGuild';
+import NewLoot from './newLoot';
 
 const params = new Proxy(new URLSearchParams(window.location.search), {
 	get: (searchParams, prop) => searchParams.get(prop as string),
@@ -194,6 +195,7 @@ export default function App() {
 						{isAdmin &&
 							<>
 								<Upload refreshCache={refreshCache}></Upload>
+								<NewLoot></NewLoot>
 								<CreateLoot loots={loots} raidNight={raidNight}></CreateLoot>
 								{lootLock &&
 									<Button variant={'success'} onClick={disableLootLock} disabled={loading}>Unlock/Enable Loot Requests</Button>
