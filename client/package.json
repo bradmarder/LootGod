@@ -15,7 +15,7 @@
 	"source": "public/index.html",
 	"browserslist": "> 0.5%, last 2 versions, not dead",
 	"scripts": {
-		"start": "parcel --port 1234 --cert %HOMEPATH%\\localhost.pem --key %HOMEPATH%\\localhost.key",
+		"start": "parcel --cert %HOMEPATH%\\localhost.pem --key %HOMEPATH%\\localhost.key",
 		"build": "parcel build --no-source-maps"
 	},
 	"eslintConfig": {

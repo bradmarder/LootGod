@@ -146,9 +146,9 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 
 	public record LootOutput(string Loot, string Name, int Quantity);
 
-	public void AddPayloadConnection(string connectionId, int guildId, HttpResponse response)
+	public void AddPayloadConnection(string connectionId, HttpResponse response)
 	{
-		var payload = new ConnectionPayload(guildId, response);
+		var payload = new ConnectionPayload(GetGuildId(), response);
 		Payloads.TryAdd(connectionId, payload);
 
 		var key = GetPlayerKey();
@@ -169,11 +169,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 		}
 	}
 
-	public void RemovePayloadConnection(string connectionId)
-	{
-		_logger.LogWarning("REMOVE PAYLOAD " + connectionId);
-		Payloads.Remove(connectionId, out _);
-	}
+	public void RemovePayloadConnection(string connectionId) => Payloads.Remove(connectionId, out _);
 
 	public async Task DeliverPayloads()
 	{

@@ -122,23 +122,18 @@ app.MapGet("test", () => "Hello World!").ShortCircuit();
 
 app.MapGet("/SSE", async (HttpContext ctx, LootService service) =>
 {
-	var ct = ctx.RequestAborted;
-	var guildId = service.GetGuildId();
+	var token = ctx.RequestAborted;
+	var connectionId = ctx.Connection.Id;
 
 	//ctx.Response.Headers.Append("Cache-Control", "no-store");
 	ctx.Response.Headers.Append("Content-Type", "text/event-stream");
-	await ctx.Response.WriteAsync($"data: empty\n\n\n", ct);
-	await ctx.Response.Body.FlushAsync(ct);
+	await ctx.Response.WriteAsync($"data: empty\n\n\n", token);
+	await ctx.Response.Body.FlushAsync(token);
+	
+	service.AddPayloadConnection(connectionId, ctx.Response);
+	token.Register(() => service.RemovePayloadConnection(connectionId));
 
-	var connectionId = ctx.Connection.Id;
-	service.AddPayloadConnection(connectionId, guildId, ctx.Response);
-	ct.Register(() =>
-	{
-		Console.WriteLine("CT CANCEL");
-		service.RemovePayloadConnection(connectionId);
-	});
-
-	await Task.Delay(TimeSpan.FromMilliseconds(-1), ct);
+	await Task.Delay(Timeout.InfiniteTimeSpan, token);
 });
 
 app.MapPost("GuildDiscord", (LootGodContext db, LootService lootService, string webhook) =>
