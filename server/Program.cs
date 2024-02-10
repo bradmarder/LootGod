@@ -130,8 +130,8 @@ app.MapGet("/SSE", async (HttpContext ctx, LootService service) =>
 	await ctx.Response.WriteAsync($"data: empty\n\n\n", token);
 	await ctx.Response.Body.FlushAsync(token);
 	
-	service.AddPayloadConnection(connectionId, ctx.Response);
-	token.Register(() => service.RemovePayloadConnection(connectionId));
+	service.AddDataSink(connectionId, ctx.Response);
+	token.Register(() => service.RemoveDataSink(connectionId));
 
 	await Task.Delay(Timeout.InfiniteTimeSpan, token);
 });
@@ -215,7 +215,7 @@ app.MapGet("GetArchivedLootRequests", (LootGodContext db, LootService lootServic
 		.ToArray();
 });
 
-app.MapPost("CreateLoot", (LootGodContext db, string name) =>
+app.MapPost("CreateLoot", async (LootGodContext db, string name, LootService lootService) =>
 {
 	var guilds = db.Guilds.ToList();
 	foreach (var g in guilds)
@@ -224,6 +224,9 @@ app.MapPost("CreateLoot", (LootGodContext db, string name) =>
 		db.Loots.Add(loot);
 	}
 	db.SaveChanges();
+
+	var guildId = lootService.GetGuildId();
+	await lootService.RefreshLoots(guildId);
 });
 
 app.MapGet("FreeTrade", (LootGodContext db, LootService lootService) =>

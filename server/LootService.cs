@@ -7,15 +7,15 @@ namespace LootGod;
 
 public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttpContextAccessor _httpContextAccessor)
 {
-	private record ConnectionPayload(int GuildId, HttpResponse Response)
+	private record DataSink(int GuildId, HttpResponse Response)
 	{
 		public int EventId { get; set; } = 1;
 	}
-	private record Element(int GuildId, string Event, string JsonData);
+	private record Payload(int GuildId, string Event, string JsonData);
 
 	private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-	private static readonly Channel<Element> PayloadChannel = Channel.CreateUnbounded<Element>(new() { SingleReader = true, SingleWriter = false });
-	private static readonly ConcurrentDictionary<string, ConnectionPayload> Payloads = new();
+	private static readonly Channel<Payload> PayloadChannel = Channel.CreateUnbounded<Payload>(new() { SingleReader = true, SingleWriter = false });
+	private static readonly ConcurrentDictionary<string, DataSink> DataSinks = new();
 
 	public Guid? GetPlayerKey() =>
 		_httpContextAccessor.HttpContext!.Request.Headers.TryGetValue("Player-Key", out var headerKey) ? Guid.Parse(headerKey.ToString())
@@ -146,10 +146,10 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 
 	public record LootOutput(string Loot, string Name, int Quantity);
 
-	public void AddPayloadConnection(string connectionId, HttpResponse response)
+	public void AddDataSink(string connectionId, HttpResponse response)
 	{
-		var payload = new ConnectionPayload(GetGuildId(), response);
-		Payloads.TryAdd(connectionId, payload);
+		var sink = new DataSink(GetGuildId(), response);
+		DataSinks.TryAdd(connectionId, sink);
 
 		var key = GetPlayerKey();
 		var player = _db.Players
@@ -165,49 +165,49 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 				Name = player.Name,
 				GuildName = player.Guild.Name,
 			});
-			_logger.LogWarning(nameof(AddPayloadConnection));
+			_logger.LogWarning(nameof(AddDataSink));
 		}
 	}
 
-	public void RemovePayloadConnection(string connectionId) => Payloads.Remove(connectionId, out _);
+	public bool RemoveDataSink(string connectionId) => DataSinks.Remove(connectionId, out _);
 
 	public async Task DeliverPayloads()
 	{
-		await foreach (var element in PayloadChannel.Reader.ReadAllAsync())
+		await foreach (var payload in PayloadChannel.Reader.ReadAllAsync())
 		{
 			var start = DateTime.UtcNow;
 
-			foreach (var payload in Payloads)
+			foreach (var sink in DataSinks)
 			{
-				if (payload.Value.GuildId == element.GuildId)
+				if (sink.Value.GuildId == payload.GuildId)
 				{
 					try
 					{
-						var res = payload.Value.Response;
-						await res.WriteAsync($"event: {element.Event}\n");
-						await res.WriteAsync($"data: {element.JsonData}\n");
-						await res.WriteAsync($"id: {payload.Value.EventId++}\n");
+						var res = sink.Value.Response;
+						await res.WriteAsync($"event: {payload.Event}\n");
+						await res.WriteAsync($"data: {payload.JsonData}\n");
+						await res.WriteAsync($"id: {sink.Value.EventId++}\n");
 						await res.WriteAsync("\n\n");
 						await res.Body.FlushAsync();
 					}
 					catch (Exception ex)
 					{
-						_logger.LogError(ex, "Orphan connection removed");
-						RemovePayloadConnection(payload.Key);
+						_logger.LogError(ex, "Orphan connection removed - {ConnectionId}", sink.Key);
+						RemoveDataSink(sink.Key);
 					}
 				}
 			}
 
 			var duration = DateTime.UtcNow - start;
-			_logger.LogWarning($"Payload loop for '{element.Event}' completed in {(long)duration.TotalMilliseconds}ms");
+			_logger.LogWarning("Payload loop for '{Event}' completed in {Duration}ms", payload.Event, (long)duration.TotalMilliseconds);
 		}
 	}
 
 	public async Task RefreshLock(int guildId, bool locked)
 	{
-		var element = new Element(guildId, "lock", locked.ToString());
+		var payload = new Payload(guildId, "lock", locked.ToString());
 
-		await PayloadChannel.Writer.WriteAsync(element);
+		await PayloadChannel.Writer.WriteAsync(payload);
 	}
 
 	public LootDto[] LoadLoots(int guildId)
@@ -258,18 +258,18 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 	{
 		var loots = LoadLoots(guildId);
 		var json = JsonSerializer.Serialize(loots, _jsonOptions);
-		var element = new Element(guildId, "loots", json);
+		var payload = new Payload(guildId, "loots", json);
 
-		await PayloadChannel.Writer.WriteAsync(element);
+		await PayloadChannel.Writer.WriteAsync(payload);
 	}
 
 	public async Task RefreshRequests(int guildId)
 	{
 		var requests = LoadLootRequests(guildId);
 		var json = JsonSerializer.Serialize(requests, _jsonOptions);
-		var element = new Element(guildId, "requests", json);
+		var payload = new Payload(guildId, "requests", json);
 
-		await PayloadChannel.Writer.WriteAsync(element);
+		await PayloadChannel.Writer.WriteAsync(payload);
 	}
 
 	public async Task DiscordWebhook(HttpClient httpClient, string output, string discordWebhookUrl)
