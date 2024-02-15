@@ -64,6 +64,16 @@ export default function Loots(props: IContext) {
 			req.currentItem,
 		].join(' | ');
 
+	const getSpellLevel = (name: string) => {
+		const level = name.startsWith('Glowing') ? 125
+			: name.startsWith('Greater') ? 124
+			: name.startsWith('Median') ? 123
+			: name.startsWith('Lesser') ? 122
+			: name.startsWith('Minor') ? 121
+			: 255;
+		return level + ' | ';
+	};
+
 	return (
 		<>
 			<h3>Available {(props.spell ? 'Spells/Nuggets' : 'Loots')}</h3>
@@ -80,6 +90,7 @@ export default function Loots(props: IContext) {
 								{!props.spell &&
 									<a href={'https://www.raidloot.com/items?view=List&name=' + item.name} target='_blank' rel='noreferrer'>{item.name}</a>
 								}
+								{props.spell && getSpellLevel(item.name)}
 								{props.spell && item.name}
 								&nbsp;| {props.raidNight ? item.raidQuantity : item.rotQuantity} available | {lootRequests.filter(x => x.lootId === item.id && x.granted).length} granted | {lootRequests.filter(x => x.lootId === item.id).length} request(s)</Accordion.Header>
 							<Accordion.Body>

@@ -12,6 +12,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 		public int EventId { get; set; } = 1;
 	}
 	private record Payload(int GuildId, string Event, string JsonData);
+	public record LootOutput(string Loot, string Name, int Quantity);
 
 	private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 	private static readonly Channel<Payload> PayloadChannel = Channel.CreateUnbounded<Payload>(new() { SingleReader = true, SingleWriter = false });
@@ -144,29 +145,12 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 		return string.Join(Environment.NewLine, output);
 	}
 
-	public record LootOutput(string Loot, string Name, int Quantity);
-
 	public void AddDataSink(string connectionId, HttpResponse response)
 	{
+		LogNewDataSink();
+
 		var sink = new DataSink(GetGuildId(), response);
 		DataSinks.TryAdd(connectionId, sink);
-
-		var key = GetPlayerKey();
-		var player = _db.Players
-			.AsNoTracking()
-			.Include(x => x.Guild)
-			.FirstOrDefault(x => x.Key == key);
-
-		if (player is not null)
-		{
-			using var _ = _logger.BeginScope(new
-			{ 
-				IP = GetIPAddress(),
-				Name = player.Name,
-				GuildName = player.Guild.Name,
-			});
-			_logger.LogWarning(nameof(AddDataSink));
-		}
 	}
 
 	public bool RemoveDataSink(string connectionId) => DataSinks.Remove(connectionId, out _);
@@ -213,7 +197,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 	public LootDto[] LoadLoots(int guildId)
 	{
 		return _db.Loots
-			.Where(x => x.GuildId == guildId)
+			.Where(x => x.GuildId == EF.Constant(guildId))
 			.Where(x => x.Expansion == Expansion.NoS || x.Expansion == Expansion.LS)
 			.OrderBy(x => x.Name)
 			.Select(x => new LootDto
@@ -229,7 +213,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 	public LootRequestDto[] LoadLootRequests(int guildId)
 	{
 		return _db.LootRequests
-			.Where(x => x.Player.GuildId == guildId)
+			.Where(x => x.Player.GuildId == EF.Constant(guildId))
 			.Where(x => !x.Archived)
 			.OrderByDescending(x => x.Spell != null)
 			.ThenBy(x => x.LootId)
@@ -315,6 +299,26 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 		{
 			_logger.LogError(ex, nameof(TryReadContentAsync));
 			return "";
+		}
+	}
+
+	private void LogNewDataSink()
+	{
+		var key = GetPlayerKey();
+		var player = _db.Players
+			.AsNoTracking()
+			.Include(x => x.Guild)
+			.FirstOrDefault(x => x.Key == key);
+
+		if (player is not null)
+		{
+			using var _ = _logger.BeginScope(new
+			{
+				IP = GetIPAddress(),
+				Name = player.Name,
+				GuildName = player.Guild.Name,
+			});
+			_logger.LogWarning(nameof(AddDataSink));
 		}
 	}
 }

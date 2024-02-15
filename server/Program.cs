@@ -94,15 +94,15 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 
 app.UseExceptionHandler(opt =>
 {
-	opt.Run(async context =>
+	opt.Run(context =>
 	{
-		await Task.CompletedTask;
-
 		var ex = context.Features.Get<IExceptionHandlerFeature>();
 		if (ex is not null)
 		{
 			app.Logger.LogError(ex.Error, context.Request.Path);
 		}
+
+		return Task.CompletedTask;
 	});
 });
 app.UseResponseCompression();
@@ -125,8 +125,10 @@ app.MapGet("/SSE", async (HttpContext ctx, LootService service) =>
 	var token = ctx.RequestAborted;
 	var connectionId = ctx.Connection.Id;
 
-	//ctx.Response.Headers.Append("Cache-Control", "no-store");
 	ctx.Response.Headers.Append("Content-Type", "text/event-stream");
+	ctx.Response.Headers.Append("Cache-Control", "no-cache");
+	ctx.Response.Headers.Append("Connection", "keep-alive");
+
 	await ctx.Response.WriteAsync($"data: empty\n\n\n", token);
 	await ctx.Response.Body.FlushAsync(token);
 	
@@ -406,7 +408,7 @@ app.MapGet("GetLinkedAlts", (LootGodContext db, LootService lootService) =>
 	var guildId = lootService.GetGuildId();
 
 	return db.Players
-		.Where(x => x.GuildId == guildId)
+		.Where(x => x.GuildId == EF.Constant(guildId))
 		.Where(x => x.MainId == playerId)
 		.Select(x => x.Name)
 		.ToArray();
@@ -720,19 +722,19 @@ app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService) =
 
 	var playerMap = db.Players
 		.AsNoTracking()
-		.Where(x => x.GuildId == guildId)
+		.Where(x => x.GuildId == EF.Constant(guildId))
 		.Where(x => x.Active == true)
 		.ToDictionary(x => x.Id, x => x);
 	var altMainMap = playerMap
 		.Where(x => x.Value.MainId is not null)
 		.ToDictionary(x => x.Key, x => x.Value.MainId!.Value);
 	var rankIdToNameMap = db.Ranks
-		.Where(x => x.GuildId == guildId)
+		.Where(x => x.GuildId == EF.Constant(guildId))
 		.ToDictionary(x => x.Id, x => x.Name);
 	var dumps = db.RaidDumps
 		.AsNoTracking()
 		.Where(x => x.Timestamp > oneHundredEightyDaysAgo)
-		.Where(x => x.Player.GuildId == guildId)
+		.Where(x => x.Player.GuildId == EF.Constant(guildId))
 		.Where(x => x.Player.Active == true)
 		.ToList();
 	var uniqueDates = dumps
