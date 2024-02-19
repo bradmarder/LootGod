@@ -36,6 +36,7 @@ export default function App() {
 	const [lootLock, setLootLock] = useState(false);
 	const [requests, setRequests] = useState<ILootRequest[]>([]);
 	const [loots, setLoots] = useState<ILoot[]>([]);
+	const [items, setItems] = useState<IItem[]>([]);
 	const [cacheKey, setCacheKey] = useState(0);
 	const [linkedAltsCacheKey, setLinkedAltsCacheKey] = useState(0);
 	const [intro, setIntro] = useState(!hasKey);
@@ -58,6 +59,12 @@ export default function App() {
 		axios
 			.get<ILoot[]>('/GetLoots', { signal })
 			.then(x => setLoots(x.data))
+			.catch(() => { });
+	};
+	const getItems = (signal: AbortSignal) => {
+		axios
+			.get<ILoot[]>('/GetItems', { signal })
+			.then(x => setItems(x.data))
 			.catch(() => { });
 	};
 	const getLootRequests = (signal: AbortSignal) => {
@@ -104,6 +111,7 @@ export default function App() {
 		getLootLock(controller.signal);
 		getLootRequests(controller.signal);
 		getLeaderStatus(controller.signal);
+		getItems(controller.signal);
 
 		return () => controller.abort();
 	}, [intro]);
@@ -114,12 +122,10 @@ export default function App() {
 		const eventSource = new EventSource('/api/SSE?playerKey=' + localStorage.getItem('key'));
 		eventSource.addEventListener('lock', e => setLootLock(e.data == 'True'));
 		eventSource.addEventListener('loots', e => setLoots(JSON.parse(e.data)));
+		eventSource.addEventListener('items', e => setItems(JSON.parse(e.data)));
 		eventSource.addEventListener('requests', e => setRequests(JSON.parse(e.data)));
 		eventSource.onopen = () => console.log('SSE connection established');
-		eventSource.onerror = () => {
-			console.error('SSE connection error');
-			setError(true);
-		};
+		eventSource.onerror = () => setError(true);
 
 		return () => eventSource.close();
 	}, [intro]);
@@ -178,17 +184,17 @@ export default function App() {
 			{!error && raidNight != null &&
 				<Row>
 					<Col xs={12} xl={6}>
-						<CreateLootRequest requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight} linkedAltsCacheKey={linkedAltsCacheKey}></CreateLootRequest>
+						<CreateLootRequest requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight} linkedAltsCacheKey={linkedAltsCacheKey} items={items}></CreateLootRequest>
 						<br />
-						<LootRequests requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight}></LootRequests>
+						<LootRequests requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight} items={items}></LootRequests>
 						<br />
 						<LinkAlt refreshLinkedAltsCacheKey={refreshLinkedAltsCacheKey}></LinkAlt>
 						<br />
 						{isAdmin &&
-							<GrantedLoots requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight}></GrantedLoots>
+							<GrantedLoots requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight} items={items}></GrantedLoots>
 						}
 						{isAdmin &&
-							<ArchivedLoot requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight}></ArchivedLoot>
+							<ArchivedLoot requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight} items={items}></ArchivedLoot>
 						}
 					</Col>
 					<Col xs={12} xl={6}>
@@ -196,7 +202,7 @@ export default function App() {
 							<>
 								<Upload refreshCache={refreshCache}></Upload>
 								<NewLoot></NewLoot>
-								<CreateLoot loots={loots} raidNight={raidNight}></CreateLoot>
+								<CreateLoot items={items} raidNight={raidNight}></CreateLoot>
 								{lootLock &&
 									<Button variant={'success'} onClick={disableLootLock} disabled={loading}>Unlock/Enable Loot Requests</Button>
 								}
@@ -209,9 +215,9 @@ export default function App() {
 								}
 							</>
 						}
-						<Loots requests={requests} loots={loots} isAdmin={isAdmin} spell={true} raidNight={raidNight}></Loots>
+						<Loots requests={requests} loots={loots} isAdmin={isAdmin} spell={true} raidNight={raidNight} items={items}></Loots>
 						<br />
-						<Loots requests={requests} loots={loots} isAdmin={isAdmin} spell={false} raidNight={raidNight}></Loots>
+						<Loots requests={requests} loots={loots} isAdmin={isAdmin} spell={false} raidNight={raidNight} items={items}></Loots>
 						<br />
 						<RaidAttendance isAdmin={isAdmin} cacheKey={cacheKey}></RaidAttendance>
 					</Col>

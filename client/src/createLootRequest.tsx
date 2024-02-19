@@ -17,7 +17,7 @@ export default function CreateLootRequest(props: IContext) {
 
 	const hasQtyLoots = props.loots.filter(x => (props.raidNight ? x.raidQuantity : x.rotQuantity) > 0);
 
-	const spellSelected = lootId > 0 && props.loots.filter(x => x.id === lootId)[0]!.isSpell;
+	const spellSelected = lootId > 0 && props.loots.find(x => x.itemId === lootId)!.isSpell;
 
 	const isCreateLootDisabled =
 		hasQtyLoots.length === 0
@@ -63,7 +63,7 @@ export default function CreateLootRequest(props: IContext) {
 
 		// if someone selects a spell, they must enter the name of the spell, and the quantity defaults to 
 		// ....but then we have to remove the char/lootId unique combo...
-		if (lootId > 0 && props.loots.filter(x => x.id === lootId)[0]!.isSpell) {
+		if (lootId > 0 && props.loots.find(x => x.itemId === lootId)!.isSpell) {
 			setQuantity(1);
 		}
 
@@ -113,8 +113,8 @@ export default function CreateLootRequest(props: IContext) {
 							<Form.Label>Loot</Form.Label>
 							<Form.Select value={lootId} onChange={e => setLootLogic(Number(e.target.value))}>
 								<option value={0}>Select an Item</option>
-								{hasQtyLoots.map(item =>
-									<option key={item.id} value={item.id}>{item.name}</option>
+								{hasQtyLoots.map(loot =>
+									<option key={loot.itemId} value={loot.itemId}>{loot.name}</option>
 								)}
 							</Form.Select>
 						</Form.Group>

@@ -2,15 +2,15 @@ import { useState } from 'react';
 import { Row, Col, Alert, Button, Form } from 'react-bootstrap';
 import axios from 'axios';
 
-export default function CreateLoot(props: { loots: ILoot[], raidNight: boolean }) {
+export default function CreateLoot(props: { items: IItem[], raidNight: boolean }) {
 
 	const [isLoading, setIsLoading] = useState(false);
-	const [createLootName, setCreateLootName] = useState('');
+	const [createItemId, setCreateItemId] = useState(0);
 	const [createLootQuantity, setCreateLootQuantity] = useState(1);
 
 	const createLoot = async () => {
 		const data = {
-			Name: createLootName,
+			ItemId: createItemId,
 			Quantity: createLootQuantity,
 			RaidNight: props.raidNight,
 		};
@@ -21,7 +21,7 @@ export default function CreateLoot(props: { loots: ILoot[], raidNight: boolean }
 		finally {
 			setIsLoading(false);
 		}
-		setCreateLootName('');
+		setCreateItemId(0);
 		setCreateLootQuantity(1);
 	};
 
@@ -33,10 +33,10 @@ export default function CreateLoot(props: { loots: ILoot[], raidNight: boolean }
 					<Col>
 						<Form.Group>
 							<Form.Label>Name</Form.Label>
-							<Form.Select value={createLootName} onChange={e => setCreateLootName(e.target.value)}>
+							<Form.Select value={createItemId} onChange={e => setCreateItemId(Number(e.target.value))}>
 								<option>Select Loot</option>
-								{props.loots.map(item =>
-									<option key={item.id} value={item.name}>{item.name}</option>
+								{props.items.map(item =>
+									<option key={item.id} value={item.id}>{item.name}</option>
 								)}
 							</Form.Select>
 						</Form.Group>

@@ -14,7 +14,7 @@ export default function leaderModule() {
 		setIsLoading(true);
 		axios
 			.post('/TransferGuildLeadership?name=' + transferName)
-			.then(x => setTransferSuccess(true))
+			.then(_ => setTransferSuccess(true))
 			.finally(() => setIsLoading(false));
 	};
 	const updateDiscord = () => {
@@ -22,7 +22,7 @@ export default function leaderModule() {
 		setDiscordSuccess(false);
 		axios
 			.post('/GuildDiscord?webhook=' + encodeURIComponent(discord))
-			.then(x => setDiscordSuccess(true))
+			.then(_ => setDiscordSuccess(true))
 			.finally(() => setIsLoading(false));
 	};
 	const getDiscord = () => {

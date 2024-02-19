@@ -1,9 +1,14 @@
 declare interface ILoot {
 	readonly id: number;
+	readonly itemId: number
 	readonly name: string;
 	readonly raidQuantity: number;
 	readonly rotQuantity: number;
 	readonly isSpell: boolean;
+}
+declare interface IItem {
+	readonly id: number;
+	readonly name: string;
 }
 declare interface ILootRequest {
 	readonly id: number;
@@ -25,6 +30,7 @@ declare interface IContext {
 	readonly raidNight: boolean;
 	readonly isAdmin: boolean;
 	readonly loots: ReadonlyArray<ILoot>;
+	readonly items: ReadonlyArray<IItem>;
 	readonly requests: ReadonlyArray<ILootRequest>;
 	readonly spell?: boolean;
 	readonly lootLocked?: boolean;

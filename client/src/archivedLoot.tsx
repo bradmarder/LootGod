@@ -43,7 +43,7 @@ export default function ArchivedLoot(props: IContext) {
 							<Form.Label>Name</Form.Label>
 							<Form.Select value={lootId} onChange={e => setLootId(e.target.value)}>
 								<option value=''>Select Loot</option>
-								{props.loots.map((item, i) =>
+								{props.items.map(item =>
 									<option key={item.id} value={item.id}>{item.name}</option>
 								)}
 							</Form.Select>

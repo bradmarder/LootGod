@@ -87,6 +87,14 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 
 	db.Database.EnsureCreated();
 
+	try
+	{
+		db.Database.ExecuteSqlRaw("ALTER TABLE Items DROP COLUMN RaidQuantity");
+		db.Database.ExecuteSqlRaw("ALTER TABLE Items DROP COLUMN RotQuantity");
+	}
+	catch { }
+	//db.Database.ExecuteSqlRaw("ALTER TABLE Items DROP COLUMN GuildId");
+
 	_ = scope.ServiceProvider
 		.GetRequiredService<LootService>()
 		.DeliverPayloads();
@@ -120,7 +128,7 @@ app.UsePathBase("/api");
 app.UseMiddleware<LogMiddleware>();
 app.MapGet("test", () => "Hello World!").ShortCircuit();
 
-app.MapGet("/SSE", async (HttpContext ctx, LootService service) =>
+app.MapGet("SSE", async (HttpContext ctx, LootService service) =>
 {
 	var token = ctx.RequestAborted;
 	var connectionId = ctx.Connection.Id;
@@ -193,9 +201,9 @@ app.MapGet("GetArchivedLootRequests", (LootGodContext db, LootService lootServic
 		.Where(x => x.Player.GuildId == guildId)
 		.Where(x => x.Archived)
 		.Where(x => name == null || x.AltName!.StartsWith(name) || x.Player.Name.StartsWith(name))
-		.Where(x => lootId == null || x.LootId == lootId)
+		.Where(x => lootId == null || x.ItemId == lootId)
 		.OrderByDescending(x => x.Spell != null)
-		.ThenBy(x => x.LootId)
+		.ThenBy(x => x.ItemId)
 		.ThenByDescending(x => x.AltName ?? x.Player.Name)
 		.Select(x => new LootRequestDto
 		{
@@ -206,8 +214,8 @@ app.MapGet("GetArchivedLootRequests", (LootGodContext db, LootService lootServic
 			MainName = x.Player.Name,
 			Class = x.Class ?? x.Player.Class,
 			Spell = x.Spell,
-			LootId = x.LootId,
-			LootName = x.Loot.Name,
+			LootId = x.ItemId,
+			LootName = x.Item.Name,
 			Quantity = x.Quantity,
 			RaidNight = x.RaidNight,
 			IsAlt = x.IsAlt,
@@ -219,16 +227,12 @@ app.MapGet("GetArchivedLootRequests", (LootGodContext db, LootService lootServic
 
 app.MapPost("CreateLoot", async (LootGodContext db, string name, LootService lootService) =>
 {
-	var guilds = db.Guilds.ToList();
-	foreach (var g in guilds)
-	{
-		var loot = new Loot(name, Expansion.LS, g);
-		db.Loots.Add(loot);
-	}
+	var guild = db.Guilds.FirstOrDefault(); // TODO: remove guild, items won't require
+	var item = new Item(name, Expansion.LS, guild);
+	db.Items.Add(item);
 	db.SaveChanges();
 
-	var guildId = lootService.GetGuildId();
-	await lootService.RefreshLoots(guildId);
+	await lootService.RefreshItems();
 });
 
 app.MapGet("FreeTrade", (LootGodContext db, LootService lootService) =>
@@ -247,6 +251,13 @@ app.MapGet("GetDiscordWebhook", (LootGodContext db, LootService lootService) =>
 		.Where(x => x.Id == guildId)
 		.Select(x => x.DiscordWebhookUrl ?? "")
 		.FirstOrDefault();
+});
+
+app.MapGet("GetItems", (LootService lootService) =>
+{
+	//lootService.EnsureAdminStatus();
+
+	return lootService.LoadItems();
 });
 
 app.MapGet("GetLoots", (LootService lootService) =>
@@ -326,17 +337,27 @@ app.MapPost("DeleteLootRequest", async (LootGodContext db, HttpContext context, 
 	await lootService.RefreshRequests(guildId);
 });
 
-// TODO: this should take lootId
 app.MapPost("UpdateLootQuantity", async (CreateLoot dto, LootGodContext db, LootService lootService) =>
 {
 	lootService.EnsureAdminStatus();
 
 	var guildId = lootService.GetGuildId();
 
-	db.Loots
-		.Where(x => x.GuildId == guildId)
-		.Where(x => x.Name == dto.Name)
-		.ExecuteUpdate(x => x.SetProperty(y => dto.RaidNight ? y.RaidQuantity : y.RotQuantity, dto.Quantity));
+	var loot = db.Loots.SingleOrDefault(x => x.GuildId == guildId && x.ItemId == dto.ItemId);
+	if (loot is null)
+	{
+		loot = new Loot { GuildId = guildId, ItemId = dto.ItemId };
+		db.Loots.Add(loot);
+	}
+	if (dto.RaidNight)
+	{
+		loot.RaidQuantity = dto.Quantity;
+	}
+	else
+	{
+		loot.RotQuantity = dto.Quantity;
+	}
+	db.SaveChanges();
 
 	await lootService.RefreshLoots(guildId);
 });
@@ -347,12 +368,17 @@ app.MapPost("IncrementLootQuantity", async (LootGodContext db, int id, bool raid
 
 	var guildId = lootService.GetGuildId();
 
-	db.Loots
-		.Where(x => x.Id == id)
-		.Where(x => x.GuildId == guildId)
-		.ExecuteUpdate(x => x.SetProperty(
-			y => raidNight ? y.RaidQuantity : y.RotQuantity,
-			y => (raidNight ? y.RaidQuantity : y.RotQuantity) + 1));
+	var loot = db.Loots.Single(x => x.Id == id);
+	if (raidNight)
+	{
+		loot.RaidQuantity++;
+	}
+	else
+	{
+		loot.RotQuantity++;
+	}
+
+	db.SaveChanges();
 
 	await lootService.RefreshLoots(guildId);
 });
@@ -363,26 +389,30 @@ app.MapPost("DecrementLootQuantity", async (LootGodContext db, int id, bool raid
 
 	var guildId = lootService.GetGuildId();
 
-	db.Loots
-		.Where(x => x.Id == id)
-		.Where(x => x.GuildId == guildId)
-		.ExecuteUpdate(x => x.SetProperty(
-			y => raidNight ? y.RaidQuantity : y.RotQuantity,
-			y => (raidNight ? y.RaidQuantity : y.RotQuantity) == 0 ? 0 : (raidNight ? y.RaidQuantity : y.RotQuantity) - 1));
+	var loot = db.Loots.Single(x => x.Id == id);
+	if (raidNight)
+	{
+		loot.RaidQuantity--;
+	}
+	else
+	{
+		loot.RotQuantity--;
+	}
+
+	// if quantities are zero, then remove the loot record
+	if (loot.RaidQuantity == 0 && loot.RotQuantity == 0)
+	{
+		db.Loots.Remove(loot);
+	}
+
+	db.SaveChanges();
 
 	await lootService.RefreshLoots(guildId);
 });
 
 app.MapPost("CreateGuild", (LootGodContext db, CreateGuild dto) =>
 {
-	var lootTemplate = db.Loots
-		.AsNoTracking()
-		.Where(x => x.GuildId == 1)
-		.Where(x => x.Expansion == Expansion.NoS || x.Expansion == Expansion.LS)
-		.ToArray();
 	var player = new Player(dto.LeaderName, dto.GuildName, dto.Server);
-	var loots = lootTemplate.Select(x => new Loot(x.Name, x.Expansion, player.Guild));
-	db.Loots.AddRange(loots);
 	db.Players.Add(player);
 	db.SaveChanges();
 
@@ -487,7 +517,7 @@ app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootServ
 	foreach (var loot in loots)
 	{
 		var grantedQuantity = requests
-			.Where(x => x.LootId == loot.Id && x.Granted)
+			.Where(x => x.ItemId == loot.ItemId && x.Granted)
 			.Sum(x => x.Quantity);
 
 		if (raidNight)
@@ -817,5 +847,5 @@ app.MapGet("GetPasswords", (LootGodContext db, LootService lootService) =>
 
 await app.RunAsync(cts.Token);
 
-public record CreateLoot(byte Quantity, string Name, bool RaidNight);
+public record CreateLoot(byte Quantity, int ItemId, bool RaidNight);
 public record CreateGuild(string LeaderName, string GuildName, Server Server);

@@ -66,7 +66,7 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 						</tr>
 					</thead>
 					<tbody>
-						{ra.filter(x => props.isAdmin ? true : !x.hidden).filter(x => !filter75 || x._30 >= 75).map((item, i) =>
+						{ra.filter(x => props.isAdmin ? true : !x.hidden).filter(x => !filter75 || x._30 >= 75).map(item =>
 							<tr key={item.name}>
 								<td>{item.name}</td>
 								<td>{item.rank}</td>

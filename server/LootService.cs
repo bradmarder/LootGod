@@ -11,7 +11,12 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 	{
 		public int EventId { get; set; } = 1;
 	}
-	private record Payload(int GuildId, string Event, string JsonData);
+
+	/// <summary>
+	/// null GuildId implies the payload is sent to every client (items)
+	/// </summary>
+	private record Payload(int? GuildId, string Event, string JsonData);
+
 	public record LootOutput(string Loot, string Name, int Quantity);
 
 	private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -108,18 +113,18 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 
 		var grantedLoot = _db.LootRequests
 			.AsNoTracking()
-			.Include(x => x.Loot)
+			.Include(x => x.Item)
 			.Include(x => x.Player)
 			.Where(x => x.Player.GuildId == guildId)
 			.Where(x => x.Granted && !x.Archived)
-			.OrderBy(x => x.LootId)
+			.OrderBy(x => x.ItemId)
 			.ThenBy(x => x.AltName ?? x.Player.Name)
 			.ToList()
-			.GroupBy(x => (x.LootId, x.AltName ?? x.Player.Name))
+			.GroupBy(x => (x.ItemId, x.AltName ?? x.Player.Name))
 			.Select(x =>
 			{
 				var request = x.First();
-				return new LootOutput(request.Loot.Name, request.AltName ?? request.Player.Name, x.Sum(y => y.Quantity));
+				return new LootOutput(request.Item.Name, request.AltName ?? request.Player.Name, x.Sum(y => y.Quantity));
 			})
 			.ToArray();
 
@@ -128,8 +133,8 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 			.Where(x => x.RaidQuantity > 0)
 			.Select(x => new
 			{
-				x.Name,
-				Quantity = x.RaidQuantity - x.LootRequests.Count(x => x.Granted && !x.Archived),
+				x.Item.Name,
+				Quantity = x.RaidQuantity - x.Item.LootRequests.Count(x => x.Player.GuildId == guildId && x.Granted && !x.Archived),
 			})
 			.Where(x => x.Quantity > 0)
 			.Select(x => new LootOutput(x.Name, "ROT", x.Quantity))
@@ -163,7 +168,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 
 			foreach (var sink in DataSinks)
 			{
-				if (sink.Value.GuildId == payload.GuildId)
+				if (payload.GuildId is null || sink.Value.GuildId == payload.GuildId)
 				{
 					try
 					{
@@ -194,16 +199,30 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 		await PayloadChannel.Writer.WriteAsync(payload);
 	}
 
+	public ItemDto[] LoadItems()
+	{
+		return _db.Items
+			.Where(x => x.Expansion == Expansion.NoS || x.Expansion == Expansion.LS)
+			.OrderBy(x => x.Name)
+			.Select(x => new ItemDto
+			{
+				Id = x.Id,
+				Name = x.Name,
+			})
+			.ToArray();
+	}
+
 	public LootDto[] LoadLoots(int guildId)
 	{
 		return _db.Loots
 			.Where(x => x.GuildId == EF.Constant(guildId))
-			.Where(x => x.Expansion == Expansion.NoS || x.Expansion == Expansion.LS)
-			.OrderBy(x => x.Name)
+			.Where(x => x.Item.Expansion == Expansion.NoS || x.Item.Expansion == Expansion.LS)
+			.OrderBy(x => x.Item.Name)
 			.Select(x => new LootDto
 			{
 				Id = x.Id,
-				Name = x.Name,
+				ItemId = x.ItemId,
+				Name = x.Item.Name,
 				RaidQuantity = x.RaidQuantity,
 				RotQuantity = x.RotQuantity,
 			})
@@ -216,7 +235,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 			.Where(x => x.Player.GuildId == EF.Constant(guildId))
 			.Where(x => !x.Archived)
 			.OrderByDescending(x => x.Spell != null)
-			.ThenBy(x => x.LootId)
+			.ThenBy(x => x.ItemId)
 			.ThenByDescending(x => x.AltName ?? x.Player.Name)
 			.Select(x => new LootRequestDto
 			{
@@ -227,8 +246,8 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 				MainName = x.Player.Name,
 				Class = x.Class ?? x.Player.Class,
 				Spell = x.Spell,
-				LootId = x.LootId,
-				LootName = x.Loot.Name,
+				LootId = x.ItemId,
+				LootName = x.Item.Name,
 				Quantity = x.Quantity,
 				RaidNight = x.RaidNight,
 				IsAlt = x.IsAlt,
@@ -236,6 +255,15 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 				CurrentItem = x.CurrentItem,
 			})
 			.ToArray();
+	}
+
+	public async Task RefreshItems()
+	{
+		var items = LoadItems();
+		var json = JsonSerializer.Serialize(items, _jsonOptions);
+		var payload = new Payload(null, "items", json);
+
+		await PayloadChannel.Writer.WriteAsync(payload);
 	}
 
 	public async Task RefreshLoots(int guildId)

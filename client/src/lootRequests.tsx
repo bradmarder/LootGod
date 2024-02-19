@@ -45,7 +45,7 @@ export default function LootRequests(props: IContext) {
 						</tr>
 					</thead>
 					<tbody>
-						{myLootRequests.map((item, i) =>
+						{myLootRequests.map(item =>
 							<tr key={item.id}>
 								<td>{item.altName || item.mainName}</td>
 								<td>{item.isAlt ? 'Alt' : 'Main'}</td>

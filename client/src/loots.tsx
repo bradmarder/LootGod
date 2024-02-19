@@ -37,14 +37,14 @@ export default function Loots(props: IContext) {
 
 	const lootRequests = props.requests.filter(x => props.raidNight === x.raidNight);
 
-	const items = props.loots
+	const loots = props.loots
 		.filter(x => (props.raidNight ? x.raidQuantity : x.rotQuantity) > 0)
 		.filter(x => props.spell ? x.isSpell : !x.isSpell)
 
 		// subtract the granted loot quantity from the total loot quantity
 		.map(item => {
 			const grantedLootQty = lootRequests
-				.filter(x => x.lootId === item.id)
+				.filter(x => x.lootId === item.itemId)
 				.filter(x => x.granted)
 				.map(x => x.quantity)
 				.reduce((x, y) => x + y, 0);
@@ -77,39 +77,40 @@ export default function Loots(props: IContext) {
 	return (
 		<>
 			<h3>Available {(props.spell ? 'Spells/Nuggets' : 'Loots')}</h3>
-			{items.length === 0 &&
+			{loots.length === 0 &&
 				<Alert variant='warning'>
 					Looks like there aren't any {(props.spell ? 'spells/nuggets' : 'loots')} available right now
 				</Alert>
 			}
-			{items.length > 0 &&
+			{loots.length > 0 &&
 				<Accordion>
-					{items.map((item, i) =>
-						<Accordion.Item key={item.id} eventKey={i.toString()}>
+					{loots.map((loot, i) =>
+						<Accordion.Item key={loot.id} eventKey={i.toString()}>
 							<Accordion.Header>
 								{!props.spell &&
-									<a href={'https://www.raidloot.com/items?view=List&name=' + item.name} target='_blank' rel='noreferrer'>{item.name}</a>
+									<a href={'https://www.raidloot.com/items?view=List&name=' + loot.name} target='_blank' rel='noreferrer'>{loot.name}</a>
 								}
-								{props.spell && getSpellLevel(item.name)}
-								{props.spell && item.name}
-								&nbsp;| {props.raidNight ? item.raidQuantity : item.rotQuantity} available | {lootRequests.filter(x => x.lootId === item.id && x.granted).length} granted | {lootRequests.filter(x => x.lootId === item.id).length} request(s)</Accordion.Header>
+								{props.spell && getSpellLevel(loot.name)}
+								{props.spell && loot.name}
+								&nbsp;| {props.raidNight ? loot.raidQuantity : loot.rotQuantity} available | {lootRequests.filter(x => x.lootId === loot.itemId && x.granted).length} granted | {lootRequests.filter(x => x.lootId === loot.itemId).length} request(s)
+							</Accordion.Header>
 							<Accordion.Body>
 								{props.isAdmin &&
 									<>
-										{(props.raidNight ? item.raidQuantity : item.rotQuantity) === 0 &&
+										{(props.raidNight ? loot.raidQuantity : loot.rotQuantity) === 0 &&
 											<Alert variant={'warning'}><strong>Grant Disabled</strong> - Already Allotted Maximum Quantity</Alert>
 										}
-										<Button variant={'warning'} size={'sm'} disabled={isLoading} onClick={() => incrementLoot(item.id)}>Increment Quantity</Button>
-										<Button variant={'danger'} size={'sm'} disabled={isLoading || (props.raidNight ? item.raidQuantity : item.rotQuantity) === 0} onClick={() => decrementLoot(item.id)}>Decrement Quantity</Button>
+										<Button variant={'warning'} size={'sm'} disabled={isLoading} onClick={() => incrementLoot(loot.id)}>Increment Quantity</Button>
+										<Button variant={'danger'} size={'sm'} disabled={isLoading || (props.raidNight ? loot.raidQuantity : loot.rotQuantity) === 0} onClick={() => decrementLoot(loot.id)}>Decrement Quantity</Button>
 										<br /><br />
-										{lootRequests.filter(x => x.lootId === item.id).map(req =>
+										{lootRequests.filter(x => x.lootId === loot.itemId).map(req =>
 											<span key={req.id}>
 												{getText(req)}
 												&nbsp;
 												{props.isAdmin && req.granted &&
 													<Button variant={'danger'} disabled={isLoading} onClick={() => ungrantLootRequest(req.id)}>Un-Grant</Button>
 												}
-												{props.isAdmin && !req.granted && (props.raidNight ? item.raidQuantity : item.rotQuantity) > 0 &&
+												{props.isAdmin && !req.granted && (props.raidNight ? loot.raidQuantity : loot.rotQuantity) > 0 &&
 													<Button variant={'success'} disabled={isLoading} onClick={() => grantLootRequest(req.id)}>Grant</Button>
 												}
 												<br />

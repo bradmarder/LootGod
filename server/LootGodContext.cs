@@ -11,6 +11,7 @@ public class LootGodContext : DbContext
 
 	public DbSet<Guild> Guilds => Set<Guild>();
 	public DbSet<LootRequest> LootRequests => Set<LootRequest>();
+	public DbSet<Item> Items => Set<Item>();
 	public DbSet<Loot> Loots => Set<Loot>();
 	public DbSet<Player> Players => Set<Player>();
 	public DbSet<RaidDump> RaidDumps => Set<RaidDump>();

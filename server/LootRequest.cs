@@ -15,7 +15,7 @@ public class LootRequest
 		PlayerId = playerId;
 		Spell = dto.Spell?.Trim();
 		Class = dto.Class;
-		LootId = dto.LootId;
+		ItemId = dto.LootId;
 		Quantity = dto.Quantity;
 		CurrentItem = dto.CurrentItem;
 		RaidNight = dto.RaidNight;
@@ -44,7 +44,10 @@ public class LootRequest
 	public string? Spell { get; set; }
 
 	public EQClass? Class { get; set; }
-	public int LootId { get; set; }
+
+	// TODO: rename column
+	[Column("LootId")]
+	public int ItemId { get; set; }
 
 	/// <summary>
 	/// True for "raid night" loots, false for "Rot Loot"
@@ -63,8 +66,8 @@ public class LootRequest
 
 	public virtual bool IsAlt => AltName is not null;
 
-	[ForeignKey(nameof(LootId))]
-	public virtual Loot Loot { get; set; } = null!;
+	[ForeignKey(nameof(ItemId))]
+	public virtual Item Item { get; set; } = null!;
 
 	[ForeignKey(nameof(PlayerId))]
 	public virtual Player Player { get; set; } = null!;
