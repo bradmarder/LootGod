@@ -51,8 +51,6 @@ else
 	conn.Dispose();
 }
 
-builder.WebHost.UseKestrelCore();
-builder.Services.AddRoutingCore();
 builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite(connString.ConnectionString));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<LootService>();
@@ -86,14 +84,6 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 	var db = scope.ServiceProvider.GetRequiredService<LootGodContext>();
 
 	db.Database.EnsureCreated();
-
-	try
-	{
-		db.Database.ExecuteSqlRaw("ALTER TABLE Items DROP COLUMN RaidQuantity");
-		db.Database.ExecuteSqlRaw("ALTER TABLE Items DROP COLUMN RotQuantity");
-	}
-	catch { }
-	//db.Database.ExecuteSqlRaw("ALTER TABLE Items DROP COLUMN GuildId");
 
 	_ = scope.ServiceProvider
 		.GetRequiredService<LootService>()
@@ -171,10 +161,13 @@ app.MapGet("Vacuum", (LootGodContext db, string key) =>
 app.MapGet("Backup", (LootGodContext db, string key) =>
 {
 	EnsureOwner(key);
-	db.Database.ExecuteSql($"VACUUM INTO '{backup}'");
+
+	db.Database.ExecuteSqlRaw("VACUUM INTO {0}", backup);
+
 	var stream = File.OpenRead(backup);
 	var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 	var name = $"backup-{now}.db";
+
 	return Results.Stream(stream, fileDownloadName: name);
 });
 
@@ -214,7 +207,7 @@ app.MapGet("GetArchivedLootRequests", (LootGodContext db, LootService lootServic
 			MainName = x.Player.Name,
 			Class = x.Class ?? x.Player.Class,
 			Spell = x.Spell,
-			LootId = x.ItemId,
+			ItemId = x.ItemId,
 			LootName = x.Item.Name,
 			Quantity = x.Quantity,
 			RaidNight = x.RaidNight,

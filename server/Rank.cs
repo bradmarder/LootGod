@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LootGod;
 
-[Index(nameof(Name), nameof(GuildId), IsUnique = true)]
+[Index(nameof(GuildId), nameof(Name), IsUnique = true)]
 public class Rank
 {
 	private Rank() { }

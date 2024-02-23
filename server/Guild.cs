@@ -4,7 +4,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LootGod;
 
-// TODO: recreate table for both Name/Server index
 [Index(nameof(Name), nameof(Server), IsUnique = true)]
 public class Guild
 {

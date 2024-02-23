@@ -18,7 +18,7 @@ declare interface ILootRequest {
 	readonly altName: string;
 	readonly spell: string | null;
 	readonly class: EQClass;
-	readonly lootId: number;
+	readonly itemId: number;
 	readonly lootName: string;
 	readonly quantity: number;
 	readonly raidNight: boolean;

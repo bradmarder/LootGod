@@ -246,7 +246,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 				MainName = x.Player.Name,
 				Class = x.Class ?? x.Player.Class,
 				Spell = x.Spell,
-				LootId = x.ItemId,
+				ItemId = x.ItemId,
 				LootName = x.Item.Name,
 				Quantity = x.Quantity,
 				RaidNight = x.RaidNight,

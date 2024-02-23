@@ -44,7 +44,7 @@ export default function Loots(props: IContext) {
 		// subtract the granted loot quantity from the total loot quantity
 		.map(item => {
 			const grantedLootQty = lootRequests
-				.filter(x => x.lootId === item.itemId)
+				.filter(x => x.itemId === item.itemId)
 				.filter(x => x.granted)
 				.map(x => x.quantity)
 				.reduce((x, y) => x + y, 0);
@@ -92,7 +92,7 @@ export default function Loots(props: IContext) {
 								}
 								{props.spell && getSpellLevel(loot.name)}
 								{props.spell && loot.name}
-								&nbsp;| {props.raidNight ? loot.raidQuantity : loot.rotQuantity} available | {lootRequests.filter(x => x.lootId === loot.itemId && x.granted).length} granted | {lootRequests.filter(x => x.lootId === loot.itemId).length} request(s)
+								&nbsp;| {props.raidNight ? loot.raidQuantity : loot.rotQuantity} available | {lootRequests.filter(x => x.itemId === loot.itemId && x.granted).length} granted | {lootRequests.filter(x => x.itemId === loot.itemId).length} request(s)
 							</Accordion.Header>
 							<Accordion.Body>
 								{props.isAdmin &&
@@ -103,7 +103,7 @@ export default function Loots(props: IContext) {
 										<Button variant={'warning'} size={'sm'} disabled={isLoading} onClick={() => incrementLoot(loot.id)}>Increment Quantity</Button>
 										<Button variant={'danger'} size={'sm'} disabled={isLoading || (props.raidNight ? loot.raidQuantity : loot.rotQuantity) === 0} onClick={() => decrementLoot(loot.id)}>Decrement Quantity</Button>
 										<br /><br />
-										{lootRequests.filter(x => x.lootId === loot.itemId).map(req =>
+										{lootRequests.filter(x => x.itemId === loot.itemId).map(req =>
 											<span key={req.id}>
 												{getText(req)}
 												&nbsp;

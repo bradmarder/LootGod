@@ -12,17 +12,17 @@ export default function CreateLootRequest(props: IContext) {
 	const [currentItem, setCurrentItem] = useState('');
 	const [quantity, setQuantity] = useState(1);
 	const [eqClass, setClass] = useState('');
-	const [lootId, setLootId] = useState(0);
+	const [itemId, setItemId] = useState(0);
 	const [linkedAlts, setLinkedAlts] = useState<string[]>([]);
 
 	const hasQtyLoots = props.loots.filter(x => (props.raidNight ? x.raidQuantity : x.rotQuantity) > 0);
 
-	const spellSelected = lootId > 0 && props.loots.find(x => x.itemId === lootId)!.isSpell;
+	const spellSelected = itemId > 0 && props.loots.find(x => x.itemId === itemId)!.isSpell;
 
 	const isCreateLootDisabled =
 		hasQtyLoots.length === 0
 		|| isLoading
-		|| lootId === 0
+		|| itemId === 0
 		|| quantity < 1
 
 		// if specifying an alt, then class is required
@@ -35,7 +35,7 @@ export default function CreateLootRequest(props: IContext) {
 		const data = {
 			AltName: altName || null,
 			Class: altName === '' ? null : classes.indexOf(eqClass as EQClass),
-			LootId: lootId,
+			ItemId: itemId,
 			Quantity: spellSelected ? 1 : quantity,
 			Spell: spellSelected ? spell : null,
 			CurrentItem: currentItem,
@@ -53,21 +53,21 @@ export default function CreateLootRequest(props: IContext) {
 			setIsLoading(false);
 		}
 		setAltName('');
-		setLootId(0);
+		setItemId(0);
 		setQuantity(1);
 		setClass('');
 		setSpell('');
 		setCurrentItem('');
 	};
-	const setLootLogic = (lootId: number) => {
+	const setLootLogic = (itemId: number) => {
 
 		// if someone selects a spell, they must enter the name of the spell, and the quantity defaults to 
 		// ....but then we have to remove the char/lootId unique combo...
-		if (lootId > 0 && props.loots.find(x => x.itemId === lootId)!.isSpell) {
+		if (itemId > 0 && props.loots.find(x => x.itemId === itemId)!.isSpell) {
 			setQuantity(1);
 		}
 
-		setLootId(lootId);
+		setItemId(itemId);
 	};
 	const loadLinkedAlts = () => {
         axios
@@ -111,7 +111,7 @@ export default function CreateLootRequest(props: IContext) {
 					<Col xs={12} md={6}>
 						<Form.Group className="mb-3">
 							<Form.Label>Loot</Form.Label>
-							<Form.Select value={lootId} onChange={e => setLootLogic(Number(e.target.value))}>
+							<Form.Select value={itemId} onChange={e => setLootLogic(Number(e.target.value))}>
 								<option value={0}>Select an Item</option>
 								{hasQtyLoots.map(loot =>
 									<option key={loot.itemId} value={loot.itemId}>{loot.name}</option>

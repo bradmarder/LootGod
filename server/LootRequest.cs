@@ -15,7 +15,7 @@ public class LootRequest
 		PlayerId = playerId;
 		Spell = dto.Spell?.Trim();
 		Class = dto.Class;
-		ItemId = dto.LootId;
+		ItemId = dto.ItemId;
 		Quantity = dto.Quantity;
 		CurrentItem = dto.CurrentItem;
 		RaidNight = dto.RaidNight;
@@ -45,8 +45,6 @@ public class LootRequest
 
 	public EQClass? Class { get; set; }
 
-	// TODO: rename column
-	[Column("LootId")]
 	public int ItemId { get; set; }
 
 	/// <summary>

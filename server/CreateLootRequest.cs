@@ -13,7 +13,7 @@ public record CreateLootRequest
 	public string? Spell { get; init; }
 
 	public EQClass? Class { get; init; } // Enum.IsDefined
-	public int LootId { get; init; }
+	public int ItemId { get; init; }
 	public byte Quantity { get; init; }
 
 	[StringLength(255)]

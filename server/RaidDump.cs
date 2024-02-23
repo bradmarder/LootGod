@@ -19,4 +19,3 @@ public class RaidDump
 	[ForeignKey(nameof(PlayerId))]
 	public virtual Player Player { get; set; } = null!;
 }
-
