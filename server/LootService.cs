@@ -220,7 +220,6 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 			.OrderBy(x => x.Item.Name)
 			.Select(x => new LootDto
 			{
-				Id = x.Id,
 				ItemId = x.ItemId,
 				Name = x.Item.Name,
 				RaidQuantity = x.RaidQuantity,

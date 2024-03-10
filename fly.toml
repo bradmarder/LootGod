@@ -7,7 +7,7 @@ processes = []
 primary_region = "ord"
 
 [env]
-  DATABASE_URL = "/mnt/guildLoot.db"
+  DATABASE_URL = "/mnt/loot.db"
   BACKUP_URL = "/mnt/backup.db"
 
 [experimental]

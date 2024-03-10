@@ -8,7 +8,8 @@ namespace LootGod;
 [Index(nameof(Archived), nameof(Granted))]
 public class LootRequest
 {
-	private LootRequest() { }
+	// TODO: make private
+	public LootRequest() { }
 	public LootRequest(CreateLootRequest dto, string? ip, int playerId)
 	{
 		IP = ip;
@@ -28,9 +29,9 @@ public class LootRequest
 	}
 
 	[Key]
-	public int Id { get; private set; }
+	public int Id { get; set; }
 
-	public DateTime CreatedDate { get; set; }
+	public long CreatedDate { get; set; }
 
 	public string? IP { get; set; }
 

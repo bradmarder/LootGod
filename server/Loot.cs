@@ -1,15 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LootGod;
 
-[Index(nameof(GuildId), nameof(ItemId), IsUnique = true)]
+[PrimaryKey(nameof(GuildId), nameof(ItemId))]
 public class Loot
 {
-	[Key]
-	public int Id { get; private set; }
-
 	public int ItemId { get; set; }
 	public int GuildId { get; set; }
 	public byte RaidQuantity { get; set; }

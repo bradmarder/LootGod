@@ -15,21 +15,22 @@ public class Guild
 	}
 
 	[Key]
-	public int Id { get; private set; }
+	public int Id { get; set; }
 
 	[StringLength(255, MinimumLength = 3)]
 	public string Name { get; set; } = null!;
 
 	public Server Server { get; set; }
 
-	public DateTime CreatedDate { get; set; }
+	public long CreatedDate { get; set; }
 
 	public bool LootLocked { get; set; }
 
-	// TODO: cannot delete FK column, need to re-create table
-	public int? LeaderId { get; set; }
+	[StringLength(255)]
+	public string? RaidDiscordWebhookUrl { get; set; }
 
-	public string? DiscordWebhookUrl { get; set; }
+	[StringLength(255)]
+	public string? RotDiscordWebhookUrl { get; set; }
 
 	[InverseProperty(nameof(Player.Guild))]
 	public virtual List<Player> Players { get; } = new();

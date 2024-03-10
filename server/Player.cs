@@ -81,12 +81,9 @@ public class Player
 	}
 
 	[Key]
-	public int Id { get; private set; }
+	public int Id { get; set; }
 
 	public bool Admin { get; set; }
-
-	[StringLength(255)]
-	public string? Email { get; set; }
 
 	/// <summary>
 	/// Alts are never given keys
@@ -105,7 +102,7 @@ public class Player
 
 	public int GuildId { get; set; }
 
-	public DateTime CreatedDate { get; set; }
+	public long CreatedDate { get; set; }
 
 	[Required]
 	[StringLength(24, MinimumLength = 4)]

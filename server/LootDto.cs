@@ -29,7 +29,6 @@ public record LootDto
 		"Calcified Bloodied Ore",
 	}.ToFrozenSet();
 
-	public required int Id { get; init; }
 	public required int ItemId { get; init; }
 	public required byte RaidQuantity { get; init; }
 	public required byte RotQuantity { get; init; }

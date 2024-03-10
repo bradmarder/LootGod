@@ -149,7 +149,7 @@ app.MapPost("GuildDiscord", (LootGodContext db, LootService lootService, string 
 	var guildId = lootService.GetGuildId();
 	db.Guilds
 		.Where(x => x.Id == guildId)
-		.ExecuteUpdate(x => x.SetProperty(y => y.DiscordWebhookUrl, webhook));
+		.ExecuteUpdate(x => x.SetProperty(y => y.RaidDiscordWebhookUrl, webhook));
 });
 
 app.MapGet("Vacuum", (LootGodContext db, string key) =>
@@ -184,17 +184,17 @@ app.MapGet("GetLootRequests", (LootService lootService) =>
 	return lootService.LoadLootRequests(guildId);
 });
 
-app.MapGet("GetArchivedLootRequests", (LootGodContext db, LootService lootService, string? name, int? lootId) =>
+app.MapGet("GetArchivedLootRequests", (LootGodContext db, LootService lootService, string? name, int? itemId) =>
 {
 	lootService.EnsureAdminStatus();
 
 	var guildId = lootService.GetGuildId();
 
 	return db.LootRequests
-		.Where(x => x.Player.GuildId == guildId)
+		.Where(x => x.Player.GuildId == EF.Constant(guildId))
 		.Where(x => x.Archived)
 		.Where(x => name == null || x.AltName!.StartsWith(name) || x.Player.Name.StartsWith(name))
-		.Where(x => lootId == null || x.ItemId == lootId)
+		.Where(x => itemId == null || x.ItemId == itemId)
 		.OrderByDescending(x => x.Spell != null)
 		.ThenBy(x => x.ItemId)
 		.ThenByDescending(x => x.AltName ?? x.Player.Name)
@@ -218,10 +218,10 @@ app.MapGet("GetArchivedLootRequests", (LootGodContext db, LootService lootServic
 		.ToArray();
 });
 
+// TODO: remove? lockdown somehow
 app.MapPost("CreateLoot", async (LootGodContext db, string name, LootService lootService) =>
 {
-	var guild = db.Guilds.FirstOrDefault(); // TODO: remove guild, items won't require
-	var item = new Item(name, Expansion.LS, guild);
+	var item = new Item(name, Expansion.LS);
 	db.Items.Add(item);
 	db.SaveChanges();
 
@@ -232,7 +232,7 @@ app.MapGet("FreeTrade", (LootGodContext db, LootService lootService) =>
 {
 	var guildId = lootService.GetGuildId();
 
-	return db.Guilds.Any(x => x.Id == guildId && x.Server == Server.FirionaVie);
+	return db.Guilds.Any(x => x.Id == EF.Constant(guildId) && x.Server == Server.FirionaVie);
 });
 
 app.MapGet("GetDiscordWebhook", (LootGodContext db, LootService lootService) =>
@@ -242,7 +242,7 @@ app.MapGet("GetDiscordWebhook", (LootGodContext db, LootService lootService) =>
 
 	return db.Guilds
 		.Where(x => x.Id == guildId)
-		.Select(x => x.DiscordWebhookUrl ?? "")
+		.Select(x => x.RaidDiscordWebhookUrl ?? "")
 		.FirstOrDefault();
 });
 
@@ -342,55 +342,40 @@ app.MapPost("UpdateLootQuantity", async (CreateLoot dto, LootGodContext db, Loot
 		loot = new Loot { GuildId = guildId, ItemId = dto.ItemId };
 		db.Loots.Add(loot);
 	}
-	if (dto.RaidNight)
-	{
-		loot.RaidQuantity = dto.Quantity;
-	}
-	else
-	{
-		loot.RotQuantity = dto.Quantity;
-	}
+	_ = dto.RaidNight
+		? loot.RaidQuantity = dto.Quantity
+		: loot.RotQuantity = dto.Quantity;
 	db.SaveChanges();
 
 	await lootService.RefreshLoots(guildId);
 });
 
-app.MapPost("IncrementLootQuantity", async (LootGodContext db, int id, bool raidNight, LootService lootService) =>
+app.MapPost("IncrementLootQuantity", async (LootGodContext db, int itemId, bool raidNight, LootService lootService) =>
 {
 	lootService.EnsureAdminStatus();
 
 	var guildId = lootService.GetGuildId();
 
-	var loot = db.Loots.Single(x => x.Id == id);
-	if (raidNight)
-	{
-		loot.RaidQuantity++;
-	}
-	else
-	{
-		loot.RotQuantity++;
-	}
+	var loot = db.Loots.Single(x => x.GuildId == guildId && x.ItemId == itemId);
+	_ = raidNight
+		? loot.RaidQuantity++
+		: loot.RotQuantity++;
 
 	db.SaveChanges();
 
 	await lootService.RefreshLoots(guildId);
 });
 
-app.MapPost("DecrementLootQuantity", async (LootGodContext db, int id, bool raidNight, LootService lootService) =>
+app.MapPost("DecrementLootQuantity", async (LootGodContext db, int itemId, bool raidNight, LootService lootService) =>
 {
 	lootService.EnsureAdminStatus();
 
 	var guildId = lootService.GetGuildId();
 
-	var loot = db.Loots.Single(x => x.Id == id);
-	if (raidNight)
-	{
-		loot.RaidQuantity--;
-	}
-	else
-	{
-		loot.RotQuantity--;
-	}
+	var loot = db.Loots.Single(x => x.GuildId == guildId && x.ItemId == itemId);
+	_ = raidNight
+		? loot.RaidQuantity--
+		: loot.RotQuantity--;
 
 	// if quantities are zero, then remove the loot record
 	if (loot.RaidQuantity == 0 && loot.RotQuantity == 0)
@@ -522,14 +507,20 @@ app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootServ
 		{
 			loot.RotQuantity -= (byte)grantedQuantity;
 		}
+
+		// if quantities are zero, then remove the loot record
+		if (loot.RaidQuantity == 0 && loot.RotQuantity == 0)
+		{
+			db.Loots.Remove(loot);
+		}
 	}
 
 	_ = db.SaveChanges();
 
 	var guild = db.Guilds.Single(x => x.Id == guildId);
-	if (guild.DiscordWebhookUrl is not null)
+	if (guild.RaidDiscordWebhookUrl is not null)
 	{
-		await lootService.DiscordWebhook(httpClient, output, guild.DiscordWebhookUrl);
+		await lootService.DiscordWebhook(httpClient, output, guild.RaidDiscordWebhookUrl);
 	}
 
 	var t1 = lootService.RefreshLoots(guildId);
@@ -761,7 +752,7 @@ app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService) =
 		.Where(x => x.Player.Active == true)
 		.ToList();
 	var uniqueDates = dumps
-		.Select(x => DateTimeOffset.FromUnixTimeSeconds(x.Timestamp))
+		.Select(x => DateTimeOffset.FromUnixTimeSeconds((long)x.Timestamp))
 		.Select(x => DateOnly.FromDateTime(x.DateTime))
 		.ToHashSet();
 	var oneHundredEightDayMaxCount = uniqueDates.Count;
@@ -776,7 +767,7 @@ app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService) =
 		.ToDictionary(
 			x => playerMap[x.Key],
 			x => x
-				.Select(y => DateTimeOffset.FromUnixTimeSeconds(y.Timestamp))
+				.Select(y => DateTimeOffset.FromUnixTimeSeconds((long)y.Timestamp))
 				.Select(y => DateOnly.FromDateTime(y.DateTime))
 				.ToHashSet());
 

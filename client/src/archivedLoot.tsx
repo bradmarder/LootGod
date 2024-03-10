@@ -9,13 +9,13 @@ export default function ArchivedLoot(props: IContext) {
 	const [granted, setGranted] = useState(false);
 	const [requests, setRequests] = useState<ILootRequest[]>([]);
 	const [name, setName] = useState('');
-	const [lootId, setLootId] = useState('');
+	const [itemId, setItemId] = useState('');
 
 	const getLootRequests = () => {
 		setIsLoading(true);
 		const params = {
 			name: name || null,
-			lootId: lootId || null,
+			itemId: itemId || null,
 		};
 		axios
 			.get<ILootRequest[]>('/GetArchivedLootRequests', { params })
@@ -41,7 +41,7 @@ export default function ArchivedLoot(props: IContext) {
 					<Col>
 						<Form.Group>
 							<Form.Label>Name</Form.Label>
-							<Form.Select value={lootId} onChange={e => setLootId(e.target.value)}>
+							<Form.Select value={itemId} onChange={e => setItemId(e.target.value)}>
 								<option value=''>Select Loot</option>
 								{props.items.map(item =>
 									<option key={item.id} value={item.id}>{item.name}</option>
@@ -50,7 +50,7 @@ export default function ArchivedLoot(props: IContext) {
 						</Form.Group>
 					</Col>
 				</Row>
-				<Button variant='success' disabled={isLoading || (name === '' && lootId === '')} onClick={getLootRequests}>Search</Button>
+				<Button variant='success' disabled={isLoading || (name === '' && itemId === '')} onClick={getLootRequests}>Search</Button>
 			</Form>
 			{requests.length > 0 &&
 				<Table striped bordered hover size="sm">
@@ -68,7 +68,7 @@ export default function ArchivedLoot(props: IContext) {
 						</tr>
 					</thead>
 					<tbody>
-						{requests.filter(x => !granted || x.granted).map((item) =>
+						{requests.filter(x => !granted || x.granted).map(item =>
 							<tr key={item.id}>
 								<td>{item.altName || item.mainName}</td>
 								<td>{item.isAlt ? 'Alt' : 'Main'}</td>
@@ -77,7 +77,7 @@ export default function ArchivedLoot(props: IContext) {
 								<td>{item.spell || item.quantity}</td>
 								<td>{item.currentItem}</td>
 								<td className={item.granted ? 'text-success' : 'text-danger'}>{item.granted ? "yes" : "no"}</td>
-								<td>{new Date(item.createdDate + '+00:00').toLocaleDateString()}</td>
+								<td>{new Date(item.createdDate).toLocaleDateString()}</td>
 								<td>{item.raidNight ? 'Raid' : 'Rot'}</td>
 							</tr>
 						)}

@@ -17,14 +17,14 @@ export default function Loots(props: IContext) {
 	const incrementLoot = (id: number) => {
 		setIsLoading(true);
 		axios
-			.post('/IncrementLootQuantity?id=' + id+ '&raidNight=' + props.raidNight)
+			.post('/IncrementLootQuantity?itemId=' + id + '&raidNight=' + props.raidNight)
 			.finally(() => setIsLoading(false));
 	}
 
 	const decrementLoot = (id: number) => {
 		setIsLoading(true);
 		axios
-			.post('/DecrementLootQuantity?id=' + id + '&raidNight=' + props.raidNight)
+			.post('/DecrementLootQuantity?itemId=' + id + '&raidNight=' + props.raidNight)
 			.finally(() => setIsLoading(false));
 	}
 
@@ -85,7 +85,7 @@ export default function Loots(props: IContext) {
 			{loots.length > 0 &&
 				<Accordion>
 					{loots.map((loot, i) =>
-						<Accordion.Item key={loot.id} eventKey={i.toString()}>
+						<Accordion.Item key={loot.itemId} eventKey={i.toString()}>
 							<Accordion.Header>
 								{!props.spell &&
 									<a href={'https://www.raidloot.com/items?view=List&name=' + loot.name} target='_blank' rel='noreferrer'>{loot.name}</a>
@@ -100,8 +100,8 @@ export default function Loots(props: IContext) {
 										{(props.raidNight ? loot.raidQuantity : loot.rotQuantity) === 0 &&
 											<Alert variant={'warning'}><strong>Grant Disabled</strong> - Already Allotted Maximum Quantity</Alert>
 										}
-										<Button variant={'warning'} size={'sm'} disabled={isLoading} onClick={() => incrementLoot(loot.id)}>Increment Quantity</Button>
-										<Button variant={'danger'} size={'sm'} disabled={isLoading || (props.raidNight ? loot.raidQuantity : loot.rotQuantity) === 0} onClick={() => decrementLoot(loot.id)}>Decrement Quantity</Button>
+										<Button variant={'warning'} size={'sm'} disabled={isLoading} onClick={() => incrementLoot(loot.itemId)}>Increment Quantity</Button>
+										<Button variant={'danger'} size={'sm'} disabled={isLoading || (props.raidNight ? loot.raidQuantity : loot.rotQuantity) === 0} onClick={() => decrementLoot(loot.itemId)}>Decrement Quantity</Button>
 										<br /><br />
 										{lootRequests.filter(x => x.itemId === loot.itemId).map(req =>
 											<span key={req.id}>

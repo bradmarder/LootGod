@@ -12,34 +12,27 @@ public enum Expansion : byte
 	LS = 4,
 }
 
-// TODO: rebuild table with correct indexes
 [Index(nameof(Expansion))]
 [Index(nameof(Name), IsUnique = true)]
 public class Item
 {
 	private Item() { }
-	public Item(string name, Expansion expansion, Guild guild)
+	public Item(string name, Expansion expansion)
 	{
 		Name = name;
 		Expansion = expansion;
-		Guild = guild;
 	}
 
 	[Key]
-	public int Id { get; private set; }
+	public int Id { get; set; }
 
 	public Expansion Expansion { get; set; }
 
-	[Obsolete]
-	public int GuildId { get; set; }
+	public long CreatedDate { get; set; }
 
 	[Required]
 	[StringLength(255)]
 	public string Name { get; set; } = null!;
-
-	[Obsolete]
-	[ForeignKey(nameof(GuildId))]
-	public virtual Guild? Guild { get; set; } = null!;
 
 	[InverseProperty(nameof(LootRequest.Item))]
 	public virtual List<LootRequest> LootRequests { get; } = new();

@@ -13,7 +13,6 @@ public class RaidDump
 	}
 
 	public long Timestamp { get; private set; }
-
 	public int PlayerId { get; private set; }
 
 	[ForeignKey(nameof(PlayerId))]

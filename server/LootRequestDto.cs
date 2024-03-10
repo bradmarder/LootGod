@@ -4,7 +4,7 @@ public record LootRequestDto
 {
 	public required int Id { get; init; }
 	public required int PlayerId { get; init; }
-	public required DateTime CreatedDate { get; init; }
+	public required long CreatedDate { get; init; }
 	public required string MainName { get; init; }
 	public required string? AltName { get; init; }
 	public required string? Spell { get; init; }

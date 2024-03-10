@@ -1,5 +1,4 @@
 declare interface ILoot {
-	readonly id: number;
 	readonly itemId: number
 	readonly name: string;
 	readonly raidQuantity: number;
@@ -13,7 +12,7 @@ declare interface IItem {
 declare interface ILootRequest {
 	readonly id: number;
 	readonly playerId: number;
-	readonly createdDate: string;
+	readonly createdDate: number;
 	readonly mainName: string;
 	readonly altName: string;
 	readonly spell: string | null;
@@ -35,10 +34,6 @@ declare interface IContext {
 	readonly spell?: boolean;
 	readonly lootLocked?: boolean;
 	readonly linkedAltsCacheKey?: number;
-}
-declare interface ILootLock {
-	readonly lock: boolean;
-	readonly createdDate: string | null;
 }
 declare interface IRaidAttendance {
 	readonly name: string;

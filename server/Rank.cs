@@ -20,11 +20,11 @@ public class Rank
 	}
 
 	[Key]
-	public int Id { get; private set; }
+	public int Id { get; set; }
 
 	public int GuildId { get; set; }
 
-	public DateTime CreatedDate { get; set; }
+	public long CreatedDate { get; set; }
 
 	[Required]
 	[StringLength(byte.MaxValue)]

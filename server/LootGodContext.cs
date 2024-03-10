@@ -19,24 +19,35 @@ public class LootGodContext : DbContext
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
+		// https://github.com/dotnet/efcore/issues/10228
+		//modelBuilder
+		//	.Entity<Item>()
+		//	.Property(x => x.Id)
+		//	.UseAutoincrement(false);
+
+		modelBuilder
+			.Entity<Item>()
+			.Property(x => x.CreatedDate)
+			.HasDefaultValueSql("1000 * unixepoch()");
+
 		modelBuilder
 			.Entity<Guild>()
 			.Property(x => x.CreatedDate)
-			.HasDefaultValueSql("CURRENT_TIMESTAMP");
+			.HasDefaultValueSql("1000 * unixepoch()");
 
 		modelBuilder
 			.Entity<LootRequest>()
 			.Property(x => x.CreatedDate)
-			.HasDefaultValueSql("CURRENT_TIMESTAMP");
+			.HasDefaultValueSql("1000 * unixepoch()");
 
 		modelBuilder
 			.Entity<Player>()
 			.Property(x => x.CreatedDate)
-			.HasDefaultValueSql("CURRENT_TIMESTAMP");
+			.HasDefaultValueSql("1000 * unixepoch()");
 
 		modelBuilder
 			.Entity<Rank>()
 			.Property(x => x.CreatedDate)
-			.HasDefaultValueSql("CURRENT_TIMESTAMP");
+			.HasDefaultValueSql("1000 * unixepoch()");
 	}
 }
