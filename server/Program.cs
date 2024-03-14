@@ -136,12 +136,15 @@ app.MapGet("SSE", async (HttpContext ctx, LootService service) =>
 	await Task.Delay(Timeout.InfiniteTimeSpan, token);
 });
 
-app.MapPost("GuildDiscord", (LootGodContext db, LootService lootService, string webhook) =>
+app.MapPost("GuildDiscord", (LootGodContext db, LootService lootService, string webhook, bool raidNight) =>
 {
 	lootService.EnsureGuildLeader();
 
 	var uri = new Uri(webhook, UriKind.Absolute);
-	if (!StringComparer.OrdinalIgnoreCase.Equals(uri.Host, "discordapp.com"))
+	if (uri.Host != "discord.com"
+		|| uri.Segments[1] != "api/"
+		|| uri.Segments[2] != "webhooks/"
+		|| !long.TryParse(uri.Segments[3].TrimEnd('/'), out _))
 	{
 		throw new Exception(webhook);
 	}
@@ -149,7 +152,7 @@ app.MapPost("GuildDiscord", (LootGodContext db, LootService lootService, string 
 	var guildId = lootService.GetGuildId();
 	db.Guilds
 		.Where(x => x.Id == guildId)
-		.ExecuteUpdate(x => x.SetProperty(y => y.RaidDiscordWebhookUrl, webhook));
+		.ExecuteUpdate(x => x.SetProperty(y => raidNight ? y.RaidDiscordWebhookUrl : y.RotDiscordWebhookUrl, webhook));
 });
 
 app.MapGet("Vacuum", (LootGodContext db, string key) =>
@@ -235,14 +238,18 @@ app.MapGet("FreeTrade", (LootGodContext db, LootService lootService) =>
 	return db.Guilds.Any(x => x.Id == EF.Constant(guildId) && x.Server == Server.FirionaVie);
 });
 
-app.MapGet("GetDiscordWebhook", (LootGodContext db, LootService lootService) =>
+app.MapGet("GetDiscordWebhooks", (LootGodContext db, LootService lootService) =>
 {
 	lootService.EnsureGuildLeader();
 	var guildId = lootService.GetGuildId();
 
 	return db.Guilds
 		.Where(x => x.Id == guildId)
-		.Select(x => x.RaidDiscordWebhookUrl ?? "")
+		.Select(x => new
+		{
+			Raid = x.RaidDiscordWebhookUrl ?? "",
+			Rot = x.RotDiscordWebhookUrl ?? "",
+		})
 		.FirstOrDefault();
 });
 
@@ -299,8 +306,8 @@ app.MapPost("CreateLootRequest", async (CreateLootRequest dto, LootGodContext db
 	}
 
 	var ip = lootService.GetIPAddress();
-	var item = new LootRequest(dto, ip, playerId);
-	_ = db.LootRequests.Add(item);
+	var request = new LootRequest(dto, ip, playerId);
+	_ = db.LootRequests.Add(request);
 	_ = db.SaveChanges();
 
 	await lootService.RefreshRequests(guildId);
@@ -518,9 +525,10 @@ app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootServ
 	_ = db.SaveChanges();
 
 	var guild = db.Guilds.Single(x => x.Id == guildId);
-	if (guild.RaidDiscordWebhookUrl is not null)
+	var webhook = raidNight ? guild.RaidDiscordWebhookUrl : guild.RotDiscordWebhookUrl;
+	if (webhook is not null)
 	{
-		await lootService.DiscordWebhook(httpClient, output, guild.RaidDiscordWebhookUrl);
+		await lootService.DiscordWebhook(httpClient, output, webhook);
 	}
 
 	var t1 = lootService.RefreshLoots(guildId);

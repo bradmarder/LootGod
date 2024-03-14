@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
 
@@ -170,13 +171,16 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 			{
 				if (payload.GuildId is null || sink.Value.GuildId == payload.GuildId)
 				{
+					var text = new StringBuilder()
+						.Append($"event: {payload.Event}\n")
+						.Append($"data: {payload.JsonData}\n")
+						.Append($"id: {sink.Value.EventId++}\n")
+						.Append("\n\n")
+						.ToString();
+					var res = sink.Value.Response;
 					try
 					{
-						var res = sink.Value.Response;
-						await res.WriteAsync($"event: {payload.Event}\n");
-						await res.WriteAsync($"data: {payload.JsonData}\n");
-						await res.WriteAsync($"id: {sink.Value.EventId++}\n");
-						await res.WriteAsync("\n\n");
+						await res.WriteAsync(text);
 						await res.Body.FlushAsync();
 					}
 					catch (Exception ex)

@@ -63,7 +63,7 @@ export default function App() {
 	};
 	const getItems = (signal: AbortSignal) => {
 		axios
-			.get<ILoot[]>('/GetItems', { signal })
+			.get<IItem[]>('/GetItems', { signal })
 			.then(x => setItems(x.data))
 			.catch(() => { });
 	};

@@ -5,7 +5,8 @@ import axios from 'axios';
 export default function leaderModule() {
 
 	const [isLoading, setIsLoading] = useState(true);
-	const [discord, setDiscord] = useState('');
+	const [raidDiscord, setRaidDiscord] = useState('');
+	const [rotDiscord, setRotDiscord] = useState('');
 	const [transferName, setTransferName] = useState('');
 	const [discordSuccess, setDiscordSuccess] = useState(false);
 	const [transferSuccess, setTransferSuccess] = useState(false);
@@ -17,18 +18,25 @@ export default function leaderModule() {
 			.then(_ => setTransferSuccess(true))
 			.finally(() => setIsLoading(false));
 	};
-	const updateDiscord = () => {
+	const updateDiscord = async () => {
 		setIsLoading(true);
 		setDiscordSuccess(false);
-		axios
-			.post('/GuildDiscord?webhook=' + encodeURIComponent(discord))
-			.then(_ => setDiscordSuccess(true))
-			.finally(() => setIsLoading(false));
+		const a = axios.post('/GuildDiscord?raidNight=true&webhook=' + encodeURIComponent(raidDiscord));
+		const b = axios.post('/GuildDiscord?raidNight=false&webhook=' + encodeURIComponent(rotDiscord));
+		try {
+			await Promise.all([a, b]);
+			setDiscordSuccess(true)
+		} finally {
+			setIsLoading(false);
+		}
 	};
 	const getDiscord = () => {
 		axios
-			.get('/GetDiscordWebhook')
-			.then(x => setDiscord(x.data))
+			.get<{ raid: string, rot: string }>('/GetDiscordWebhooks')
+			.then(x => {
+				setRaidDiscord(x.data.raid);
+				setRotDiscord(x.data.rot);
+			})
 			.finally(() => setIsLoading(false));
 	};
 	useEffect(getDiscord, []);
@@ -49,13 +57,18 @@ export default function leaderModule() {
 			<hr />
 			<Form onSubmit={e => e.preventDefault()}>
 				<Form.Group>
-					<Form.Label>Discord Webhook URL</Form.Label>
-					<Form.Control type="text" placeholder='Enter Discord webhook URL' value={discord} onChange={e => setDiscord(e.target.value)} />
+					<Form.Label>Raid Discord Webhook URL</Form.Label>
+					<Form.Control type="text" placeholder='Enter Raid Discord webhook URL' value={raidDiscord} onChange={e => setRaidDiscord(e.target.value)} />
+				</Form.Group>
+				<hr />
+				<Form.Group>
+					<Form.Label>Rot Discord Webhook URL</Form.Label>
+					<Form.Control type="text" placeholder='Enter Rot Discord webhook URL' value={rotDiscord} onChange={e => setRotDiscord(e.target.value)} />
 				</Form.Group>
 				<br />
-				<Button variant='warning' disabled={isLoading || discord.length < 10} onClick={updateDiscord}>Update</Button>
+				<Button variant='warning' disabled={isLoading} onClick={updateDiscord}>Update</Button>
 				{discordSuccess &&
-					<Alert variant='success'>Successfully updated discard webhook URL</Alert>
+					<Alert variant='success'>Successfully updated Discord webhook URL</Alert>
 				}
 			</Form>
 		</Alert>
