@@ -140,15 +140,18 @@ app.MapPost("GuildDiscord", (LootGodContext db, LootService lootService, string 
 {
 	lootService.EnsureGuildLeader();
 
-	var uri = new Uri(webhook, UriKind.Absolute);
-	if (uri.Host != "discord.com"
-		|| uri.Segments[1] != "api/"
-		|| uri.Segments[2] != "webhooks/"
-		|| !long.TryParse(uri.Segments[3].TrimEnd('/'), out _))
+	if (!string.IsNullOrEmpty(webhook))
 	{
-		throw new Exception(webhook);
+		var uri = new Uri(webhook, UriKind.Absolute);
+		if (uri.Host != "discord.com"
+			|| uri.Segments[0] != "/"
+			|| uri.Segments[1] != "api/"
+			|| uri.Segments[2] != "webhooks/"
+			|| !long.TryParse(uri.Segments[3].TrimEnd('/'), out _))
+		{
+			throw new Exception(webhook);
+		}
 	}
-
 	var guildId = lootService.GetGuildId();
 	db.Guilds
 		.Where(x => x.Id == guildId)
