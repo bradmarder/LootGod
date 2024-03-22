@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
@@ -42,7 +43,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 			.Where(x => x.Key == key)
 			.Where(x => x.Active != false)
 			.Select(x => x.Id)
-			.FirstOrDefault();
+			.Single();
 	}
 
 	public int GetGuildId()
@@ -53,7 +54,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 			.Where(x => x.Key == key)
 			.Where(x => x.Active != false)
 			.Select(x => x.GuildId)
-			.FirstOrDefault();
+			.Single();
 	}
 
 	public bool GetAdminStatus()
@@ -64,7 +65,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 			.Where(x => x.Key == key)
 			.Where(x => x.Active == true)
 			.Select(x => x.Admin)
-			.FirstOrDefault();
+			.Single();
 	}
 
 	public bool IsGuildLeader()
@@ -165,7 +166,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 	{
 		await foreach (var payload in PayloadChannel.Reader.ReadAllAsync())
 		{
-			var start = DateTime.UtcNow;
+			var watch = Stopwatch.StartNew();
 
 			foreach (var sink in DataSinks)
 			{
@@ -191,8 +192,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 				}
 			}
 
-			var duration = DateTime.UtcNow - start;
-			_logger.LogWarning("Payload loop for '{Event}' completed in {Duration}ms", payload.Event, (long)duration.TotalMilliseconds);
+			_logger.LogWarning("Payload loop for '{Event}' completed in {Duration}ms", payload.Event, watch.ElapsedMilliseconds);
 		}
 	}
 
@@ -339,17 +339,14 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 		var player = _db.Players
 			.AsNoTracking()
 			.Include(x => x.Guild)
-			.FirstOrDefault(x => x.Key == key);
+			.Single(x => x.Key == key);
 
-		if (player is not null)
+		using var _ = _logger.BeginScope(new
 		{
-			using var _ = _logger.BeginScope(new
-			{
-				IP = GetIPAddress(),
-				Name = player.Name,
-				GuildName = player.Guild.Name,
-			});
-			_logger.LogWarning(nameof(AddDataSink));
-		}
+			IP = GetIPAddress(),
+			Name = player.Name,
+			GuildName = player.Guild.Name,
+		});
+		_logger.LogWarning(nameof(AddDataSink));
 	}
 }

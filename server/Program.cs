@@ -46,23 +46,13 @@ builder.Services.AddLogging(x => x
 	.ClearProviders()
 	.AddSimpleConsole(x =>
 	{
+		x.IncludeScopes = true;
 		x.SingleLine = true;
 		x.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
-		x.IncludeScopes = true;
 	})
 	.SetMinimumLevel(LogLevel.Warning)
 	.Configure(y => y.ActivityTrackingOptions = ActivityTrackingOptions.None)
 );
-
-builder.Services.AddRateLimiter(rateLimiterOptions =>
-{
-	rateLimiterOptions.AddFixedWindowLimiter("SingleDailyUsage", x =>
-	{
-		x.PermitLimit = 1;
-		x.QueueLimit = 0;
-		x.Window = TimeSpan.FromDays(1);
-	});
-});
 
 using var app = builder.Build();
 

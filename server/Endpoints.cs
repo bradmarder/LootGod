@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
@@ -7,20 +8,12 @@ using System.Text;
 
 namespace LootGod;
 
-public class Endpoints
+public record Endpoints(string _adminKey, string _backup)
 {
 	public record CreateLoot(byte Quantity, int ItemId, bool RaidNight);
 	public record CreateGuild(string LeaderName, string GuildName, Server Server);
 
 	private readonly HttpClient _httpClient = new();
-	private readonly string _adminKey;
-	private readonly string _backup;
-
-	public Endpoints(string adminKey, string backup)
-	{
-		_adminKey = adminKey;
-		_backup = backup;
-	}
 
 	void EnsureOwner(string key)
 	{
@@ -167,7 +160,7 @@ public class Endpoints
 					Raid = x.RaidDiscordWebhookUrl ?? "",
 					Rot = x.RotDiscordWebhookUrl ?? "",
 				})
-				.FirstOrDefault();
+				.Single();
 		});
 
 		app.MapGet("GetItems", (LootService lootService) =>
@@ -230,11 +223,10 @@ public class Endpoints
 			await lootService.RefreshRequests(guildId);
 		});
 
-		app.MapPost("DeleteLootRequest", async (LootGodContext db, HttpContext context, LootService lootService) =>
+		app.MapPost("DeleteLootRequest", async (LootGodContext db, int id, LootService lootService) =>
 		{
 			lootService.EnsureRaidLootUnlocked();
 
-			var id = int.Parse(context.Request.Query["id"]!);
 			var request = db.LootRequests.Single(x => x.Id == id);
 			var guildId = lootService.GetGuildId();
 			var playerId = lootService.GetPlayerId();
@@ -247,9 +239,8 @@ public class Endpoints
 				throw new Exception("Cannot delete archived loot requests");
 			}
 
-			db.LootRequests
-				.Where(x => x.Id == id)
-				.ExecuteDelete();
+			db.LootRequests.Remove(request);
+			db.SaveChanges();
 
 			await lootService.RefreshRequests(guildId);
 		});
@@ -319,8 +310,7 @@ public class Endpoints
 			db.SaveChanges();
 
 			return player.Key!.Value;
-		})
-		.RequireRateLimiting("SingleDailyUsage");
+		});
 
 		app.MapPost("ToggleLootLock", async (LootGodContext db, LootService lootService, bool enable) =>
 		{
@@ -641,9 +631,9 @@ public class Endpoints
 				var data = await sr.ReadToEndAsync();
 				using var content = new StringContent(data);
 				using var form = new MultipartFormDataContent
-		{
-			{ content, "file", entry.FullName }
-		};
+				{
+					{ content, "file", entry.FullName }
+				};
 				form.Headers.Add("Player-Key", playerKey!.ToString());
 				using var res = await _httpClient.PostAsync($"http://{IPAddress.Loopback}:{8080}/api/ImportRaidDump?offset={offset}", form);
 				res.EnsureSuccessStatusCode();
@@ -743,7 +733,7 @@ public class Endpoints
 				.Where(x => x.Alt != true)
 				.Where(x => x.Active != false)
 				.OrderBy(x => x.Name)
-				.Select(x => x.Name + " " + "https://raidloot.fly.dev?key=" + x.Key)
+				.Select(x => x.Name + "\t" + "https://raidloot.fly.dev?key=" + x.Key)
 				.ToArray();
 			var data = string.Join(Environment.NewLine, namePasswordsMap);
 			var bytes = Encoding.UTF8.GetBytes(data);
