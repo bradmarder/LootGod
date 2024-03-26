@@ -1,6 +1,5 @@
 using LootGod;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 

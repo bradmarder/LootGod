@@ -558,68 +558,18 @@ public record Endpoints(string _adminKey, string _backup)
 			return Results.Ok();
 		}).DisableAntiforgery();
 
-		app.MapPost("ImportRaidDump", async (LootGodContext db, LootService lootService, IFormFile file, int offset) =>
+		app.MapPost("ImportRaidDump", async (LootService lootService, IFormFile file, int offset) =>
 		{
 			lootService.EnsureAdminStatus();
 
-			var guildId = lootService.GetGuildId();
-
-			// read the raid dump output file
 			await using var stream = file.OpenReadStream();
-			using var sr = new StreamReader(stream);
-			var output = await sr.ReadToEndAsync();
-			var nameToClassMap = output
-				.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
-				.Select(x => x.Split('\t'))
-				.Where(x => x.Length > 4) // filter out "missing" rows that start with a number, but have nothing after
-				.ToDictionary(x => x[1], x => x[3]);
+			await lootService.ImportRaidDump(stream, file.FileName, offset);
 
-			// create players who do not exist
-			var existingNames = db.Players
-				.Where(x => x.GuildId == guildId)
-				.Select(x => x.Name)
-				.ToArray();
-			var players = nameToClassMap.Keys
-				.Except(existingNames)
-				.Select(x => new Player(x, nameToClassMap[x], guildId))
-				.ToList();
-			db.Players.AddRange(players);
-			db.SaveChanges();
-
-			// save raid dumps for all players
-			// example filename = RaidRoster_firiona-20220815-205645.txt
-			var parts = file.FileName.Split('-');
-			var time = parts[1] + parts[2].Split('.')[0];
-
-			// since the filename of the raid dump doesn't include the timezone, we assume it matches the user's browser UTC offset
-			var timestamp = DateTimeOffset
-				.ParseExact(time, "yyyyMMddHHmmss", CultureInfo.InvariantCulture)
-				.AddMinutes(offset)
-				.ToUnixTimeSeconds();
-
-			var raidDumps = db.Players
-				.Where(x => x.GuildId == guildId)
-				.Where(x => nameToClassMap.Keys.Contains(x.Name)) // ContainsKey cannot be translated by EFCore
-				.Select(x => x.Id)
-				.ToArray()
-				.Select(x => new RaidDump(timestamp, x))
-				.ToArray();
-			db.RaidDumps.AddRange(raidDumps);
-
-			// A unique constraint on the composite index for (Timestamp/Player) will cause exceptions for duplicate raid dumps.
-			// It is safe/intended to ignore these exceptions for idempotency.
-			try
-			{
-				db.SaveChanges();
-			}
-			catch (DbUpdateException) { }
 		}).DisableAntiforgery();
 
-		app.MapPost("BulkImportRaidDump", async (LootGodContext db, LootService lootService, IFormFile file, int offset) =>
+		app.MapPost("BulkImportRaidDump", async (LootService lootService, IFormFile file, int offset) =>
 		{
 			lootService.EnsureAdminStatus();
-
-			var playerKey = lootService.GetPlayerKey();
 
 			await using var stream = file.OpenReadStream();
 			using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
@@ -627,16 +577,7 @@ public record Endpoints(string _adminKey, string _backup)
 			foreach (var entry in zip.Entries.OrderBy(x => x.LastWriteTime))
 			{
 				await using var dump = entry.Open();
-				using var sr = new StreamReader(dump);
-				var data = await sr.ReadToEndAsync();
-				using var content = new StringContent(data);
-				using var form = new MultipartFormDataContent
-				{
-					{ content, "file", entry.FullName }
-				};
-				form.Headers.Add("Player-Key", playerKey!.ToString());
-				using var res = await _httpClient.PostAsync($"http://{IPAddress.Loopback}:{8080}/api/ImportRaidDump?offset={offset}", form);
-				res.EnsureSuccessStatusCode();
+				await lootService.ImportRaidDump(dump, entry.FullName, offset);
 			}
 		}).DisableAntiforgery();
 
@@ -653,7 +594,7 @@ public record Endpoints(string _adminKey, string _backup)
 				.AsNoTracking()
 				.Where(x => x.GuildId == EF.Constant(guildId))
 				.Where(x => x.Active == true)
-				.ToDictionary(x => x.Id, x => x);
+				.ToDictionary(x => x.Id);
 			var altMainMap = playerMap
 				.Where(x => x.Value.MainId is not null)
 				.ToDictionary(x => x.Key, x => x.Value.MainId!.Value);
@@ -667,7 +608,7 @@ public record Endpoints(string _adminKey, string _backup)
 				.Where(x => x.Player.Active == true)
 				.ToList();
 			var uniqueDates = dumps
-				.Select(x => DateTimeOffset.FromUnixTimeSeconds((long)x.Timestamp))
+				.Select(x => DateTimeOffset.FromUnixTimeSeconds(x.Timestamp))
 				.Select(x => DateOnly.FromDateTime(x.DateTime))
 				.ToHashSet();
 			var oneHundredEightDayMaxCount = uniqueDates.Count;
@@ -682,7 +623,7 @@ public record Endpoints(string _adminKey, string _backup)
 				.ToDictionary(
 					x => playerMap[x.Key],
 					x => x
-						.Select(y => DateTimeOffset.FromUnixTimeSeconds((long)y.Timestamp))
+						.Select(y => DateTimeOffset.FromUnixTimeSeconds(y.Timestamp))
 						.Select(y => DateOnly.FromDateTime(y.DateTime))
 						.ToHashSet());
 

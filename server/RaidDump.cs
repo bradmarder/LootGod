@@ -12,7 +12,11 @@ public class RaidDump
 		PlayerId = playerId;
 	}
 
+	/// <summary>
+	/// unix time seconds
+	/// </summary>
 	public long Timestamp { get; private set; }
+
 	public int PlayerId { get; private set; }
 
 	[ForeignKey(nameof(PlayerId))]

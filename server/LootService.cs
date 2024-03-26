@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
@@ -318,6 +319,58 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 				response?.Dispose();
 			}
 		}
+	}
+
+	public async Task ImportRaidDump(Stream stream, string fileName, int offset)
+	{
+		var guildId = GetGuildId();
+		using var sr = new StreamReader(stream);
+		var output = await sr.ReadToEndAsync();
+		var nameToClassMap = output
+			.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
+			.Select(x => x.Split('\t'))
+			.Where(x => x.Length > 4) // filter out "missing" rows that start with a number, but have nothing after
+			.ToDictionary(x => x[1], x => x[3]);
+
+		// create players who do not exist
+		var existingNames = _db.Players
+			.Where(x => x.GuildId == guildId)
+			.Select(x => x.Name)
+			.ToArray();
+		var players = nameToClassMap.Keys
+			.Except(existingNames)
+			.Select(x => new Player(x, nameToClassMap[x], guildId))
+			.ToList();
+		_db.Players.AddRange(players);
+		_db.SaveChanges();
+
+		// save raid dumps for all players
+		// example filename = RaidRoster_firiona-20220815-205645.txt
+		var parts = fileName.Split('-');
+		var time = parts[1] + parts[2].Split('.')[0];
+
+		// since the filename of the raid dump doesn't include the timezone, we assume it matches the user's browser UTC offset
+		var timestamp = DateTimeOffset
+			.ParseExact(time, "yyyyMMddHHmmss", CultureInfo.InvariantCulture)
+			.AddMinutes(offset)
+			.ToUnixTimeSeconds();
+
+		var raidDumps = _db.Players
+			.Where(x => x.GuildId == guildId)
+			.Where(x => nameToClassMap.Keys.Contains(x.Name)) // ContainsKey cannot be translated by EFCore
+			.Select(x => x.Id)
+			.ToArray()
+			.Select(x => new RaidDump(timestamp, x))
+			.ToArray();
+		_db.RaidDumps.AddRange(raidDumps);
+
+		// A unique constraint on the composite index for (Timestamp/Player) will cause exceptions for duplicate raid dumps.
+		// It is safe/intended to ignore these exceptions for idempotency.
+		try
+		{
+			_db.SaveChanges();
+		}
+		catch (DbUpdateException) { }
 	}
 
 	private async Task<string> TryReadContentAsync(HttpResponseMessage? response)
