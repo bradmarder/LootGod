@@ -1,14 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Diagnostics;
-using System.Globalization;
+﻿using Microsoft.EntityFrameworkCore;
 using System.IO.Compression;
-using System.Net;
 using System.Text;
 
 namespace LootGod;
 
-public record Endpoints(string _adminKey, string _backup)
+public class Endpoints(string _adminKey, string _backup)
 {
 	public record CreateLoot(byte Quantity, int ItemId, bool RaidNight);
 	public record CreateGuild(string LeaderName, string GuildName, Server Server);
