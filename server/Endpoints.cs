@@ -460,21 +460,27 @@ public class Endpoints(string _adminKey, string _backup)
 			db.SaveChanges();
 		});
 
+		// parse the guild dump player output
+		static async Task<GuildDumpPlayerOutput[]> ParseDumps(IFormFile file)
+		{
+			await using var stream = file.OpenReadStream();
+			using var sr = new StreamReader(stream);
+			var output = await sr.ReadToEndAsync();
+
+			return output
+				.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
+				.Select(x => x.Split('\t'))
+				.Select(x => new GuildDumpPlayerOutput(x))
+				.ToArray();
+		}
+
 		app.MapPost("ImportGuildDump", async (LootGodContext db, LootService lootService, IFormFile file) =>
 		{
 			lootService.EnsureAdminStatus();
 
 			var guildId = lootService.GetGuildId();
 
-			// parse the guild dump player output
-			await using var stream = file.OpenReadStream();
-			using var sr = new StreamReader(stream);
-			var output = await sr.ReadToEndAsync();
-			var dumps = output
-				.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
-				.Select(x => x.Split('\t'))
-				.Select(x => new GuildDumpPlayerOutput(x))
-				.ToArray();
+			var dumps = await ParseDumps(file);
 
 			// ensure not partial guild dump by checking a leader exists
 			if (!dumps.Any(x => StringComparer.OrdinalIgnoreCase.Equals("Leader", x.Rank)))

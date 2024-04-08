@@ -5,7 +5,7 @@ RUN npm ci
 COPY /client/ ./
 RUN npm run build
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS api
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS server
 WORKDIR /app
 COPY server/LootGod.csproj ./
 ARG RUNTIME=linux-musl-x64
@@ -19,13 +19,11 @@ RUN dotnet publish -c Release -o out \
 
 FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-alpine
 WORKDIR /app
-COPY --from=api /app/out .
+COPY --from=server /app/out .
 COPY --from=client /app/dist wwwroot
 EXPOSE 8080
-
-# Microsoft.Data.Sqlite.SqliteException (0x80004005): SQLite Error 8: 'attempt to write a readonly database'.
-#USER app
-#RUN chmod -R 600 /mnt
-
+USER app
 ENV DOTNET_EnableDiagnostics=0
+HEALTHCHECK --interval=1s --timeout=1s --retries=1 \
+	CMD wget -nv -t1 --spider 'http://localhost:8080/healthz' || exit 1
 ENTRYPOINT ["./LootGod"]

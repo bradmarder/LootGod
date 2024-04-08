@@ -39,6 +39,9 @@ else
 
 builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite(connString.ConnectionString));
 builder.Services.AddHttpContextAccessor();
+builder.Services
+	.AddHealthChecks()
+	.AddDbContextCheck<LootGodContext>();
 builder.Services.AddScoped<LootService>();
 builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
 builder.Services.AddLogging(x => x
@@ -92,7 +95,7 @@ app.UseStaticFiles(new StaticFileOptions
 });
 app.UsePathBase("/api");
 app.UseMiddleware<LogMiddleware>();
-app.MapGet("test", () => "Hello World!").ShortCircuit();
+app.MapHealthChecks("/healthz");
 
 new Endpoints(adminKey, backup).Map(app);
 
