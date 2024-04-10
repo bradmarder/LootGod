@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
@@ -22,6 +23,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 
 	public record LootOutput(string Loot, string Name, int Quantity);
 
+	private static readonly HttpClient _httpClient = new();
 	private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 	private static readonly Channel<Payload> PayloadChannel = Channel.CreateUnbounded<Payload>(new() { SingleReader = true, SingleWriter = false });
 	private static readonly ConcurrentDictionary<string, DataSink> DataSinks = new();
@@ -288,7 +290,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 		await PayloadChannel.Writer.WriteAsync(payload);
 	}
 
-	public async Task DiscordWebhook(HttpClient httpClient, string output, string discordWebhookUrl)
+	public async Task DiscordWebhook(string output, string discordWebhookUrl)
 	{
 		const string syntax = "coq";
 
@@ -306,7 +308,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 			HttpResponseMessage? response = null;
 			try
 			{
-				response = await httpClient.PostAsJsonAsync(discordWebhookUrl, json);
+				response = await _httpClient.PostAsJsonAsync(discordWebhookUrl, json);
 				response.EnsureSuccessStatusCode();
 			}
 			catch (Exception ex)
@@ -319,6 +321,21 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 				response?.Dispose();
 			}
 		}
+	}
+
+	/// <summary>
+	/// example filename = RaidRoster_firiona-20220815-205645.txt
+	/// </summary>
+	private static long ParseTimestamp(string fileName, int offset)
+	{
+		var parts = fileName.Split('-');
+		var time = parts[1] + parts[2].Split('.')[0];
+
+		// since the filename of the raid dump doesn't include the timezone, we assume it matches the user's browser UTC offset
+		return DateTimeOffset
+			.ParseExact(time, "yyyyMMddHHmmss", CultureInfo.InvariantCulture)
+			.AddMinutes(offset)
+			.ToUnixTimeSeconds();
 	}
 
 	public async Task ImportRaidDump(Stream stream, string fileName, int offset)
@@ -345,32 +362,22 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 		_db.SaveChanges();
 
 		// save raid dumps for all players
-		// example filename = RaidRoster_firiona-20220815-205645.txt
-		var parts = fileName.Split('-');
-		var time = parts[1] + parts[2].Split('.')[0];
-
-		// since the filename of the raid dump doesn't include the timezone, we assume it matches the user's browser UTC offset
-		var timestamp = DateTimeOffset
-			.ParseExact(time, "yyyyMMddHHmmss", CultureInfo.InvariantCulture)
-			.AddMinutes(offset)
-			.ToUnixTimeSeconds();
-
-		var raidDumps = _db.Players
+		var timestamp = ParseTimestamp(fileName, offset);
+		var entity = _db.Model.FindEntityType(typeof(RaidDump));
+		var sb = new StringBuilder()
+			.AppendLine($"INSERT INTO '{entity!.GetTableName()}' ('{nameof(RaidDump.PlayerId)}', '{nameof(RaidDump.Timestamp)}') VALUES");
+		var values = _db.Players
 			.Where(x => x.GuildId == guildId)
 			.Where(x => nameToClassMap.Keys.Contains(x.Name)) // ContainsKey cannot be translated by EFCore
-			.Select(x => x.Id)
-			.ToArray()
-			.Select(x => new RaidDump(timestamp, x))
+			.Select(x => $"({x.Id}, {timestamp})")
 			.ToArray();
-		_db.RaidDumps.AddRange(raidDumps);
+		sb.AppendLine(string.Join(',', values));
 
-		// A unique constraint on the composite index for (Timestamp/Player) will cause exceptions for duplicate raid dumps.
-		// It is safe/intended to ignore these exceptions for idempotency.
-		try
-		{
-			_db.SaveChanges();
-		}
-		catch (DbUpdateException) { }
+		// UPSERT - Ignore unique constraint on the primary composite key for RaidDump (Timestamp/Player)
+		sb.AppendLine("ON CONFLICT DO NOTHING");
+
+		var sql = sb.ToString();
+		_db.Database.ExecuteSqlRaw(sql);
 	}
 
 	private async Task<string> TryReadContentAsync(HttpResponseMessage? response)

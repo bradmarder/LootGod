@@ -9,8 +9,6 @@ public class Endpoints(string _adminKey, string _backup)
 	public record CreateLoot(byte Quantity, int ItemId, bool RaidNight);
 	public record CreateGuild(string LeaderName, string GuildName, Server Server);
 
-	private readonly HttpClient _httpClient = new();
-
 	void EnsureOwner(string key)
 	{
 		if (key != _adminKey)
@@ -431,7 +429,7 @@ public class Endpoints(string _adminKey, string _backup)
 			var webhook = raidNight ? guild.RaidDiscordWebhookUrl : guild.RotDiscordWebhookUrl;
 			if (webhook is not null)
 			{
-				await lootService.DiscordWebhook(_httpClient, output, webhook);
+				await lootService.DiscordWebhook(output, webhook);
 			}
 
 			var t1 = lootService.RefreshLoots(guildId);
