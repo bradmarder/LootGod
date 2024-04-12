@@ -23,12 +23,10 @@ export default function leaderModule() {
 		setDiscordSuccess(false);
 		const a = axios.post('/GuildDiscord?raidNight=true&webhook=' + encodeURIComponent(raidDiscord));
 		const b = axios.post('/GuildDiscord?raidNight=false&webhook=' + encodeURIComponent(rotDiscord));
-		try {
-			await Promise.all([a, b]);
-			setDiscordSuccess(true)
-		} finally {
-			setIsLoading(false);
-		}
+		Promise
+			.all([a, b])
+			.then(() => setDiscordSuccess(true))
+			.finally(() => setIsLoading(false));
 	};
 	const getDiscord = () => {
 		axios

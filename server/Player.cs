@@ -48,7 +48,7 @@ public class Player
 		Active = true;
 		Admin = true;
 		Key = GetRandomGuid();
-		Class = EQClass.Bard; // TODO: FIX THIS!!! class isn't updated ever
+		Class = EQClass.Bard; // default - will be updated during guild dump
 		Guild = new(guildName, server);
 		Rank = new("Leader", Guild);
 	}

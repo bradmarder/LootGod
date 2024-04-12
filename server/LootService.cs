@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Collections.Concurrent;
+using System.Collections.Frozen;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
@@ -27,6 +27,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 	private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 	private static readonly Channel<Payload> PayloadChannel = Channel.CreateUnbounded<Payload>(new() { SingleReader = true, SingleWriter = false });
 	private static readonly ConcurrentDictionary<string, DataSink> DataSinks = new();
+	private static readonly FrozenSet<Expansion> CurrentExpansions = new[] { Expansion.NoS, Expansion.LS }.ToFrozenSet();
 
 	public Guid? GetPlayerKey() =>
 		_httpContextAccessor.HttpContext!.Request.Headers.TryGetValue("Player-Key", out var headerKey) ? Guid.Parse(headerKey.ToString())
@@ -209,7 +210,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 	public ItemDto[] LoadItems()
 	{
 		return _db.Items
-			.Where(x => x.Expansion == Expansion.NoS || x.Expansion == Expansion.LS)
+			.Where(x => EF.Constant(CurrentExpansions).Contains(x.Expansion))
 			.OrderBy(x => x.Name)
 			.Select(x => new ItemDto
 			{
@@ -223,7 +224,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 	{
 		return _db.Loots
 			.Where(x => x.GuildId == EF.Constant(guildId))
-			.Where(x => x.Item.Expansion == Expansion.NoS || x.Item.Expansion == Expansion.LS)
+			.Where(x => EF.Constant(CurrentExpansions).Contains(x.Item.Expansion))
 			.OrderBy(x => x.Item.Name)
 			.Select(x => new LootDto
 			{
