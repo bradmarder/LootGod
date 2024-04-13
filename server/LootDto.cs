@@ -4,30 +4,30 @@ namespace LootGod;
 
 public record LootDto
 {
-	private static readonly FrozenSet<string> _spellPrefixes = new[]
-	{
+	private static readonly FrozenSet<string> _spellPrefixes = FrozenSet.ToFrozenSet(
+	[
 		"Minor",
 		"Lesser",
 		"Median",
 		"Greater",
 		"Glowing",
 		"Captured",
-	}.ToFrozenSet();
+	]);
 
-	private static readonly FrozenSet<string> _spellSuffixes = new[]
-	{
+	private static readonly FrozenSet<string> _spellSuffixes = FrozenSet.ToFrozenSet(
+	[
 		"Rune",
 		"Ethernere",
 		"Shadowscribed Parchment",
 		"Shar Vahl",
 		"Emblem of the Forge",
-	}.ToFrozenSet();
+	]);
 
-	private static readonly FrozenSet<string> _nuggets = new[]
-	{
+	private static readonly FrozenSet<string> _nuggets = FrozenSet.ToFrozenSet(
+	[
 		"Diamondized Restless Ore",
 		"Calcified Bloodied Ore",
-	}.ToFrozenSet();
+	]);
 
 	public required int ItemId { get; init; }
 	public required byte RaidQuantity { get; init; }
