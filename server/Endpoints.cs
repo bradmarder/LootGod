@@ -584,11 +584,86 @@ public class Endpoints(string _adminKey, string _backup)
 		app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService) =>
 		{
 			var guildId = lootService.GetGuildId();
-			var oneHundredEightyDaysAgo = DateTimeOffset.UtcNow.AddDays(-180).ToUnixTimeSeconds();
-			var ninety = DateTime.UtcNow.AddDays(-90);
-			var thirty = DateTime.UtcNow.AddDays(-30);
+			var now = DateTime.UtcNow;
+			var oneHundredEighty = now.AddDays(-180);
+			var ninety = now.AddDays(-90);
+			var thirty = now.AddDays(-30);
 			var ninetyDaysAgo = DateOnly.FromDateTime(ninety);
 			var thirtyDaysAgo = DateOnly.FromDateTime(thirty);
+			var oneHundredEightyDaysAgo = DateOnly.FromDateTime(oneHundredEighty);
+			var threshold = DateTimeOffset.UtcNow.AddDays(-180).ToUnixTimeSeconds();
+
+			var playerMap = db.Players
+				.AsNoTracking()
+				.Where(x => x.GuildId == EF.Constant(guildId))
+				.Where(x => x.Active == true)
+				.ToDictionary(x => x.Id);
+			var altMainMap = playerMap
+				.Where(x => x.Value.MainId is not null)
+				.ToDictionary(x => x.Key, x => x.Value.MainId!.Value);
+			var rankIdToNameMap = db.Ranks
+				.Where(x => x.GuildId == EF.Constant(guildId))
+				.ToDictionary(x => x.Id, x => x.Name);
+			var dumps = db.RaidDumps
+				.AsNoTracking()
+				.Where(x => x.Timestamp > threshold)
+				.Where(x => x.Player.GuildId == EF.Constant(guildId))
+				.Where(x => x.Player.Active == true)
+				.ToList();
+			var uniqueDates = dumps
+				.Select(x => DateTimeOffset.FromUnixTimeSeconds(x.Timestamp))
+				.Select(x => DateOnly.FromDateTime(x.DateTime))
+				.ToHashSet();
+			var oneHundredEightDayMaxCount = uniqueDates.Count;
+			var ninetyDayMaxCount = uniqueDates.Count(x => x > ninetyDaysAgo);
+			var thirtyDayMaxCount = uniqueDates.Count(x => x > thirtyDaysAgo);
+
+			// if there are zero raid dumps for mains, include them in RA
+			//playerMap
+			//	.Select(x => x.Value)
+			//	.Where(x => x.MainId is null)
+			//	.Where(x => x.Alt != true)
+			//	.ToList()
+			//	.ForEach(x => raidPlayers.TryAdd(x, new()));
+
+			static byte GetPercent(IEnumerable<DateOnly> values, DateOnly daysAgo, int max)
+			{
+				return (byte)(max == 0 ? 0 : Math.Round(100d * values.Count(y => y >= daysAgo) / max, 0, MidpointRounding.AwayFromZero));
+			}
+
+			return dumps
+				.Select(x => altMainMap.TryGetValue(x.PlayerId, out var mainId)
+					? new RaidDump(x.Timestamp, mainId)
+					: x)
+				.GroupBy(x => x.PlayerId)
+				.ToDictionary(
+					x => playerMap[x.Key],
+					x => x
+						.Select(y => DateTimeOffset.FromUnixTimeSeconds(y.Timestamp))
+						.Select(y => DateOnly.FromDateTime(y.DateTime))
+						.ToHashSet())
+				.Select(x => new RaidAttendanceDto
+				{
+					Name = x.Key.Name,
+					Hidden = x.Key.Hidden,
+					Admin = x.Key.Admin,
+					Rank = x.Key.RankId is null ? "unknown" : rankIdToNameMap[x.Key.RankId.Value],
+
+					_30 = GetPercent(x.Value, thirtyDaysAgo, thirtyDayMaxCount),
+					_90 = GetPercent(x.Value, ninetyDaysAgo, ninetyDayMaxCount),
+					_180 = GetPercent(x.Value, oneHundredEightyDaysAgo, oneHundredEightDayMaxCount),
+				})
+				.OrderBy(x => x.Name)
+				.ToArray();
+		});
+
+		app.MapGet("GetPlayerAttendance_V2", (LootGodContext db, LootService lootService) =>
+		{
+			var guildId = lootService.GetGuildId();
+			var now = DateTimeOffset.UtcNow;
+			var oneHundredEightyDaysAgo = now.AddDays(-180).ToUnixTimeSeconds();
+			var ninetyDaysAgo = now.AddDays(-90).ToUnixTimeSeconds();
+			var thirtyDaysAgo = now.AddDays(-30).ToUnixTimeSeconds();
 
 			var playerMap = db.Players
 				.AsNoTracking()
@@ -608,34 +683,25 @@ public class Endpoints(string _adminKey, string _backup)
 				.Where(x => x.Player.Active == true)
 				.ToList();
 			var uniqueDates = dumps
-				.Select(x => DateTimeOffset.FromUnixTimeSeconds(x.Timestamp))
-				.Select(x => DateOnly.FromDateTime(x.DateTime))
+				.Select(x => x.Timestamp)
 				.ToHashSet();
 			var oneHundredEightDayMaxCount = uniqueDates.Count;
 			var ninetyDayMaxCount = uniqueDates.Count(x => x > ninetyDaysAgo);
 			var thirtyDayMaxCount = uniqueDates.Count(x => x > thirtyDaysAgo);
 
-			var raidPlayers = dumps
+			static byte GetPercent(IEnumerable<long> values, long daysAgo, int max)
+			{
+				return (byte)(max == 0 ? 0 : Math.Round(100d * values.Count(y => y >= daysAgo) / max, 0, MidpointRounding.AwayFromZero));
+			}
+
+			return dumps
 				.Select(x => altMainMap.TryGetValue(x.PlayerId, out var mainId)
 					? new RaidDump(x.Timestamp, mainId)
 					: x)
 				.GroupBy(x => x.PlayerId)
 				.ToDictionary(
 					x => playerMap[x.Key],
-					x => x
-						.Select(y => DateTimeOffset.FromUnixTimeSeconds(y.Timestamp))
-						.Select(y => DateOnly.FromDateTime(y.DateTime))
-						.ToHashSet());
-
-			// if there are zero raid dumps for mains, include them in RA
-			//playerMap
-			//	.Select(x => x.Value)
-			//	.Where(x => x.MainId is null)
-			//	.Where(x => x.Alt != true)
-			//	.ToList()
-			//	.ForEach(x => raidPlayers.TryAdd(x, new()));
-
-			return raidPlayers
+					x => x.Select(y => y.Timestamp).ToHashSet())
 				.Select(x => new RaidAttendanceDto
 				{
 					Name = x.Key.Name,
@@ -643,14 +709,13 @@ public class Endpoints(string _adminKey, string _backup)
 					Admin = x.Key.Admin,
 					Rank = x.Key.RankId is null ? "unknown" : rankIdToNameMap[x.Key.RankId.Value],
 
-					_30 = (byte)(thirtyDayMaxCount == 0 ? 0 : Math.Round(100d * x.Value.Count(y => y > thirtyDaysAgo) / thirtyDayMaxCount, 0, MidpointRounding.AwayFromZero)),
-					_90 = (byte)(ninetyDayMaxCount == 0 ? 0 : Math.Round(100d * x.Value.Count(y => y > ninetyDaysAgo) / ninetyDayMaxCount, 0, MidpointRounding.AwayFromZero)),
-					_180 = (byte)(oneHundredEightDayMaxCount == 0 ? 0 : Math.Round(100d * x.Value.Count / oneHundredEightDayMaxCount, 0, MidpointRounding.AwayFromZero)),
+					_30 = GetPercent(x.Value, thirtyDaysAgo, thirtyDayMaxCount),
+					_90 = GetPercent(x.Value, ninetyDaysAgo, ninetyDayMaxCount),
+					_180 = GetPercent(x.Value, oneHundredEightyDaysAgo, oneHundredEightDayMaxCount),
 				})
 				.OrderBy(x => x.Name)
 				.ToArray();
 		});
-
 		app.MapGet("GetGrantedLootOutput", (LootService lootService) =>
 		{
 			lootService.EnsureAdminStatus();
@@ -674,7 +739,7 @@ public class Endpoints(string _adminKey, string _backup)
 				.Where(x => x.Alt != true)
 				.Where(x => x.Active != false)
 				.OrderBy(x => x.Name)
-				.Select(x => x.Name + "\t" + "https://raidloot.fly.dev?key=" + x.Key)
+				.Select(x => x.Name + "\t" + "https://raidloot.fly.dev?key=" + x.Key) // TODO:
 				.ToArray();
 			var data = string.Join(Environment.NewLine, namePasswordsMap);
 			var bytes = Encoding.UTF8.GetBytes(data);
