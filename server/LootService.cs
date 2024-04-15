@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
-using System.Collections.Frozen;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
@@ -27,7 +26,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 	private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 	private static readonly Channel<Payload> PayloadChannel = Channel.CreateUnbounded<Payload>(new() { SingleReader = true, SingleWriter = false });
 	private static readonly ConcurrentDictionary<string, DataSink> DataSinks = new();
-	private static readonly FrozenSet<Expansion> CurrentExpansions = FrozenSet.ToFrozenSet([Expansion.NoS, Expansion.LS]);
+	private static readonly Expansion[] CurrentExpansions = [Expansion.NoS, Expansion.LS];
 
 	public Guid? GetPlayerKey() =>
 		_httpContextAccessor.HttpContext!.Request.Headers.TryGetValue("Player-Key", out var headerKey) ? Guid.Parse(headerKey.ToString())
