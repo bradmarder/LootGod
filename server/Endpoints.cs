@@ -503,11 +503,10 @@ public class Endpoints(string _adminKey, string _backup)
 			var ranks = dumps
 				.Select(x => x.Rank)
 				.Distinct(StringComparer.OrdinalIgnoreCase)
-				.Except(existingRankNames);
-			foreach (var rank in ranks)
-			{
-				db.Ranks.Add(new(rank, guildId));
-			}
+				.Except(existingRankNames)
+				.Select(x => new Rank(x, guildId))
+				.ToArray();
+			db.Ranks.AddRange(ranks);
 			db.SaveChanges();
 
 			// load all ranks

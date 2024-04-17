@@ -1,0 +1,28 @@
+services:
+  client:
+    #command: npm run start
+    build:
+      dockerfile: Dockerfile-client
+    ports:
+      - "1234:1234"
+    links:
+      - server:api.localhost
+    develop:
+      watch:
+        - action: sync
+          path: /client
+          target: /app
+        - action: rebuild
+          path: /client/package.json
+  server:
+    build:
+      dockerfile: Dockerfile-server
+    ports:
+      - "5000:8080"
+    develop:
+      watch:
+        - action: sync
+          path: /server
+          target: /app
+        - action: rebuild
+          path: /server/LootGod.csproj

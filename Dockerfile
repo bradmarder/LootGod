@@ -10,7 +10,7 @@ WORKDIR /app
 COPY server/LootGod.csproj ./
 ARG RUNTIME=linux-musl-x64
 RUN dotnet restore --runtime $RUNTIME
-COPY server/. ./
+COPY server/*.cs ./
 RUN dotnet publish -c Release -o out \
 	--no-restore \
 	--runtime $RUNTIME \

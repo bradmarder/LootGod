@@ -1,0 +1,8 @@
+FROM node:alpine
+WORKDIR /app
+COPY localhost.pem localhost.key ./
+COPY /client/package.json /client/package-lock.json ./
+RUN npm ci
+COPY ./client/ .
+EXPOSE 1234
+CMD npm run start

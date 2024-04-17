@@ -1,0 +1,7 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine
+WORKDIR /app
+COPY /server/LootGod.csproj ./
+RUN dotnet restore
+COPY /server/*.cs .
+EXPOSE 8080
+CMD dotnet watch
