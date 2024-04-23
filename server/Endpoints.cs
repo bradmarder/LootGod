@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.IO.Compression;
 using System.Text;
 
 namespace LootGod;
@@ -15,6 +14,17 @@ public class Endpoints(string _adminKey, string _backup)
 		{
 			throw new UnauthorizedAccessException(key);
 		}
+	}
+
+	public static bool IsValidWebhook(string webhook)
+	{
+		return new Uri(webhook, UriKind.Absolute) is
+		{ 
+			Scheme: "https",
+			Host: "discord.com",
+			Segments: ["/", "api/", "webhooks/", var x, _],
+		}
+		&& long.TryParse(x[..^1], out _);
 	}
 
 	public void Map(IEndpointRouteBuilder app)
@@ -41,18 +51,11 @@ public class Endpoints(string _adminKey, string _backup)
 		{
 			lootService.EnsureGuildLeader();
 
-			if (!string.IsNullOrEmpty(webhook))
+			if (!string.IsNullOrEmpty(webhook) && !IsValidWebhook(webhook))
 			{
-				var uri = new Uri(webhook, UriKind.Absolute);
-				if (uri.Host != "discord.com"
-					|| uri.Segments[0] != "/"
-					|| uri.Segments[1] != "api/"
-					|| uri.Segments[2] != "webhooks/"
-					|| !long.TryParse(uri.Segments[3].TrimEnd('/'), out _))
-				{
-					throw new Exception(webhook);
-				}
+				throw new Exception(webhook);
 			}
+
 			var guildId = lootService.GetGuildId();
 			db.Guilds
 				.Where(x => x.Id == guildId)
@@ -71,11 +74,9 @@ public class Endpoints(string _adminKey, string _backup)
 
 			db.Database.ExecuteSqlRaw("VACUUM INTO {0}", _backup);
 
-			var stream = File.OpenRead(_backup);
 			var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-			var name = $"backup-{now}.db";
 
-			return Results.Stream(stream, fileDownloadName: name);
+			return Results.File(_backup, fileDownloadName: $"backup-{now}.db");
 		});
 
 		app.MapGet("DeleteBackup", (string key) =>
@@ -384,7 +385,7 @@ public class Endpoints(string _adminKey, string _backup)
 			var guildId = lootService.GetGuildId();
 
 			// capture the output before we archive requests
-			var output = lootService.GetGrantedLootOutput();
+			var output = lootService.GetGrantedLootOutput(raidNight);
 
 			var requests = db.LootRequests
 				.Where(x => x.Player.GuildId == guildId)
@@ -458,126 +459,26 @@ public class Endpoints(string _adminKey, string _backup)
 			db.SaveChanges();
 		});
 
-		// parse the guild dump player output
-		static async Task<GuildDumpPlayerOutput[]> ParseDumps(IFormFile file)
-		{
-			await using var stream = file.OpenReadStream();
-			using var sr = new StreamReader(stream);
-			var output = await sr.ReadToEndAsync();
-
-			return output
-				.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
-				.Select(x => x.Split('\t'))
-				.Select(x => new GuildDumpPlayerOutput(x))
-				.ToArray();
-		}
-
-		app.MapPost("ImportGuildDump", async (LootGodContext db, LootService lootService, IFormFile file) =>
+		app.MapPost("ImportDump", async (LootService lootService, IFormFile file, int offset) =>
 		{
 			lootService.EnsureAdminStatus();
 
-			var guildId = lootService.GetGuildId();
-
-			var dumps = await ParseDumps(file);
-
-			// ensure not partial guild dump by checking a leader exists
-			if (!dumps.Any(x => StringComparer.OrdinalIgnoreCase.Equals("Leader", x.Rank)))
+			var ext = Path.GetExtension(file.FileName);
+			switch (ext, file.FileName)
 			{
-				return TypedResults.BadRequest("Partial Guild Dump - Missing Leader Rank");
+				case (".zip", _):
+					await lootService.BulkRaidDump(file, offset);
+					break;
+				case (".txt", var x) when x.StartsWith("RaidRoster"):
+					await lootService.ImportRaidDump(file, offset);
+					break;
+				case (".txt", var x) when x.Split('-') is [_, _, _]:
+					await lootService.ImportGuildDump(file);
+					break;
+				default:
+					throw new Exception($"Cannot determine dump for ext '{ext}' with filename '{file.FileName}'");
 			}
 
-			// ensure guild leader does not change (must use TransferGuildLeadership endpoint instead)
-			var existingLeader = db.Players.Single(x => x.GuildId == guildId && x.Rank!.Name == "Leader");
-			if (!dumps.Any(x =>
-				StringComparer.OrdinalIgnoreCase.Equals(x.Name, existingLeader.Name)
-				&& StringComparer.OrdinalIgnoreCase.Equals(x.Rank, "Leader")))
-			{
-				return TypedResults.BadRequest("Cannot transfer guild leadership during a dump");
-			}
-
-			// create the new ranks
-			var existingRankNames = db.Ranks
-				.Where(x => x.GuildId == guildId)
-				.Select(x => x.Name)
-				.ToList();
-			var ranks = dumps
-				.Select(x => x.Rank)
-				.Distinct(StringComparer.OrdinalIgnoreCase)
-				.Except(existingRankNames)
-				.Select(x => new Rank(x, guildId))
-				.ToArray();
-			db.Ranks.AddRange(ranks);
-			db.SaveChanges();
-
-			// load all ranks
-			var rankNameToIdMap = db.Ranks
-				.Where(x => x.GuildId == guildId)
-				.ToDictionary(x => x.Name, x => x.Id);
-
-			// update existing players
-			var players = db.Players
-				.Where(x => x.GuildId == guildId)
-				.ToArray();
-			foreach (var player in players)
-			{
-				var dump = dumps.SingleOrDefault(x => x.Name == player.Name);
-				if (dump is not null)
-				{
-					player.Active = true;
-					player.RankId = rankNameToIdMap[dump.Rank];
-					player.LastOnDate = dump.LastOnDate;
-					player.Level = dump.Level;
-					player.Alt = dump.Alt;
-					player.Notes = dump.Notes;
-
-					// TODO: shouldn't be necessary, bug with Kyoto class defaulting to Bard
-					player.Class = Player._classNameToEnumMap[dump.Class];
-				}
-				else
-				{
-					// if a player no longer appears in a guild dump output, we assert them inactive
-					// TODO: disconnect removed player/connection from hub
-					player.Active = false;
-					player.Admin = false;
-				}
-			}
-			db.SaveChanges();
-
-			// create players who do not exist
-			var existingNames = players
-				.Select(x => x.Name)
-				.ToHashSet();
-			var dumpPlayers = dumps
-				.Where(x => !existingNames.Contains(x.Name))
-				.Select(x => new Player(x, guildId))
-				.ToList();
-			db.Players.AddRange(dumpPlayers);
-			db.SaveChanges();
-
-			return Results.Ok();
-		}).DisableAntiforgery();
-
-		app.MapPost("ImportRaidDump", async (LootService lootService, IFormFile file, int offset) =>
-		{
-			lootService.EnsureAdminStatus();
-
-			await using var stream = file.OpenReadStream();
-			await lootService.ImportRaidDump(stream, file.FileName, offset);
-
-		}).DisableAntiforgery();
-
-		app.MapPost("BulkImportRaidDump", async (LootService lootService, IFormFile file, int offset) =>
-		{
-			lootService.EnsureAdminStatus();
-
-			await using var stream = file.OpenReadStream();
-			using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
-
-			foreach (var entry in zip.Entries.OrderBy(x => x.LastWriteTime))
-			{
-				await using var dump = entry.Open();
-				await lootService.ImportRaidDump(dump, entry.FullName, offset);
-			}
 		}).DisableAntiforgery();
 
 		app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService) =>
@@ -715,11 +616,12 @@ public class Endpoints(string _adminKey, string _backup)
 				.OrderBy(x => x.Name)
 				.ToArray();
 		});
-		app.MapGet("GetGrantedLootOutput", (LootService lootService) =>
+
+		app.MapGet("GetGrantedLootOutput", (LootService lootService, bool raidNight) =>
 		{
 			lootService.EnsureAdminStatus();
 
-			var output = lootService.GetGrantedLootOutput();
+			var output = lootService.GetGrantedLootOutput(raidNight);
 			var bytes = Encoding.UTF8.GetBytes(output);
 			var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 

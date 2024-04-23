@@ -10,13 +10,10 @@ export default function Upload(props: { refreshCache: () => void }) {
 
 	const uploadDump = (file: File) => {
 		setIsLoading(true);
-		const endpoint = file.name.endsWith('.zip') ? '/BulkImportRaidDump'
-			 : file.name.startsWith('RaidRoster') ? '/ImportRaidDump'
-			 : '/ImportGuildDump';
 		const formData = new FormData();
 		formData.append("file", file);
 		axios
-			.post(endpoint + '?offset=' + new Date().getTimezoneOffset(), formData)
+			.post('/ImportDump?offset=' + new Date().getTimezoneOffset(), formData)
 			.then(() => {
 				setUploaded([...uploaded, key + ' - ' + file.name]);
 				props.refreshCache();

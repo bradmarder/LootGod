@@ -104,30 +104,30 @@ export default function App() {
 	useEffect(() => {
 		if (intro) { return; }
 
-		const controller = new AbortController();
+		const ac = new AbortController();
 
-		getAdminStatus(controller.signal);
-		getLoots(controller.signal);
-		getLootLock(controller.signal);
-		getLootRequests(controller.signal);
-		getLeaderStatus(controller.signal);
-		getItems(controller.signal);
+		getAdminStatus(ac.signal);
+		getLoots(ac.signal);
+		getLootLock(ac.signal);
+		getLootRequests(ac.signal);
+		getLeaderStatus(ac.signal);
+		getItems(ac.signal);
 
-		return () => controller.abort();
+		return () => ac.abort();
 	}, [intro]);
 
 	useEffect(() => {
 		if (intro) { return; }
 
-		const eventSource = new EventSource('/api/SSE?playerKey=' + localStorage.getItem('key'));
-		eventSource.addEventListener('lock', e => setLootLock(e.data == 'True'));
-		eventSource.addEventListener('loots', e => setLoots(JSON.parse(e.data)));
-		eventSource.addEventListener('items', e => setItems(JSON.parse(e.data)));
-		eventSource.addEventListener('requests', e => setRequests(JSON.parse(e.data)));
-		eventSource.onopen = () => console.log('SSE connection established');
-		eventSource.onerror = () => setError(true);
+		const es = new EventSource('/api/SSE?playerKey=' + localStorage.getItem('key'));
+		es.addEventListener('lock', e => setLootLock(e.data == 'True'));
+		es.addEventListener('loots', e => setLoots(JSON.parse(e.data)));
+		es.addEventListener('items', e => setItems(JSON.parse(e.data)));
+		es.addEventListener('requests', e => setRequests(JSON.parse(e.data)));
+		es.onopen = () => console.log('SSE connection established');
+		es.onerror = () => { setError(true); es.close(); }
 
-		return () => eventSource.close();
+		return () => es.close();
 	}, [intro]);
 
 	const createGuildCallback = () => {

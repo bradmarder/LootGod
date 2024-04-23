@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
@@ -112,7 +113,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 		}
 	}
 
-	public string GetGrantedLootOutput()
+	public string GetGrantedLootOutput(bool raidNight)
 	{
 		var guildId = GetGuildId();
 
@@ -122,6 +123,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 			.Include(x => x.Player)
 			.Where(x => x.Player.GuildId == guildId)
 			.Where(x => x.Granted && !x.Archived)
+			.Where(x => x.RaidNight == raidNight)
 			.OrderBy(x => x.ItemId)
 			.ThenBy(x => x.AltName ?? x.Player.Name)
 			.ToList()
@@ -135,11 +137,11 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 
 		var rotLoot = _db.Loots
 			.Where(x => x.GuildId == guildId)
-			.Where(x => x.RaidQuantity > 0)
+			.Where(x => (raidNight ? x.RaidQuantity : x.RotQuantity) > 0)
 			.Select(x => new
 			{
 				x.Item.Name,
-				Quantity = x.RaidQuantity - x.Item.LootRequests.Count(x => x.Player.GuildId == guildId && x.Granted && !x.Archived),
+				Quantity = (raidNight ? x.RaidQuantity : x.RotQuantity) - x.Item.LootRequests.Count(x => x.Player.GuildId == guildId && x.Granted && !x.Archived && x.RaidNight == raidNight),
 			})
 			.Where(x => x.Quantity > 0)
 			.Select(x => new LootOutput(x.Name, "ROT", x.Quantity))
@@ -378,6 +380,119 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 
 		var sql = sb.ToString();
 		_db.Database.ExecuteSqlRaw(sql);
+	}
+
+	public async Task BulkRaidDump(IFormFile file, int offset)
+	{
+		await using var stream = file.OpenReadStream();
+		using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
+
+		foreach (var entry in zip.Entries.OrderBy(x => x.LastWriteTime))
+		{
+			await using var dump = entry.Open();
+			await ImportRaidDump(dump, entry.FullName, offset);
+		}
+	}
+
+	public async Task ImportRaidDump(IFormFile file, int offset)
+	{
+		await using var stream = file.OpenReadStream();
+		await ImportRaidDump(stream, file.FileName, offset);
+	}
+
+	public async Task ImportGuildDump(IFormFile file)
+	{
+		var guildId = GetGuildId();
+
+		var dumps = await ParseDumps(file);
+
+		// ensure not partial guild dump by checking a leader exists
+		if (!dumps.Any(x => StringComparer.OrdinalIgnoreCase.Equals("Leader", x.Rank)))
+		{
+			throw new Exception("Partial Guild Dump - Missing Leader Rank");
+		}
+
+		// ensure guild leader does not change (must use TransferGuildLeadership endpoint instead)
+		var existingLeader = _db.Players.Single(x => x.GuildId == guildId && x.Rank!.Name == "Leader");
+		if (!dumps.Any(x =>
+			StringComparer.OrdinalIgnoreCase.Equals(x.Name, existingLeader.Name)
+			&& StringComparer.OrdinalIgnoreCase.Equals(x.Rank, "Leader")))
+		{
+			throw new Exception("Cannot transfer guild leadership during a dump");
+		}
+
+		// create the new ranks
+		var existingRankNames = _db.Ranks
+			.Where(x => x.GuildId == guildId)
+			.Select(x => x.Name)
+			.ToList();
+		var ranks = dumps
+			.Select(x => x.Rank)
+			.Distinct(StringComparer.OrdinalIgnoreCase)
+			.Except(existingRankNames)
+			.Select(x => new Rank(x, guildId))
+			.ToArray();
+		_db.Ranks.AddRange(ranks);
+		_db.SaveChanges();
+
+		// load all ranks
+		var rankNameToIdMap = _db.Ranks
+			.Where(x => x.GuildId == guildId)
+			.ToDictionary(x => x.Name, x => x.Id);
+
+		// update existing players
+		var players = _db.Players
+			.Where(x => x.GuildId == guildId)
+			.ToArray();
+		foreach (var player in players)
+		{
+			var dump = dumps.SingleOrDefault(x => x.Name == player.Name);
+			if (dump is not null)
+			{
+				player.Active = true;
+				player.RankId = rankNameToIdMap[dump.Rank];
+				player.LastOnDate = dump.LastOnDate;
+				player.Level = dump.Level;
+				player.Alt = dump.Alt;
+				player.Notes = dump.Notes;
+
+				// TODO: shouldn't be necessary, bug with Kyoto class defaulting to Bard
+				player.Class = Player._classNameToEnumMap[dump.Class];
+			}
+			else
+			{
+				// if a player no longer appears in a guild dump output, we assert them inactive
+				// TODO: disconnect removed player/connection from hub
+				player.Active = false;
+				player.Admin = false;
+			}
+		}
+		_db.SaveChanges();
+
+		// create players who do not exist
+		var existingNames = players
+			.Select(x => x.Name)
+			.ToHashSet();
+		var dumpPlayers = dumps
+			.Where(x => !existingNames.Contains(x.Name))
+			.Select(x => new Player(x, guildId))
+			.ToList();
+		_db.Players.AddRange(dumpPlayers);
+		_db.SaveChanges();
+	}
+
+	// parse the guild dump player output
+	static async Task<GuildDumpPlayerOutput[]> ParseDumps(IFormFile file)
+	{
+		await using var stream = file.OpenReadStream();
+		using var sr = new StreamReader(stream);
+		var output = await sr.ReadToEndAsync();
+
+		return output
+			.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
+			.Select(x => x.Split('\t'))
+			.Select(x => new GuildDumpPlayerOutput(x))
+			.ToArray();
 	}
 
 	private async Task<string> TryReadContentAsync(HttpResponseMessage? response)

@@ -32,7 +32,7 @@ export default function GrantedLoots(props: IContext) {
 			}
 			{grantedLootRequests.length > 0 &&
 				<>
-				<a target="_blank" rel="noreferrer" href={'/api/GetGrantedLootOutput?playerKey=' + localStorage.getItem('key')}>Download Granted Loot Output Text File (for discord)</a>
+				<a target="_blank" rel="noreferrer" href={'/api/GetGrantedLootOutput?playerKey=' + localStorage.getItem('key') + '&raidNight=' + props.raidNight}>Download Granted Loot Output Text File (for discord)</a>
 				<Alert variant={'warning'}>
 					<strong>WARNING!</strong> This archives all active loot requests and resets quantities. If you have a Discord webhook set, this will also
 					post the granted loot output to that channel.
