@@ -19,7 +19,8 @@ public class Endpoints(string _adminKey, string _backup)
 	public static bool IsValidWebhook(string webhook)
 	{
 		return new Uri(webhook, UriKind.Absolute) is
-		{ 
+		{
+			Port: 443,
 			Scheme: "https",
 			Host: "discord.com",
 			Segments: ["/", "api/", "webhooks/", var x, _],
@@ -447,7 +448,10 @@ public class Endpoints(string _adminKey, string _backup)
 			var oldLeader = db.Players.Single(x => x.Id == leaderId);
 			var newLeader = db.Players.Single(x => x.GuildId == guildId && x.Name == name);
 
-			if (oldLeader.Id == newLeader.Id) { throw new Exception("cannot transfer leadership to self?!"); }
+			if (oldLeader.Id == newLeader.Id)
+			{
+				throw new Exception("cannot transfer leadership to self?!");
+			}
 
 			newLeader.Admin = true;
 			newLeader.RankId = oldLeader.RankId;
@@ -478,7 +482,6 @@ public class Endpoints(string _adminKey, string _backup)
 				default:
 					throw new Exception($"Cannot determine dump for ext '{ext}' with filename '{file.FileName}'");
 			}
-
 		}).DisableAntiforgery();
 
 		app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService) =>
@@ -515,8 +518,8 @@ public class Endpoints(string _adminKey, string _backup)
 				.Select(x => DateOnly.FromDateTime(x.DateTime))
 				.ToHashSet();
 			var oneHundredEightDayMaxCount = uniqueDates.Count;
-			var ninetyDayMaxCount = uniqueDates.Count(x => x > ninetyDaysAgo);
-			var thirtyDayMaxCount = uniqueDates.Count(x => x > thirtyDaysAgo);
+			var ninetyDayMaxCount = uniqueDates.Count(x => x >= ninetyDaysAgo);
+			var thirtyDayMaxCount = uniqueDates.Count(x => x >= thirtyDaysAgo);
 
 			// if there are zero raid dumps for mains, include them in RA
 			//playerMap
@@ -586,8 +589,8 @@ public class Endpoints(string _adminKey, string _backup)
 				.Select(x => x.Timestamp)
 				.ToHashSet();
 			var oneHundredEightDayMaxCount = uniqueDates.Count;
-			var ninetyDayMaxCount = uniqueDates.Count(x => x > ninetyDaysAgo);
-			var thirtyDayMaxCount = uniqueDates.Count(x => x > thirtyDaysAgo);
+			var ninetyDayMaxCount = uniqueDates.Count(x => x >= ninetyDaysAgo);
+			var thirtyDayMaxCount = uniqueDates.Count(x => x >= thirtyDaysAgo);
 
 			static byte GetPercent(IEnumerable<long> values, long daysAgo, int max)
 			{

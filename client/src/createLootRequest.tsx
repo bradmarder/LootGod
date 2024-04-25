@@ -18,6 +18,15 @@ export default function CreateLootRequest(props: IContext) {
 	const hasQtyLoots = props.loots.filter(x => (props.raidNight ? x.raidQuantity : x.rotQuantity) > 0);
 
 	const spellSelected = itemId > 0 && props.loots.find(x => x.itemId === itemId)!.isSpell;
+	const reset = () => {
+		setAltName('');
+		setItemId(0);
+		setQuantity(1);
+		setClass('');
+		setSpell('');
+		setCurrentItem('');
+		setIsLoading(false);
+	};
 
 	const isCreateLootDisabled =
 		hasQtyLoots.length === 0
@@ -31,10 +40,10 @@ export default function CreateLootRequest(props: IContext) {
 		// if a spell is selected, the user *must* enter a spell name
 		|| (spellSelected && spell == null);
 
-	const createLootRequest = async () => {
+	const createLootRequest = () => {
 		const data = {
 			AltName: altName || null,
-			Class: altName === '' ? null : classes.indexOf(eqClass as EQClass),
+			Class: classes.indexOf(eqClass as EQClass),
 			ItemId: itemId,
 			Quantity: spellSelected ? 1 : quantity,
 			Spell: spellSelected ? spell : null,
@@ -42,22 +51,10 @@ export default function CreateLootRequest(props: IContext) {
 			RaidNight: props.raidNight,
 		};
 		setIsLoading(true);
-		try {
-			await axios.post('/CreateLootRequest', data);
-		}
-		catch {
-			// DUPLICATE REQUEST ERROR MESSAGE
-			alert('duplicate request for name and loot');
-		}
-		finally {
-			setIsLoading(false);
-		}
-		setAltName('');
-		setItemId(0);
-		setQuantity(1);
-		setClass('');
-		setSpell('');
-		setCurrentItem('');
+		axios
+			.post('/CreateLootRequest', data)
+			.catch(() => alert('duplicate request for name and loot, maybe'))
+			.finally(() => reset());
 	};
 	const setLootLogic = (itemId: number) => {
 
@@ -70,6 +67,7 @@ export default function CreateLootRequest(props: IContext) {
 		setItemId(itemId);
 	};
 	const loadLinkedAlts = () => {
+		setIsLoading(true);
         axios
             .get<string[]>('/GetLinkedAlts')
             .then(x => setLinkedAlts(x.data))
