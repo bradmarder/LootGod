@@ -43,7 +43,7 @@ export default function CreateLootRequest(props: IContext) {
 	const createLootRequest = () => {
 		const data = {
 			AltName: altName || null,
-			Class: classes.indexOf(eqClass as EQClass),
+			Class: eqClass == '' ? null : classes.indexOf(eqClass as EQClass),
 			ItemId: itemId,
 			Quantity: spellSelected ? 1 : quantity,
 			Spell: spellSelected ? spell : null,

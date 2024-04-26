@@ -16,14 +16,16 @@ public class Endpoints(string _adminKey, string _backup)
 		}
 	}
 
-	public static bool IsValidWebhook(string webhook)
+	public static bool IsValidDiscordWebhook(string webhook)
 	{
 		return new Uri(webhook, UriKind.Absolute) is
 		{
 			Port: 443,
 			Scheme: "https",
 			Host: "discord.com",
-			Segments: ["/", "api/", "webhooks/", var x, _],
+			Fragment: "",
+			Query: "",
+			Segments: ["/", "api/", "webhooks/", var x, { Length: 68 }],
 		}
 		&& long.TryParse(x[..^1], out _);
 	}
@@ -52,7 +54,7 @@ public class Endpoints(string _adminKey, string _backup)
 		{
 			lootService.EnsureGuildLeader();
 
-			if (!string.IsNullOrEmpty(webhook) && !IsValidWebhook(webhook))
+			if (!string.IsNullOrEmpty(webhook) && !IsValidDiscordWebhook(webhook))
 			{
 				throw new Exception(webhook);
 			}
