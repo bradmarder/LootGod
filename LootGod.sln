@@ -53,6 +53,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B35EB5A2-496
 		client\src\loots.tsx = client\src\loots.tsx
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LootGodIntegration.Tests", "LootGodIntegration.Tests\LootGodIntegration.Tests.csproj", "{2DAA012C-32A8-40E1-888C-D184834AE0CA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +65,10 @@ Global
 		{54F9205B-3F59-4F59-A86F-AC4808F264E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{54F9205B-3F59-4F59-A86F-AC4808F264E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{54F9205B-3F59-4F59-A86F-AC4808F264E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DAA012C-32A8-40E1-888C-D184834AE0CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DAA012C-32A8-40E1-888C-D184834AE0CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DAA012C-32A8-40E1-888C-D184834AE0CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DAA012C-32A8-40E1-888C-D184834AE0CA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

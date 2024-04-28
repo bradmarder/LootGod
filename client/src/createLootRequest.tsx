@@ -53,12 +53,12 @@ export default function CreateLootRequest(props: IContext) {
 		setIsLoading(true);
 		axios
 			.post('/CreateLootRequest', data)
-			.catch(() => alert('duplicate request for name and loot, maybe'))
+			.catch(() => alert('duplicate request for name and loot, maybe?'))
 			.finally(() => reset());
 	};
 	const setLootLogic = (itemId: number) => {
 
-		// if someone selects a spell, they must enter the name of the spell, and the quantity defaults to 
+		// if someone selects a spell, they must enter the name of the spell, and the quantity defaults to 1
 		// ....but then we have to remove the char/lootId unique combo...
 		if (itemId > 0 && props.loots.find(x => x.itemId === itemId)!.isSpell) {
 			setQuantity(1);

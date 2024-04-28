@@ -100,3 +100,5 @@ app.MapHealthChecks("/healthz");
 new Endpoints(adminKey, backup).Map(app);
 
 await app.RunAsync(cts.Token);
+
+public partial class Program { }
