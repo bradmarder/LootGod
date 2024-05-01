@@ -348,25 +348,10 @@ public class Endpoints(string _adminKey, string _backup)
 				.ExecuteUpdate(x => x.SetProperty(y => y.MainId, playerId));
 		});
 
-		app.MapGet("GetLootLock", (LootService lootService) =>
-		{
-			return lootService.GetRaidLootLock();
-		});
-
-		app.MapGet("GetPlayerId", (LootService lootService) =>
-		{
-			return lootService.GetPlayerId();
-		});
-
-		app.MapGet("GetAdminStatus", (LootService lootService) =>
-		{
-			return lootService.GetAdminStatus();
-		});
-
-		app.MapGet("GetLeaderStatus", (LootService lootService) =>
-		{
-			return lootService.IsGuildLeader();
-		});
+		app.MapGet("GetLootLock", (LootService x) => x.GetRaidLootLock());
+		app.MapGet("GetPlayerId", (LootService x) => x.GetPlayerId());
+		app.MapGet("GetAdminStatus", (LootService x) => x.GetAdminStatus());
+		app.MapGet("GetLeaderStatus", (LootService x) => x.IsGuildLeader());
 
 		app.MapPost("GrantLootRequest", async (LootGodContext db, LootService lootService, int id, bool grant) =>
 		{
