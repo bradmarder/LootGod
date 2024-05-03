@@ -51,19 +51,26 @@ public class LootTest(AppFixture _fixture) : IClassFixture<AppFixture>
 	}
 
 	[Fact, TestPriority(2)]
-	public async Task GetLootLock()
-	{
-		var locked = await Client.GetFromJsonAsync<bool>("/GetLootLock");
-
-		Assert.False(locked);
-	}
-
-	[Fact, TestPriority(3)]
 	public async Task GetPlayerId()
 	{
 		var id = await Client.GetFromJsonAsync<int>("/GetPlayerId");
 
 		Assert.Equal(1, id);
+	}
+
+	[Fact, TestPriority(3)]
+	public async Task GetLootLock()
+	{
+		var locked = await Client.GetFromJsonAsync<bool>("/GetLootLock");
+		Assert.False(locked);
+
+		using var _ = (await Client.PostAsync("/ToggleLootLock?enable=true", null)).EnsureSuccessStatusCode();
+		var locked2 = await Client.GetFromJsonAsync<bool>("/GetLootLock");
+		Assert.True(locked2);
+
+		using var __ = (await Client.PostAsync("/ToggleLootLock?enable=false", null)).EnsureSuccessStatusCode();
+		var locked3 = await Client.GetFromJsonAsync<bool>("/GetLootLock");
+		Assert.False(locked3);
 	}
 
 	[Fact, TestPriority(4)]

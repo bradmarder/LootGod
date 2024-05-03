@@ -382,7 +382,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 		_db.Database.ExecuteSqlRaw(sql);
 	}
 
-	public async Task BulkRaidDump(IFormFile file, int offset)
+	public async Task BulkImportRaidDump(IFormFile file, int offset)
 	{
 		await using var stream = file.OpenReadStream();
 		using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
@@ -404,7 +404,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 	{
 		var guildId = GetGuildId();
 
-		var dumps = await ParseDumps(file);
+		var dumps = await ParseGuildDump(file);
 
 		// ensure not partial guild dump by checking a leader exists
 		if (!dumps.Any(x => StringComparer.OrdinalIgnoreCase.Equals("Leader", x.Rank)))
@@ -482,7 +482,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 	}
 
 	// parse the guild dump player output
-	static async Task<GuildDumpPlayerOutput[]> ParseDumps(IFormFile file)
+	static async Task<GuildDumpPlayerOutput[]> ParseGuildDump(IFormFile file)
 	{
 		await using var stream = file.OpenReadStream();
 		using var sr = new StreamReader(stream);

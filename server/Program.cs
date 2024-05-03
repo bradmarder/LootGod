@@ -69,19 +69,26 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 		.DeliverPayloads();
 }
 
-app.UseExceptionHandler(opt =>
+if (app.Environment.IsDevelopment())
 {
-	opt.Run(context =>
+	app.UseDeveloperExceptionPage();
+}
+else
+{
+	app.UseExceptionHandler(opt =>
 	{
-		var ex = context.Features.Get<IExceptionHandlerFeature>();
-		if (ex is not null)
+		opt.Run(context =>
 		{
-			app.Logger.LogError(ex.Error, context.Request.Path);
-		}
-
-		return Task.CompletedTask;
+			var ex = context.Features.Get<IExceptionHandlerFeature>();
+			if (ex is not null)
+			{
+				app.Logger.LogError(ex.Error, context.Request.Path);
+			}
+			return Task.CompletedTask;
+		});
 	});
-});
+}
+
 app.UseResponseCompression();
 app.UseDefaultFiles();
 app.UseStaticFiles(new StaticFileOptions

@@ -215,8 +215,8 @@ public class Endpoints(string _adminKey, string _backup)
 
 			var ip = lootService.GetIPAddress();
 			var request = new LootRequest(dto, ip, playerId);
-			_ = db.LootRequests.Add(request);
-			_ = db.SaveChanges();
+			db.LootRequests.Add(request);
+			db.SaveChanges();
 
 			await lootService.RefreshRequests(guildId);
 		});
@@ -412,7 +412,7 @@ public class Endpoints(string _adminKey, string _backup)
 				}
 			}
 
-			_ = db.SaveChanges();
+			db.SaveChanges();
 
 			var guild = db.Guilds.Single(x => x.Id == guildId);
 			var webhook = raidNight ? guild.RaidDiscordWebhookUrl : guild.RotDiscordWebhookUrl;
@@ -458,7 +458,7 @@ public class Endpoints(string _adminKey, string _backup)
 			switch (ext, file.FileName)
 			{
 				case (".zip", _):
-					await lootService.BulkRaidDump(file, offset);
+					await lootService.BulkImportRaidDump(file, offset);
 					break;
 				case (".txt", var x) when x.StartsWith("RaidRoster"):
 					await lootService.ImportRaidDump(file, offset);
