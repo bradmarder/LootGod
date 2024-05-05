@@ -109,4 +109,44 @@ public class LootTest(AppFixture _fixture) : IClassFixture<AppFixture>
 		Assert.Equal(raidHook, loadedHooks!.Raid);
 		Assert.Equal(rotHook, loadedHooks.Rot);
 	}
+
+	[Fact, TestPriority(7)]
+	public async Task CreateItem()
+	{
+		var emptyItems = await Client.GetFromJsonAsync<ItemDto[]>("/GetItems");
+		Assert.Empty(emptyItems!);
+
+		const string name = "Godly Plate of the Whale";
+		using var _ = (await Client.PostAsync("/CreateItem?name=" + name, null)).EnsureSuccessStatusCode();
+
+		var items = await Client.GetFromJsonAsync<ItemDto[]>("/GetItems");
+		Assert.Single(items!);
+		Assert.Equal(name, items![0].Name);
+	}
+
+	[Fact, TestPriority(9)]
+	public async Task CreateLoot()
+	{
+		var emptyLoots = await Client.GetFromJsonAsync<LootDto[]>("/GetLoots");
+		Assert.Empty(emptyLoots!);
+
+		var raidLoot = new Endpoints.CreateLoot(3, 1, true);
+		var rotLoot = new Endpoints.CreateLoot(4, 1, false);
+		using var _ = (await Client.PostAsJsonAsync("/UpdateLootQuantity", raidLoot)).EnsureSuccessStatusCode();
+		using var __ = (await Client.PostAsJsonAsync("/UpdateLootQuantity", rotLoot)).EnsureSuccessStatusCode();
+
+		var loots = await Client.GetFromJsonAsync<LootDto[]>("/GetLoots");
+		Assert.Single(loots!);
+		var loot = loots![0];
+		Assert.Equal(raidLoot.ItemId, loot.ItemId);
+		Assert.Equal(raidLoot.Quantity, loot.RaidQuantity);
+		Assert.Equal(rotLoot.ItemId, loot.ItemId);
+		Assert.Equal(rotLoot.Quantity, loot.RotQuantity);
+	}
+
+	[Fact, TestPriority(9)]
+	public async Task ImportDumps()
+	{
+		
+	}
 }

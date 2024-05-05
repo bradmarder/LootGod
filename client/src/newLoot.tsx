@@ -7,21 +7,18 @@ export default function NewLoot() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [createLootName, setCreateLootName] = useState('');
 
-	const createLoot = async () => {
+	const createItem = () => {
 		setIsLoading(true);
-		try {
-			await axios.post('/CreateLoot?name=' + createLootName);
-		}
-		finally {
-			setIsLoading(false);
-		}
-		setCreateLootName('');
+		axios
+			.post('/CreateItem?name=' + encodeURIComponent(createLootName))
+			.then(() => setCreateLootName(''))
+			.finally(() => setIsLoading(false));
 	};
 
 	return (
 		<Alert variant='primary'>
 			<h4>Add New LS Loot (Admin only)</h4>
-			<Form onSubmit={createLoot}>
+			<Form onSubmit={createItem}>
 				<Row>
 					<Col>
 						<Form.Group>
@@ -31,7 +28,7 @@ export default function NewLoot() {
 					</Col>
 				</Row>
 				<br />
-				<Button variant='success' disabled={isLoading} onClick={createLoot}>Create</Button>
+				<Button variant='success' disabled={isLoading || createLootName.length < 2} onClick={createItem}>Create</Button>
 			</Form>
 		</Alert>
 	);

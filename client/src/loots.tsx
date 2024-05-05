@@ -12,21 +12,17 @@ export default function Loots(props: IContext) {
 		axios
 			.post('/GrantLootRequest?id=' + id + '&grant=true')
 			.finally(() => setIsLoading(false));
-	}
+	};
 
-	const incrementLoot = (id: number) => {
+	const updateLootQuantity = (itemId: number, value: number) => {
 		setIsLoading(true);
+		const loot = props.loots.find(x => x.itemId === itemId)!;
+		const quantity = value + (props.raidNight ? loot.raidQuantity : loot.rotQuantity);
+		const dto = { itemId, quantity, raidNight: props.raidNight };
 		axios
-			.post('/IncrementLootQuantity?itemId=' + id + '&raidNight=' + props.raidNight)
+			.post('/UpdateLootQuantity', dto)
 			.finally(() => setIsLoading(false));
-	}
-
-	const decrementLoot = (id: number) => {
-		setIsLoading(true);
-		axios
-			.post('/DecrementLootQuantity?itemId=' + id + '&raidNight=' + props.raidNight)
-			.finally(() => setIsLoading(false));
-	}
+	};
 
 	const ungrantLootRequest = (id: number) => {
 		setIsLoading(true);
@@ -100,8 +96,8 @@ export default function Loots(props: IContext) {
 										{(props.raidNight ? loot.raidQuantity : loot.rotQuantity) === 0 &&
 											<Alert variant={'warning'}><strong>Grant Disabled</strong> - Already Allotted Maximum Quantity</Alert>
 										}
-										<Button variant={'warning'} size={'sm'} disabled={isLoading} onClick={() => incrementLoot(loot.itemId)}>Increment Quantity</Button>
-										<Button variant={'danger'} size={'sm'} disabled={isLoading || (props.raidNight ? loot.raidQuantity : loot.rotQuantity) === 0} onClick={() => decrementLoot(loot.itemId)}>Decrement Quantity</Button>
+										<Button variant={'warning'} size={'sm'} disabled={isLoading} onClick={() => updateLootQuantity(loot.itemId, 1)}>Increment Quantity</Button>
+										<Button variant={'danger'} size={'sm'} disabled={isLoading || (props.raidNight ? loot.raidQuantity : loot.rotQuantity) === 0} onClick={() => updateLootQuantity(loot.itemId, -1)}>Decrement Quantity</Button>
 										<br /><br />
 										{lootRequests.filter(x => x.itemId === loot.itemId).map(req =>
 											<span key={req.id}>

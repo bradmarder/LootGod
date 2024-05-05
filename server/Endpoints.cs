@@ -130,7 +130,7 @@ public class Endpoints(string _adminKey, string _backup)
 		});
 
 		// TODO: remove? lockdown somehow
-		app.MapPost("CreateLoot", async (LootGodContext db, string name, LootService lootService) =>
+		app.MapPost("CreateItem", async (LootGodContext db, string name, LootService lootService) =>
 		{
 			var item = new Item(name, Expansion.LS);
 			db.Items.Add(item);
@@ -252,43 +252,12 @@ public class Endpoints(string _adminKey, string _backup)
 			var loot = db.Loots.SingleOrDefault(x => x.GuildId == guildId && x.ItemId == dto.ItemId);
 			if (loot is null)
 			{
-				loot = new Loot { GuildId = guildId, ItemId = dto.ItemId };
+				loot = new Loot(guildId, dto.ItemId);
 				db.Loots.Add(loot);
 			}
 			_ = dto.RaidNight
 				? loot.RaidQuantity = dto.Quantity
 				: loot.RotQuantity = dto.Quantity;
-			db.SaveChanges();
-
-			await lootService.RefreshLoots(guildId);
-		});
-
-		app.MapPost("IncrementLootQuantity", async (LootGodContext db, int itemId, bool raidNight, LootService lootService) =>
-		{
-			lootService.EnsureAdminStatus();
-
-			var guildId = lootService.GetGuildId();
-
-			var loot = db.Loots.Single(x => x.GuildId == guildId && x.ItemId == itemId);
-			_ = raidNight
-				? loot.RaidQuantity++
-				: loot.RotQuantity++;
-
-			db.SaveChanges();
-
-			await lootService.RefreshLoots(guildId);
-		});
-
-		app.MapPost("DecrementLootQuantity", async (LootGodContext db, int itemId, bool raidNight, LootService lootService) =>
-		{
-			lootService.EnsureAdminStatus();
-
-			var guildId = lootService.GetGuildId();
-
-			var loot = db.Loots.Single(x => x.GuildId == guildId && x.ItemId == itemId);
-			_ = raidNight
-				? loot.RaidQuantity--
-				: loot.RotQuantity--;
 
 			// if quantities are zero, then remove the loot record
 			if (loot.RaidQuantity == 0 && loot.RotQuantity == 0)

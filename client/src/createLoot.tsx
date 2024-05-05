@@ -8,21 +8,20 @@ export default function CreateLoot(props: { items: IItem[], raidNight: boolean }
 	const [createItemId, setCreateItemId] = useState(0);
 	const [createLootQuantity, setCreateLootQuantity] = useState(1);
 
-	const createLoot = async () => {
+	const createLoot = () => {
 		const data = {
 			ItemId: createItemId,
 			Quantity: createLootQuantity,
 			RaidNight: props.raidNight,
 		};
 		setIsLoading(true);
-		try {
-			await axios.post('/UpdateLootQuantity', data);
-		}
-		finally {
-			setIsLoading(false);
-		}
-		setCreateItemId(0);
-		setCreateLootQuantity(1);
+		axios
+			.post('/UpdateLootQuantity', data)
+			.then(() => {
+				setCreateItemId(0);
+				setCreateLootQuantity(1);
+			})
+			.finally(() => setIsLoading(false));
 	};
 
 	return (
@@ -34,7 +33,7 @@ export default function CreateLoot(props: { items: IItem[], raidNight: boolean }
 						<Form.Group>
 							<Form.Label>Name</Form.Label>
 							<Form.Select value={createItemId} onChange={e => setCreateItemId(Number(e.target.value))}>
-								<option>Select Loot</option>
+								<option value={0}>Select Loot</option>
 								{props.items.map(item =>
 									<option key={item.id} value={item.id}>{item.name}</option>
 								)}
@@ -49,7 +48,7 @@ export default function CreateLoot(props: { items: IItem[], raidNight: boolean }
 					</Col>
 				</Row>
 				<br />
-				<Button variant='success' disabled={isLoading} onClick={createLoot}>Create</Button>
+				<Button variant='success' disabled={isLoading || createItemId === 0} onClick={createLoot}>Create</Button>
 			</Form>
 		</Alert>
 	);

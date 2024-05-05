@@ -6,6 +6,13 @@ namespace LootGod;
 [PrimaryKey(nameof(GuildId), nameof(ItemId))]
 public class Loot
 {
+	private Loot() { }
+	public Loot(int guildId, int itemId)
+	{
+		GuildId = guildId;
+		ItemId = itemId;
+	}
+
 	public int ItemId { get; set; }
 	public int GuildId { get; set; }
 	public byte RaidQuantity { get; set; }
