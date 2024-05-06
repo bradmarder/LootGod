@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Alert, Button, Table } from 'react-bootstrap';
 import axios from 'axios';
 import classes from './eqClasses';
@@ -21,9 +21,7 @@ export default function LootRequests(props: IContext) {
 			.finally(() => setIsLoading(false));
 	};
 
-	const myLootRequests = useMemo(() =>
-		props.requests.filter(x => x.playerId === playerId),
-		[playerId, props.requests]);
+	const myLootRequests = props.requests.filter(x => x.playerId === playerId);
 
 	return (
 		<>

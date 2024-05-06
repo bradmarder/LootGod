@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Alert, Button, Table } from 'react-bootstrap';
 import axios from 'axios';
 import classes from './eqClasses';
@@ -20,9 +20,7 @@ export default function GrantedLoots(props: IContext) {
 			.then(() => setIsLoading(false));
 	};
 
-	const grantedLootRequests = useMemo(() =>
-		props.requests.filter(x => x.granted),
-		[props.requests]);
+	const grantedLootRequests = props.requests.filter(x => x.granted);
 
 	return (
 		<>
