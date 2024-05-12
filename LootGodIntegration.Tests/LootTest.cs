@@ -21,20 +21,50 @@ public class AppFixture : IAsyncDisposable
 	}
 }
 
-public class LootTest()
+public static class Extensions
+{
+	public static async Task EnsurePostAsJsonAsync(this HttpClient client, string requestUri)
+	{
+		await client.EnsurePostAsJsonAsync<string?>(requestUri, null);
+	}
+
+	public static async Task<string> EnsurePostAsJsonAsync<T>(this HttpClient client, string requestUri, T? value = default)
+	{
+		HttpResponseMessage? response = null;
+		try
+		{
+			response = value is null
+				? await client.PostAsJsonAsync(requestUri, new { })
+				: await client.PostAsJsonAsync(requestUri, value);
+
+			return await response.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
+		}
+		catch (Exception ex)
+		{
+			if (response is null) { throw; }
+
+			var content = await response.Content.ReadAsStringAsync();
+			throw new Exception(ex.ToString() + Environment.NewLine + content);
+		}
+		finally
+		{
+			response?.Dispose();
+		}
+	}
+}
+
+public class LootTest
 {
 	private static async Task CreateGuild(HttpClient client)
 	{
 		var dto = new Endpoints.CreateGuild("Vulak", "The Unknown", Server.FirionaVie);
-		using var response = await client.PostAsJsonAsync("/CreateGuild", dto);
-		var key = await response
-			.EnsureSuccessStatusCode()
-			.Content
-			.ReadFromJsonAsync<Guid>();
+		var key = await client.EnsurePostAsJsonAsync("/CreateGuild", dto);
+		var json = key[1..^1];
 
-		Assert.NotEqual(Guid.Empty, key);
+		Assert.True(Guid.TryParse(json, out _));
+		Assert.NotEqual(Guid.Empty, Guid.Parse(json));
 
-		client.DefaultRequestHeaders.Add("Player-Key", key.ToString());
+		client.DefaultRequestHeaders.Add("Player-Key", json);
 	}
 
 	record SsePayload
@@ -44,10 +74,11 @@ public class LootTest()
 		public required int Id { get; init; }
 	}
 
-	private static async Task<SsePayload> GetSSE(HttpClient client)
+	private static async Task<SsePayload> GetSsePayload(HttpClient client)
 	{
-		var key = client.DefaultRequestHeaders.Single(x => x.Key == "Player-Key").Value;
-		await using var stream = await client.GetStreamAsync("/SSE?playerKey=" + key);
+		var key = client.DefaultRequestHeaders.SingleOrDefault(x => x.Key == "Player-Key");
+		Assert.NotEqual(default, key);
+		await using var stream = await client.GetStreamAsync("/SSE?playerKey=" + key.Key);
 		using var sr = new StreamReader(stream);
 
 		Assert.Equal("data: empty", await sr.ReadLineAsync());
@@ -112,11 +143,11 @@ public class LootTest()
 		var locked = await app.Client.GetFromJsonAsync<bool>("/GetLootLock");
 		Assert.False(locked);
 
-		using var _ = (await app.Client.PostAsync("/ToggleLootLock?enable=true", null)).EnsureSuccessStatusCode();
+		await app.Client.EnsurePostAsJsonAsync("/ToggleLootLock?enable=true");
 		var locked2 = await app.Client.GetFromJsonAsync<bool>("/GetLootLock");
 		Assert.True(locked2);
 
-		using var __ = (await app.Client.PostAsync("/ToggleLootLock?enable=false", null)).EnsureSuccessStatusCode();
+		await app.Client.EnsurePostAsJsonAsync("/ToggleLootLock?enable=false");
 		var locked3 = await app.Client.GetFromJsonAsync<bool>("/GetLootLock");
 		Assert.False(locked3);
 	}
@@ -159,8 +190,8 @@ public class LootTest()
 		var raidHook = domain + "1/" + new string('x', 68);
 		var rotHook = domain + "2/" + new string('y', 68);
 
-		using var _ = (await app.Client.PostAsync("/GuildDiscord?raidNight=true&webhook=" + raidHook, null)).EnsureSuccessStatusCode();
-		using var __ = (await app.Client.PostAsync("/GuildDiscord?raidNight=false&webhook=" + rotHook, null)).EnsureSuccessStatusCode();
+		await app.Client.EnsurePostAsJsonAsync("/GuildDiscord?raidNight=true&webhook=" + raidHook);
+		await app.Client.EnsurePostAsJsonAsync("/GuildDiscord?raidNight=false&webhook=" + rotHook);
 		var loadedHooks = await app.Client.GetFromJsonAsync<Hooks>("/GetDiscordWebhooks");
 
 		Assert.Equal(raidHook, loadedHooks!.Raid);
@@ -189,11 +220,11 @@ public class LootTest()
 		var emptyLoots = await app.Client.GetFromJsonAsync<LootDto[]>("/GetLoots");
 		Assert.Empty(emptyLoots!);
 
-		var sse = GetSSE(app.Client);
+		var sse = GetSsePayload(app.Client);
 		var raidLoot = new Endpoints.CreateLoot(3, 1, true);
 		var rotLoot = new Endpoints.CreateLoot(4, 1, false);
-		using var _ = (await app.Client.PostAsJsonAsync("/UpdateLootQuantity", raidLoot)).EnsureSuccessStatusCode();
-		using var __ = (await app.Client.PostAsJsonAsync("/UpdateLootQuantity", rotLoot)).EnsureSuccessStatusCode();
+		await app.Client.EnsurePostAsJsonAsync("/UpdateLootQuantity", raidLoot);
+		await app.Client.EnsurePostAsJsonAsync("/UpdateLootQuantity", rotLoot);
 
 		var loots = await app.Client.GetFromJsonAsync<LootDto[]>("/GetLoots");
 		Assert.Single(loots!);
