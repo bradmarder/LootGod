@@ -1,6 +1,7 @@
 using LootGod;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace LootGodIntegration.Tests;
 
@@ -58,23 +59,26 @@ public class LootTest
 	private static async Task CreateGuild(HttpClient client)
 	{
 		var dto = new Endpoints.CreateGuild("Vulak", "The Unknown", Server.FirionaVie);
-		var key = await client.EnsurePostAsJsonAsync("/CreateGuild", dto);
-		var json = key[1..^1];
+		var json = await client.EnsurePostAsJsonAsync("/CreateGuild", dto);
+		var key = json[1..^1];
+		var success = Guid.TryParse(key, out var pKey);
 
-		Assert.True(Guid.TryParse(json, out _));
-		Assert.NotEqual(Guid.Empty, Guid.Parse(json));
+		Assert.True(success);
+		Assert.NotEqual(Guid.Empty, pKey);
 
-		client.DefaultRequestHeaders.Add("Player-Key", json);
+		client.DefaultRequestHeaders.Add("Player-Key", key);
 	}
 
-	record SsePayload
+	record SsePayload<T>
 	{
 		public required string Evt { get; init; }
-		public required string Json { get; init; }
+		public required T Json { get; init; }
 		public required int Id { get; init; }
 	}
 
-	private static async Task<SsePayload> GetSsePayload(HttpClient client)
+	private static readonly JsonSerializerOptions _options = new() { PropertyNameCaseInsensitive = true };
+
+	private static async Task<SsePayload<T>> GetSsePayload<T>(HttpClient client)
 	{
 		var key = client.DefaultRequestHeaders.SingleOrDefault(x => x.Key == "Player-Key");
 		Assert.NotEqual(default, key);
@@ -89,10 +93,10 @@ public class LootTest
 		var json = await sr.ReadLineAsync();
 		var id = await sr.ReadLineAsync();
 
-		return new SsePayload
+		return new SsePayload<T>
 		{
 			Evt = e![7..], // event: 
-			Json = json![6..], // data:
+			Json = JsonSerializer.Deserialize<T[]>(json![6..], _options)![0], // data:
 			Id = int.Parse(id![4..]), // id:
 		};
 	}
@@ -220,7 +224,7 @@ public class LootTest
 		var emptyLoots = await app.Client.GetFromJsonAsync<LootDto[]>("/GetLoots");
 		Assert.Empty(emptyLoots!);
 
-		var sse = GetSsePayload(app.Client);
+		var sse = GetSsePayload<LootDto>(app.Client);
 		var raidLoot = new Endpoints.CreateLoot(3, 1, true);
 		var rotLoot = new Endpoints.CreateLoot(4, 1, false);
 		await app.Client.EnsurePostAsJsonAsync("/UpdateLootQuantity", raidLoot);
@@ -236,11 +240,12 @@ public class LootTest
 
 		var data = await sse;
 		Assert.Equal("loots", data.Evt);
-		Assert.Equal(
-"""
-[{"itemId":1,"raidQuantity":3,"rotQuantity":0,"name":"Godly Plate of the Whale","isSpell":false}]
-""", data.Json);
 		Assert.Equal(1, data.Id);
+		Assert.Equal(1, data.Json.ItemId);
+		Assert.Equal(3, data.Json.RaidQuantity);
+		Assert.Equal(0, data.Json.RotQuantity);
+		Assert.Equal("Godly Plate of the Whale", data.Json.Name);
+		Assert.False(data.Json.IsSpell);
 	}
 
 	[Fact]
