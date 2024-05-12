@@ -25,29 +25,36 @@ public class LootGodContext : DbContext
 		//	.Property(x => x.Id)
 		//	.UseAutoincrement(false);
 
+		modelBuilder.Entity<Loot>().ToTable(x =>
+		{
+			x.HasCheckConstraint("CK_Loot_Quantity", $"{nameof(Loot.RaidQuantity)} > {0} OR {nameof(Loot.RotQuantity)} > {0}");
+		});
+
+		const string unixEpoch = "1000 * unixepoch()";
+
 		modelBuilder
 			.Entity<Item>()
 			.Property(x => x.CreatedDate)
-			.HasDefaultValueSql("1000 * unixepoch()");
+			.HasDefaultValueSql(unixEpoch);
 
 		modelBuilder
 			.Entity<Guild>()
 			.Property(x => x.CreatedDate)
-			.HasDefaultValueSql("1000 * unixepoch()");
+			.HasDefaultValueSql(unixEpoch);
 
 		modelBuilder
 			.Entity<LootRequest>()
 			.Property(x => x.CreatedDate)
-			.HasDefaultValueSql("1000 * unixepoch()");
+			.HasDefaultValueSql(unixEpoch);
 
 		modelBuilder
 			.Entity<Player>()
 			.Property(x => x.CreatedDate)
-			.HasDefaultValueSql("1000 * unixepoch()");
+			.HasDefaultValueSql(unixEpoch);
 
 		modelBuilder
 			.Entity<Rank>()
 			.Property(x => x.CreatedDate)
-			.HasDefaultValueSql("1000 * unixepoch()");
+			.HasDefaultValueSql(unixEpoch);
 	}
 }

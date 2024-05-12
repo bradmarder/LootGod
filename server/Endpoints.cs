@@ -34,17 +34,18 @@ public class Endpoints(string _adminKey, string _backup)
 	{
 		app.MapGet("SSE", async (HttpContext ctx, LootService service) =>
 		{
+			var res = ctx.Response;
 			var token = ctx.RequestAborted;
-			var connectionId = ctx.Connection.Id;
+			var connectionId = ctx.Connection.Id ?? "";
 
-			ctx.Response.Headers.Append("Content-Type", "text/event-stream");
-			ctx.Response.Headers.Append("Cache-Control", "no-cache");
-			ctx.Response.Headers.Append("Connection", "keep-alive");
+			res.Headers.Append("Content-Type", "text/event-stream");
+			res.Headers.Append("Cache-Control", "no-cache");
+			res.Headers.Append("Connection", "keep-alive");
 
-			await ctx.Response.WriteAsync($"data: empty\n\n\n", token);
-			await ctx.Response.Body.FlushAsync(token);
+			await res.WriteAsync("data: empty\n\n\n", token);
+			await res.Body.FlushAsync(token);
 
-			service.AddDataSink(connectionId, ctx.Response);
+			service.AddDataSink(connectionId, res);
 			token.Register(() => service.RemoveDataSink(connectionId));
 
 			await Task.Delay(Timeout.InfiniteTimeSpan, token);
