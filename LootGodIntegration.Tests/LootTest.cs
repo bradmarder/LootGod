@@ -104,7 +104,7 @@ public class LootTest
 	private static async Task CreateItem(HttpClient client)
 	{
 		const string name = "Godly Plate of the Whale";
-		using var _ = (await client.PostAsync("/CreateItem?name=" + name, null)).EnsureSuccessStatusCode();
+		await client.EnsurePostAsJsonAsync("/CreateItem?name=" + name);
 
 		var items = await client.GetFromJsonAsync<ItemDto[]>("/GetItems");
 		Assert.Single(items!);
@@ -214,8 +214,10 @@ public class LootTest
 		await CreateItem(app.Client);
 	}
 
-	[Fact]
-	public async Task CreateLoot()
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public async Task CreateLoot(bool raidNight)
 	{
 		await using var app = new AppFixture();
 		await CreateGuild(app.Client);
@@ -225,27 +227,20 @@ public class LootTest
 		Assert.Empty(emptyLoots!);
 
 		var sse = GetSsePayload<LootDto>(app.Client);
-		var raidLoot = new Endpoints.CreateLoot(3, 1, true);
-		var rotLoot = new Endpoints.CreateLoot(4, 1, false);
-		await app.Client.EnsurePostAsJsonAsync("/UpdateLootQuantity", raidLoot);
-		await app.Client.EnsurePostAsJsonAsync("/UpdateLootQuantity", rotLoot);
+		var loot = new Endpoints.CreateLoot(3, 1, raidNight);
+		await app.Client.EnsurePostAsJsonAsync("/UpdateLootQuantity", loot);
 
 		var loots = await app.Client.GetFromJsonAsync<LootDto[]>("/GetLoots");
 		Assert.Single(loots!);
-		var loot = loots![0];
-		Assert.Equal(raidLoot.ItemId, loot.ItemId);
-		Assert.Equal(raidLoot.Quantity, loot.RaidQuantity);
-		Assert.Equal(rotLoot.ItemId, loot.ItemId);
-		Assert.Equal(rotLoot.Quantity, loot.RotQuantity);
+		var dto = loots![0];
+		Assert.Equal(loot.ItemId, dto.ItemId);
+		Assert.Equal(loot.Quantity, raidNight ? dto.RaidQuantity : dto.RotQuantity);
+		Assert.Equal(0, raidNight ? dto.RotQuantity : dto.RaidQuantity);
 
 		var data = await sse;
 		Assert.Equal("loots", data.Evt);
 		Assert.Equal(1, data.Id);
-		Assert.Equal(1, data.Json.ItemId);
-		Assert.Equal(3, data.Json.RaidQuantity);
-		Assert.Equal(0, data.Json.RotQuantity);
-		Assert.Equal("Godly Plate of the Whale", data.Json.Name);
-		Assert.False(data.Json.IsSpell);
+		Assert.Equal(dto, data.Json);
 	}
 
 	[Fact]
@@ -260,7 +255,9 @@ public class LootTest
 		Assert.Single(passwords);
 		var password = passwords[0];
 		Assert.StartsWith("Vulak\t", password);
-		Assert.True(Guid.TryParse(password[^36..], out _));
+		var success = Guid.TryParse(password[^36..], out var val);
+		Assert.True(success);
+		Assert.NotEqual(Guid.Empty, val);
 	}
 
 	[Fact]
