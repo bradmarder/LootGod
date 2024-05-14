@@ -40,12 +40,11 @@ public static class Extensions
 
 			return await response.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
 		}
-		catch (Exception ex)
+		catch
 		{
-			if (response is null) { throw; }
-
-			var content = await response.Content.ReadAsStringAsync();
-			throw new Exception(ex.ToString() + Environment.NewLine + content);
+			Assert.NotNull(response);
+			Assert.Fail(response.ToString() + Environment.NewLine + await response.Content.ReadAsStringAsync());
+			throw;
 		}
 		finally
 		{
@@ -69,7 +68,7 @@ public class LootTest
 		client.DefaultRequestHeaders.Add("Player-Key", key);
 	}
 
-	record SsePayload<T>
+	private record SsePayload<T>
 	{
 		public required string Evt { get; init; }
 		public required T Json { get; init; }
@@ -261,9 +260,47 @@ public class LootTest
 	}
 
 	[Fact]
-	public async Task ImportDumps()
+	public async Task ImportGuildDump()
 	{
 		await using var app = new AppFixture();
 		await CreateGuild(app.Client);
+
+		const string dump = "Vulak\t120\tDruid\tLeader\t\t01/10/23\tPalatial Guild Hall\tMain -  Leader -  LC Admin - .Rot Loot Admin\t\ton\ton\t7344198\t01/06/23\tMain -  Leader -  LC Admin - .Rot Loot Admin\t";
+		var content = new MultipartFormDataContent
+		{
+			{ new StringContent(dump), "file", "The_Unknown_firiona-20230111-141432.txt" }
+		};
+
+		using var res = await app.Client.PostAsync("/ImportDump?offset=500", content);
+
+		Assert.True(res.IsSuccessStatusCode);
+	}
+
+	[Fact]
+	public async Task ImportRaidDump()
+	{
+		await using var app = new AppFixture();
+		await CreateGuild(app.Client);
+
+		const string dump = "7\tVulak\t120\tDruid\tGroup Leader\t\t\tYes\t";
+		var now = DateTime.UtcNow.ToString("yyyyMMdd");
+		var content = new MultipartFormDataContent
+		{
+			{ new StringContent(dump), "file", $"RaidRoster_firiona-{now}-210727.txt" }
+		};
+
+		using var res = await app.Client.PostAsync("/ImportDump?offset=500", content);
+		Assert.True(res.IsSuccessStatusCode);
+		var dtos = await app.Client.GetFromJsonAsync<RaidAttendanceDto[]>("/GetPlayerAttendance");
+
+		Assert.Single(dtos!);
+		var ra = dtos![0];
+		Assert.Equal("Vulak", ra.Name);
+		Assert.True(ra.Admin);
+		Assert.False(ra.Hidden);
+		Assert.Equal("Leader", ra.Rank);
+		Assert.Equal(100, ra._30);
+		Assert.Equal(100, ra._90);
+		Assert.Equal(100, ra._180);
 	}
 }
