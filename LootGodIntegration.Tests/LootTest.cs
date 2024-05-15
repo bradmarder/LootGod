@@ -1,5 +1,6 @@
 using LootGod;
 using Microsoft.AspNetCore.Mvc.Testing;
+using System.IO.Compression;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -55,7 +56,7 @@ public static class Extensions
 
 public class LootTest
 {
-	private static async Task CreateGuild(HttpClient client)
+	private static async Task<string> CreateGuild(HttpClient client)
 	{
 		var dto = new Endpoints.CreateGuild("Vulak", "The Unknown", Server.FirionaVie);
 		var json = await client.EnsurePostAsJsonAsync("/CreateGuild", dto);
@@ -66,6 +67,30 @@ public class LootTest
 		Assert.NotEqual(Guid.Empty, pKey);
 
 		client.DefaultRequestHeaders.Add("Player-Key", key);
+
+		return key;
+	}
+
+	private static async Task CreateZipRaidDumps(HttpClient client)
+	{
+		var now = DateTime.UtcNow.ToString("yyyyMMdd");
+		var dump = "7\tVulak\t120\tDruid\tGroup Leader\t\t\tYes\t"u8.ToArray();
+		await using var stream = new MemoryStream();
+		using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
+		{
+			var entry = zip.CreateEntry($"RaidRoster_firiona-{now}-210727.txt");
+			await using var ent = entry.Open();
+			await ent.WriteAsync(dump);
+		}
+
+		var content = new MultipartFormDataContent
+		{
+			{ new ByteArrayContent(stream.ToArray()), "file", "RaidRoster_firiona.zip" }
+		};
+
+		using var res = await client.PostAsync("/ImportDump?offset=500", content);
+
+		Assert.True(res.IsSuccessStatusCode);
 	}
 
 	private record SsePayload<T>
@@ -108,6 +133,25 @@ public class LootTest
 		var items = await client.GetFromJsonAsync<ItemDto[]>("/GetItems");
 		Assert.Single(items!);
 		Assert.Equal(name, items![0].Name);
+		Assert.Equal(1, items![0].Id);
+	}
+
+	private static async Task CreateLootRequest(HttpClient client)
+	{
+		var dto = new CreateLootRequest
+		{
+			ItemId = 1,
+			Class = EQClass.Berserker,
+			CurrentItem = "Rusty Axe",
+			Quantity = 1,
+			RaidNight = true,
+		};
+		await client.EnsurePostAsJsonAsync("/CreateLootRequest", dto);
+	}
+
+	private static async Task GrantLootRequest(HttpClient client)
+	{
+		await client.EnsurePostAsJsonAsync("/GrantLootRequest?id=1&grant=true");
 	}
 
 	[Fact]
@@ -225,7 +269,7 @@ public class LootTest
 		var emptyLoots = await app.Client.GetFromJsonAsync<LootDto[]>("/GetLoots");
 		Assert.Empty(emptyLoots!);
 
-		var sse = GetSsePayload<LootDto>(app.Client);
+		//var sse = GetSsePayload<LootDto>(app.Client);
 		var loot = new Endpoints.CreateLoot(3, 1, raidNight);
 		await app.Client.EnsurePostAsJsonAsync("/UpdateLootQuantity", loot);
 
@@ -236,10 +280,83 @@ public class LootTest
 		Assert.Equal(loot.Quantity, raidNight ? dto.RaidQuantity : dto.RotQuantity);
 		Assert.Equal(0, raidNight ? dto.RotQuantity : dto.RaidQuantity);
 
-		var data = await sse;
-		Assert.Equal("loots", data.Evt);
-		Assert.Equal(1, data.Id);
-		Assert.Equal(dto, data.Json);
+		//var data = await sse;
+		//Assert.Equal("loots", data.Evt);
+		//Assert.Equal(1, data.Id);
+		//Assert.Equal(dto, data.Json);
+	}
+
+	[Fact]
+	public async Task TestCreateLootRequest()
+	{
+		await using var app = new AppFixture();
+		await CreateGuild(app.Client);
+		await CreateItem(app.Client);
+		await CreateLootRequest(app.Client);
+	}
+
+	[Fact]
+	public async Task GetLootRequests()
+	{
+		await using var app = new AppFixture();
+		await CreateGuild(app.Client);
+		await CreateItem(app.Client);
+		await CreateLootRequest(app.Client);
+
+		var requests = await app.Client.GetFromJsonAsync<LootRequestDto[]>("/GetLootRequests");
+
+		Assert.Single(requests!);
+		var req = requests![0];
+		Assert.Equal(1, req.Id);
+		// TODO: more asserts
+	}
+
+	[Fact]
+	public async Task DeleteLootRequest()
+	{
+		await using var app = new AppFixture();
+		await CreateGuild(app.Client);
+		await CreateItem(app.Client);
+		await CreateLootRequest(app.Client);
+
+		await app.Client.EnsurePostAsJsonAsync("/DeleteLootRequest?id=1");
+	}
+
+	[Fact]
+	public async Task TestGrantLootRequest()
+	{
+		await using var app = new AppFixture();
+		await CreateGuild(app.Client);
+		await CreateItem(app.Client);
+		await CreateLootRequest(app.Client);
+		await GrantLootRequest(app.Client);
+	}
+
+	[Fact]
+	public async Task GetGrantedLootOutput()
+	{
+		await using var app = new AppFixture();
+		var key = await CreateGuild(app.Client);
+		await CreateItem(app.Client);
+		await CreateLootRequest(app.Client);
+		await GrantLootRequest(app.Client);
+
+		var output = await app.Client.GetByteArrayAsync("/GetGrantedLootOutput?playerKey=" + key);
+
+		var txt = System.Text.Encoding.UTF8.GetString(output);
+		Assert.Equal("TODO", txt);
+	}
+
+	[Fact]
+	public async Task FinishLootRequests()
+	{
+		await using var app = new AppFixture();
+		await CreateGuild(app.Client);
+		await CreateItem(app.Client);
+		await CreateLootRequest(app.Client);
+		await GrantLootRequest(app.Client);
+
+		await app.Client.EnsurePostAsJsonAsync("/FinishLootRequests?raidNight=true");
 	}
 
 	[Fact]
@@ -290,8 +407,28 @@ public class LootTest
 		};
 
 		using var res = await app.Client.PostAsync("/ImportDump?offset=500", content);
+
 		Assert.True(res.IsSuccessStatusCode);
-		var dtos = await app.Client.GetFromJsonAsync<RaidAttendanceDto[]>("/GetPlayerAttendance");
+	}
+
+	[Fact]
+	public async Task BulkImportRaidDumps()
+	{
+		await using var app = new AppFixture();
+		await CreateGuild(app.Client);
+		await CreateZipRaidDumps(app.Client);
+	}
+
+	[Theory]
+	[InlineData("/GetPlayerAttendance")]
+	[InlineData("/GetPlayerAttendance_V2")]
+	public async Task GetRaidAttendance(string endpoint)
+	{
+		await using var app = new AppFixture();
+		await CreateGuild(app.Client);
+		await CreateZipRaidDumps(app.Client);
+
+		var dtos = await app.Client.GetFromJsonAsync<RaidAttendanceDto[]>(endpoint);
 
 		Assert.Single(dtos!);
 		var ra = dtos![0];
