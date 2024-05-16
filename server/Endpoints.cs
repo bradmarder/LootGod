@@ -45,7 +45,7 @@ public class Endpoints(string _adminKey, string _backup)
 			await res.WriteAsync("data: empty\n\n\n", token);
 			await res.Body.FlushAsync(token);
 
-			service.AddDataSink(connectionId, res);
+			service.AddDataSink(connectionId, res, token);
 			token.Register(() => service.RemoveDataSink(connectionId));
 
 			await Task.Delay(Timeout.InfiniteTimeSpan, token);

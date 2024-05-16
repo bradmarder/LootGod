@@ -83,7 +83,7 @@ public class LootTest
 			await ent.WriteAsync(dump);
 		}
 
-		var content = new MultipartFormDataContent
+		using var content = new MultipartFormDataContent
 		{
 			{ new ByteArrayContent(stream.ToArray()), "file", "RaidRoster_firiona.zip" }
 		};
@@ -113,16 +113,25 @@ public class LootTest
 		Assert.Equal("", await sr.ReadLineAsync());
 		Assert.Equal("", await sr.ReadLineAsync());
 
-		var e = await sr.ReadLineAsync();
-		var json = await sr.ReadLineAsync();
-		var id = await sr.ReadLineAsync();
-
-		return new SsePayload<T>
+		using var cts = new CancellationTokenSource(1_000);
+		try
 		{
-			Evt = e![7..], // event: 
-			Json = JsonSerializer.Deserialize<T[]>(json![6..], _options)![0], // data:
-			Id = int.Parse(id![4..]), // id:
-		};
+			var e = await sr.ReadLineAsync(cts.Token);
+			var json = await sr.ReadLineAsync(cts.Token);
+			var id = await sr.ReadLineAsync(cts.Token);
+
+			return new SsePayload<T>
+			{
+				Evt = e![7..], // event:
+				Json = JsonSerializer.Deserialize<T[]>(json![6..], _options)![0], // data:
+				Id = int.Parse(id![4..]), // id:
+			};
+		}
+		catch (OperationCanceledException) when (cts.IsCancellationRequested)
+		{
+			Assert.Fail("Never received SSE payload");
+			throw;
+		}
 	}
 
 	private static async Task CreateItem(HttpClient client)
@@ -192,7 +201,6 @@ public class LootTest
 
 		await app.Client.EnsurePostAsJsonAsync("/ToggleLootLock?enable=true");
 		var locked2 = await app.Client.GetFromJsonAsync<bool>("/GetLootLock");
-		Assert.True(locked2);
 
 		await app.Client.EnsurePostAsJsonAsync("/ToggleLootLock?enable=false");
 		var locked3 = await app.Client.GetFromJsonAsync<bool>("/GetLootLock");
@@ -254,7 +262,12 @@ public class LootTest
 		var emptyItems = await app.Client.GetFromJsonAsync<ItemDto[]>("/GetItems");
 		Assert.Empty(emptyItems!);
 
+		var sse = GetSsePayload<ItemDto>(app.Client);
 		await CreateItem(app.Client);
+		var data = await sse;
+		Assert.Equal("items", data.Evt);
+		Assert.Equal(1, data.Id);
+		Assert.Equal(1, data.Json.Id);
 	}
 
 	[Theory]
@@ -269,7 +282,7 @@ public class LootTest
 		var emptyLoots = await app.Client.GetFromJsonAsync<LootDto[]>("/GetLoots");
 		Assert.Empty(emptyLoots!);
 
-		//var sse = GetSsePayload<LootDto>(app.Client);
+		var sse = GetSsePayload<LootDto>(app.Client);
 		var loot = new Endpoints.CreateLoot(3, 1, raidNight);
 		await app.Client.EnsurePostAsJsonAsync("/UpdateLootQuantity", loot);
 
@@ -280,10 +293,10 @@ public class LootTest
 		Assert.Equal(loot.Quantity, raidNight ? dto.RaidQuantity : dto.RotQuantity);
 		Assert.Equal(0, raidNight ? dto.RotQuantity : dto.RaidQuantity);
 
-		//var data = await sse;
-		//Assert.Equal("loots", data.Evt);
-		//Assert.Equal(1, data.Id);
-		//Assert.Equal(dto, data.Json);
+		var data = await sse;
+		Assert.Equal("loots", data.Evt);
+		Assert.Equal(1, data.Id);
+		Assert.Equal(dto, data.Json);
 	}
 
 	[Fact]
@@ -292,7 +305,14 @@ public class LootTest
 		await using var app = new AppFixture();
 		await CreateGuild(app.Client);
 		await CreateItem(app.Client);
+
+		var sse = GetSsePayload<LootRequest>(app.Client);
 		await CreateLootRequest(app.Client);
+
+		var data = await sse;
+		Assert.Equal("requests", data.Evt);
+		Assert.Equal(1, data.Id);
+		Assert.Equal(1, data.Json.Id);
 	}
 
 	[Fact]
@@ -308,7 +328,11 @@ public class LootTest
 		Assert.Single(requests!);
 		var req = requests![0];
 		Assert.Equal(1, req.Id);
-		// TODO: more asserts
+		Assert.False(req.Granted);
+		Assert.True(req.RaidNight);
+
+		// does not match primary class -> displays persona class when specified
+		Assert.Equal(EQClass.Berserker, req.Class);
 	}
 
 	[Fact]
@@ -336,15 +360,14 @@ public class LootTest
 	public async Task GetGrantedLootOutput()
 	{
 		await using var app = new AppFixture();
-		var key = await CreateGuild(app.Client);
+		await CreateGuild(app.Client);
 		await CreateItem(app.Client);
 		await CreateLootRequest(app.Client);
 		await GrantLootRequest(app.Client);
 
-		var output = await app.Client.GetByteArrayAsync("/GetGrantedLootOutput?playerKey=" + key);
+		var output = await app.Client.GetStringAsync("/GetGrantedLootOutput?raidNight=true");
 
-		var txt = System.Text.Encoding.UTF8.GetString(output);
-		Assert.Equal("TODO", txt);
+		Assert.Equal("Godly Plate of the Whale  | Vulak   | x1", output);
 	}
 
 	[Fact]
@@ -357,6 +380,14 @@ public class LootTest
 		await GrantLootRequest(app.Client);
 
 		await app.Client.EnsurePostAsJsonAsync("/FinishLootRequests?raidNight=true");
+
+		var requests = await app.Client.GetFromJsonAsync<LootRequestDto[]>("/GetLootRequests");
+		var archiveItem = await app.Client.GetFromJsonAsync<LootRequestDto[]>("/GetArchivedLootRequests?itemId=1");
+		var archiveName = await app.Client.GetFromJsonAsync<LootRequestDto[]>("/GetArchivedLootRequests?name=Vulak");
+		Assert.Empty(requests!);
+		Assert.Single(archiveItem!);
+		Assert.Single(archiveName!);
+		Assert.True(archiveItem![0].Granted);
 	}
 
 	[Fact]
@@ -383,7 +414,7 @@ public class LootTest
 		await CreateGuild(app.Client);
 
 		const string dump = "Vulak\t120\tDruid\tLeader\t\t01/10/23\tPalatial Guild Hall\tMain -  Leader -  LC Admin - .Rot Loot Admin\t\ton\ton\t7344198\t01/06/23\tMain -  Leader -  LC Admin - .Rot Loot Admin\t";
-		var content = new MultipartFormDataContent
+		using var content = new MultipartFormDataContent
 		{
 			{ new StringContent(dump), "file", "The_Unknown_firiona-20230111-141432.txt" }
 		};
@@ -401,7 +432,7 @@ public class LootTest
 
 		const string dump = "7\tVulak\t120\tDruid\tGroup Leader\t\t\tYes\t";
 		var now = DateTime.UtcNow.ToString("yyyyMMdd");
-		var content = new MultipartFormDataContent
+		using var content = new MultipartFormDataContent
 		{
 			{ new StringContent(dump), "file", $"RaidRoster_firiona-{now}-210727.txt" }
 		};

@@ -2,6 +2,8 @@ using LootGod;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Concurrent;
+using System.Threading.Channels;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 var adminKey = builder.Configuration["ADMIN_KEY"]!;
@@ -43,6 +45,9 @@ builder.Services
 	.AddHealthChecks()
 	.AddDbContextCheck<LootGodContext>();
 builder.Services.AddScoped<LootService>();
+builder.Services.AddSingleton(x => Channel.CreateUnbounded<Payload>(new() { SingleReader = true, SingleWriter = false }));
+builder.Services.AddSingleton<ConcurrentDictionary<string, DataSink>>();
+builder.Services.AddHttpClient<LootService>();
 builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
 builder.Services.AddLogging(x => x
 	.ClearProviders()

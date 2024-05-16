@@ -9,35 +9,40 @@ using System.Threading.Channels;
 
 namespace LootGod;
 
-public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttpContextAccessor _httpContextAccessor)
+public record DataSink(int GuildId, HttpResponse Response, CancellationToken Token)
 {
-	private record DataSink(int GuildId, HttpResponse Response)
-	{
-		public int EventId { get; set; } = 1;
-	}
+	public int EventId { get; set; } = 1;
+}
 
-	/// <summary>
-	/// null GuildId implies the payload is sent to every client (items)
-	/// </summary>
-	private record Payload(int? GuildId, string Event, string JsonData);
+/// <summary>
+/// null GuildId implies the payload is sent to every client (items)
+/// </summary>
+public record Payload(int? GuildId, string Event, string JsonData);
 
-	public record LootOutput(string Loot, string Name, int Quantity);
+public record LootOutput(string Loot, string Name, int Quantity);
 
-	private static readonly HttpClient _httpClient = new();
+public class LootService(
+	ILogger<LootService> _logger,
+	IHttpContextAccessor _httpContextAccessor,
+	LootGodContext _db,
+	HttpClient _httpClient,
+	Channel<Payload> _payloadChannel,
+	ConcurrentDictionary<string, DataSink> _dataSinks)
+{
 	private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-	private static readonly Channel<Payload> PayloadChannel = Channel.CreateUnbounded<Payload>(new() { SingleReader = true, SingleWriter = false });
-	private static readonly ConcurrentDictionary<string, DataSink> DataSinks = new();
 	private static readonly Expansion[] CurrentExpansions = [Expansion.NoS, Expansion.LS];
 
+	private HttpRequest Request => _httpContextAccessor.HttpContext!.Request;
+
 	public Guid? GetPlayerKey() =>
-		_httpContextAccessor.HttpContext!.Request.Headers.TryGetValue("Player-Key", out var headerKey) ? Guid.Parse(headerKey.ToString())
-		: _httpContextAccessor.HttpContext!.Request.Query.TryGetValue("playerKey", out var queryKey) ? Guid.Parse(queryKey.ToString())
+		Request.Headers.TryGetValue("Player-Key", out var headerKey) ? Guid.Parse(headerKey.ToString())
+		: Request.Query.TryGetValue("playerKey", out var queryKey) ? Guid.Parse(queryKey.ToString())
 		: null;
 
 	public string? GetIPAddress() =>
-		_httpContextAccessor.HttpContext!.Request.Headers.TryGetValue("Fly-Client-IP", out var val)
+		Request.Headers.TryGetValue("Fly-Client-IP", out var val)
 			? val
-			: _httpContextAccessor.HttpContext.Connection.RemoteIpAddress?.ToString();
+			: _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
 
 	public int GetPlayerId()
 	{
@@ -157,23 +162,24 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 		return string.Join(Environment.NewLine, output);
 	}
 
-	public void AddDataSink(string connectionId, HttpResponse response)
+	public void AddDataSink(string connectionId, HttpResponse response, CancellationToken token)
 	{
 		LogNewDataSink();
 
-		var sink = new DataSink(GetGuildId(), response);
-		DataSinks.TryAdd(connectionId, sink);
+		var guildId = GetGuildId();
+		var sink = new DataSink(guildId, response, token);
+		_dataSinks.TryAdd(connectionId, sink);
 	}
 
-	public bool RemoveDataSink(string connectionId) => DataSinks.Remove(connectionId, out _);
+	public bool RemoveDataSink(string connectionId) => _dataSinks.Remove(connectionId, out _);
 
 	public async Task DeliverPayloads()
 	{
-		await foreach (var payload in PayloadChannel.Reader.ReadAllAsync())
+		await foreach (var payload in _payloadChannel.Reader.ReadAllAsync())
 		{
 			var watch = Stopwatch.StartNew();
 
-			foreach (var sink in DataSinks)
+			foreach (var sink in _dataSinks)
 			{
 				if (payload.GuildId is null || sink.Value.GuildId == payload.GuildId)
 				{
@@ -186,8 +192,11 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 					var res = sink.Value.Response;
 					try
 					{
-						await res.WriteAsync(text);
-						await res.Body.FlushAsync();
+						using var failsafe = new CancellationTokenSource(1_000);
+						using var cts = CancellationTokenSource.CreateLinkedTokenSource(failsafe.Token, sink.Value.Token);
+
+						await res.WriteAsync(text, cts.Token);
+						await res.Body.FlushAsync(cts.Token);
 					}
 					catch (Exception ex)
 					{
@@ -205,7 +214,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 	{
 		var payload = new Payload(guildId, "lock", locked.ToString());
 
-		await PayloadChannel.Writer.WriteAsync(payload);
+		await _payloadChannel.Writer.WriteAsync(payload);
 	}
 
 	public ItemDto[] LoadItems()
@@ -271,7 +280,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 		var json = JsonSerializer.Serialize(items, _jsonOptions);
 		var payload = new Payload(null, "items", json);
 
-		await PayloadChannel.Writer.WriteAsync(payload);
+		await _payloadChannel.Writer.WriteAsync(payload);
 	}
 
 	public async Task RefreshLoots(int guildId)
@@ -280,7 +289,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 		var json = JsonSerializer.Serialize(loots, _jsonOptions);
 		var payload = new Payload(guildId, "loots", json);
 
-		await PayloadChannel.Writer.WriteAsync(payload);
+		await _payloadChannel.Writer.WriteAsync(payload);
 	}
 
 	public async Task RefreshRequests(int guildId)
@@ -289,7 +298,7 @@ public class LootService(ILogger<LootService> _logger, LootGodContext _db, IHttp
 		var json = JsonSerializer.Serialize(requests, _jsonOptions);
 		var payload = new Payload(guildId, "requests", json);
 
-		await PayloadChannel.Writer.WriteAsync(payload);
+		await _payloadChannel.Writer.WriteAsync(payload);
 	}
 
 	public async Task DiscordWebhook(string output, string discordWebhookUrl)
