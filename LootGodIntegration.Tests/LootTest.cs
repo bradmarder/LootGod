@@ -196,15 +196,19 @@ public class LootTest
 		await using var app = new AppFixture();
 		await CreateGuild(app.Client);
 
-		var locked = await app.Client.GetFromJsonAsync<bool>("/GetLootLock");
-		Assert.False(locked);
+		// By default, LootLock will be false for all new guilds
+		var defaultLootLock = await app.Client.GetFromJsonAsync<bool>("/GetLootLock");
+		Assert.False(defaultLootLock);
 
+		var sse = GetSsePayload<bool>(app.Client);
 		await app.Client.EnsurePostAsJsonAsync("/ToggleLootLock?enable=true");
-		var locked2 = await app.Client.GetFromJsonAsync<bool>("/GetLootLock");
+		var data = await sse;
 
-		await app.Client.EnsurePostAsJsonAsync("/ToggleLootLock?enable=false");
-		var locked3 = await app.Client.GetFromJsonAsync<bool>("/GetLootLock");
-		Assert.False(locked3);
+		var lootLock = await app.Client.GetFromJsonAsync<bool>("/GetLootLock");
+		Assert.True(lootLock);
+		Assert.Equal(1, data.Id);
+		Assert.Equal("lock", data.Evt);
+		Assert.True(data.Json);
 	}
 
 	[Fact]
@@ -231,8 +235,10 @@ public class LootTest
 
 	record Hooks(string Raid, string Rot);
 
-	[Fact]
-	public async Task DiscordWebhooks()
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public async Task DiscordWebhooks(bool raidNight)
 	{
 		await using var app = new AppFixture();
 		await CreateGuild(app.Client);
@@ -241,16 +247,15 @@ public class LootTest
 		Assert.Empty(emptyHooks!.Raid);
 		Assert.Empty(emptyHooks.Rot);
 
-		const string domain = "https://discord.com/api/webhooks/";
-		var raidHook = domain + "1/" + new string('x', 68);
-		var rotHook = domain + "2/" + new string('y', 68);
+		var webhook = "https://discord.com/api/webhooks/1/" + new string('x', 68);
 
-		await app.Client.EnsurePostAsJsonAsync("/GuildDiscord?raidNight=true&webhook=" + raidHook);
-		await app.Client.EnsurePostAsJsonAsync("/GuildDiscord?raidNight=false&webhook=" + rotHook);
-		var loadedHooks = await app.Client.GetFromJsonAsync<Hooks>("/GetDiscordWebhooks");
+		await app.Client.EnsurePostAsJsonAsync($"/GuildDiscord?raidNight={raidNight}&webhook={webhook}");
 
-		Assert.Equal(raidHook, loadedHooks!.Raid);
-		Assert.Equal(rotHook, loadedHooks.Rot);
+		var hooks = await app.Client.GetFromJsonAsync<Hooks>("/GetDiscordWebhooks");
+		var value = raidNight ? hooks!.Raid : hooks!.Rot;
+		var other = raidNight ? hooks!.Rot : hooks!.Raid;
+		Assert.Equal(webhook, value);
+		Assert.Empty(other);
 	}
 
 	[Fact]
@@ -354,6 +359,10 @@ public class LootTest
 		await CreateItem(app.Client);
 		await CreateLootRequest(app.Client);
 		await GrantLootRequest(app.Client);
+
+		var requests = await app.Client.GetFromJsonAsync<LootRequestDto[]>("/GetLootRequests");
+		Assert.Single(requests!);
+		Assert.True(requests![0].Granted);
 	}
 
 	[Fact]
@@ -379,6 +388,7 @@ public class LootTest
 		await CreateLootRequest(app.Client);
 		await GrantLootRequest(app.Client);
 
+		// TODO: validate discord
 		await app.Client.EnsurePostAsJsonAsync("/FinishLootRequests?raidNight=true");
 
 		var requests = await app.Client.GetFromJsonAsync<LootRequestDto[]>("/GetLootRequests");
@@ -387,6 +397,7 @@ public class LootTest
 		Assert.Empty(requests!);
 		Assert.Single(archiveItem!);
 		Assert.Single(archiveName!);
+		Assert.Equal(archiveItem, archiveName);
 		Assert.True(archiveItem![0].Granted);
 	}
 

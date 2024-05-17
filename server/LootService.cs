@@ -177,44 +177,39 @@ public class LootService(
 	{
 		await foreach (var payload in _payloadChannel.Reader.ReadAllAsync())
 		{
-			var watch = Stopwatch.StartNew();
+			var watch = Stopwatch.StartNew(); 
 
 			foreach (var sink in _dataSinks)
 			{
-				if (payload.GuildId is null || sink.Value.GuildId == payload.GuildId)
+				if (payload.GuildId is not null && payload.GuildId != sink.Value.GuildId)
 				{
-					var text = new StringBuilder()
-						.Append($"event: {payload.Event}\n")
-						.Append($"data: {payload.JsonData}\n")
-						.Append($"id: {sink.Value.EventId++}\n")
-						.Append("\n\n")
-						.ToString();
-					var res = sink.Value.Response;
-					try
-					{
-						using var failsafe = new CancellationTokenSource(1_000);
-						using var cts = CancellationTokenSource.CreateLinkedTokenSource(failsafe.Token, sink.Value.Token);
+					continue;
+				}
 
-						await res.WriteAsync(text, cts.Token);
-						await res.Body.FlushAsync(cts.Token);
-					}
-					catch (Exception ex)
-					{
-						_logger.LogError(ex, "Orphan connection removed - {ConnectionId}", sink.Key);
-						RemoveDataSink(sink.Key);
-					}
+				var text = new StringBuilder()
+					.Append($"event: {payload.Event}\n")
+					.Append($"data: {payload.JsonData}\n")
+					.Append($"id: {sink.Value.EventId++}\n")
+					.Append("\n\n")
+					.ToString();
+				try
+				{
+					using var failsafe = new CancellationTokenSource(1_000);
+					using var lts = CancellationTokenSource.CreateLinkedTokenSource(failsafe.Token, sink.Value.Token);
+
+					var res = sink.Value.Response;
+					await res.WriteAsync(text, lts.Token);
+					await res.Body.FlushAsync(lts.Token);
+				}
+				catch (Exception ex)
+				{
+					_logger.LogError(ex, "Orphan connection removed - {ConnectionId}", sink.Key);
+					RemoveDataSink(sink.Key);
 				}
 			}
 
 			_logger.LogWarning("Payload loop for '{Event}' completed in {Duration}ms", payload.Event, watch.ElapsedMilliseconds);
 		}
-	}
-
-	public async Task RefreshLock(int guildId, bool locked)
-	{
-		var payload = new Payload(guildId, "lock", locked.ToString());
-
-		await _payloadChannel.Writer.WriteAsync(payload);
 	}
 
 	public ItemDto[] LoadItems()
@@ -272,6 +267,14 @@ public class LootService(
 				CurrentItem = x.CurrentItem,
 			})
 			.ToArray();
+	}
+
+	public async Task RefreshLock(int guildId, bool locked)
+	{
+		var json = locked ? "[true]" : "[false]";
+		var payload = new Payload(guildId, "lock", json);
+
+		await _payloadChannel.Writer.WriteAsync(payload);
 	}
 
 	public async Task RefreshItems()
