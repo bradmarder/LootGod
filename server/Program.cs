@@ -22,21 +22,18 @@ var useInMemoryDatabase = source is null;
 var connString = useInMemoryDatabase
 	? new SqliteConnectionStringBuilder
 	{
-		DataSource = ":memory:",
+		DataSource = Guid.NewGuid().ToString(), // unique name required to avoid sharing the database between integration tests
 		Cache = SqliteCacheMode.Shared,
 		Mode = SqliteOpenMode.Memory,
 	}
 	: new SqliteConnectionStringBuilder { DataSource = source };
 
 // required to keep in-memory database alive
-using var conn = new SqliteConnection(connString.ConnectionString);
 if (useInMemoryDatabase)
 {
+	var conn = new SqliteConnection(connString.ConnectionString);
 	conn.Open();
-}
-else
-{
-	conn.Dispose();
+	builder.Services.AddSingleton(x => conn);
 }
 
 builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite(connString.ConnectionString));
