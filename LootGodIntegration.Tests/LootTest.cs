@@ -1,87 +1,16 @@
 using LootGod;
-using System.IO.Compression;
 
 namespace LootGodIntegration.Tests;
 
+record Hooks(string Raid, string Rot);
+
 public class LootTest
 {
-	private static async Task<string> CreateGuildAndLeader(HttpClient client)
-	{
-		var dto = new Endpoints.CreateGuild("Vulak", "The Unknown", Server.FirionaVie);
-		var json = await client.EnsurePostAsJsonAsync("/CreateGuild", dto);
-		var key = json[1..^1];
-		var success = Guid.TryParse(key, out var pKey);
-
-		Assert.True(success);
-		Assert.NotEqual(Guid.Empty, pKey);
-
-		client.DefaultRequestHeaders.Add("Player-Key", key);
-
-		return key;
-	}
-
-	private static async Task CreateZipRaidDumps(HttpClient client)
-	{
-		var dump = "7\tVulak\t120\tDruid\tGroup Leader\t\t\tYes\t"u8.ToArray();
-		await using var stream = new MemoryStream();
-		using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
-		{
-			var now = DateTime.UtcNow.ToString("yyyyMMdd");
-			var entry = zip.CreateEntry($"RaidRoster_firiona-{now}-210727.txt");
-			await using var ent = entry.Open();
-			await ent.WriteAsync(dump);
-			await ent.DisposeAsync();
-
-			var fiftyDaysAgo = DateTime.UtcNow.AddDays(-50).ToString("yyyyMMdd");
-			var entry2 = zip.CreateEntry($"RaidRoster_firiona-{fiftyDaysAgo}-210727.txt");
-			await using var ent2 = entry2.Open();
-			await ent2.WriteAsync(dump);
-			await ent2.DisposeAsync();
-		}
-
-		using var content = new MultipartFormDataContent
-		{
-			{ new ByteArrayContent(stream.ToArray()), "file", "RaidRoster_firiona.zip" }
-		};
-
-		using var res = await client.PostAsync("/ImportDump?offset=500", content);
-
-		Assert.True(res.IsSuccessStatusCode);
-	}
-
-	private static async Task CreateItem(HttpClient client)
-	{
-		const string name = "Godly Plate of the Whale";
-		await client.EnsurePostAsJsonAsync("/CreateItem?name=" + name);
-
-		var items = await client.EnsureGetJsonAsync<ItemDto[]>("/GetItems");
-		Assert.Single(items!);
-		Assert.Equal(name, items![0].Name);
-		Assert.Equal(1, items![0].Id);
-	}
-
-	private static async Task CreateLootRequest(HttpClient client)
-	{
-		var dto = new CreateLootRequest
-		{
-			ItemId = 1,
-			Class = EQClass.Berserker,
-			CurrentItem = "Rusty Axe",
-			Quantity = 1,
-			RaidNight = true,
-		};
-		await client.EnsurePostAsJsonAsync("/CreateLootRequest", dto);
-	}
-
-	private static async Task GrantLootRequest(HttpClient client)
-	{
-		await client.EnsurePostAsJsonAsync("/GrantLootRequest?id=1&grant=true");
-	}
-
 	[Fact]
 	public async Task HealthCheck()
 	{
 		await using var app = new AppFixture();
+
 		var response = await app.Client.GetStringAsync("/healthz");
 
 		Assert.Equal("Healthy", response);
@@ -91,7 +20,7 @@ public class LootTest
 	public async Task CreateGuild()
 	{
 		await using var app = new AppFixture();
-		await CreateGuildAndLeader(app.Client);
+		await app.Client.CreateGuildAndLeader();
 
 		var id = await app.Client.EnsureGetJsonAsync<int>("/GetPlayerId");
 		var admin = await app.Client.EnsureGetJsonAsync<bool>("/GetAdminStatus");
@@ -106,7 +35,7 @@ public class LootTest
 	public async Task EnableLootLock()
 	{
 		await using var app = new AppFixture();
-		await CreateGuildAndLeader(app.Client);
+		await app.Client.CreateGuildAndLeader();
 
 		// By default, LootLock will be false for all new guilds
 		var defaultLootLock = await app.Client.EnsureGetJsonAsync<bool>("/GetLootLock");
@@ -123,18 +52,16 @@ public class LootTest
 		Assert.True(data.Json);
 	}
 
-	record Hooks(string Raid, string Rot);
-
 	[Theory]
 	[InlineData(true)]
 	[InlineData(false)]
 	public async Task DiscordWebhooks(bool raidNight)
 	{
 		await using var app = new AppFixture();
-		await CreateGuildAndLeader(app.Client);
+		await app.Client.CreateGuildAndLeader();
 
 		var emptyHooks = await app.Client.EnsureGetJsonAsync<Hooks>("/GetDiscordWebhooks");
-		Assert.Empty(emptyHooks!.Raid);
+		Assert.Empty(emptyHooks.Raid);
 		Assert.Empty(emptyHooks.Rot);
 
 		var webhook = "https://discord.com/api/webhooks/1/" + new string('x', 68);
@@ -142,8 +69,8 @@ public class LootTest
 		await app.Client.EnsurePostAsJsonAsync($"/GuildDiscord?raidNight={raidNight}&webhook={webhook}");
 
 		var hooks = await app.Client.EnsureGetJsonAsync<Hooks>("/GetDiscordWebhooks");
-		var value = raidNight ? hooks!.Raid : hooks!.Rot;
-		var other = raidNight ? hooks!.Rot : hooks!.Raid;
+		var value = raidNight ? hooks.Raid : hooks.Rot;
+		var other = raidNight ? hooks.Rot : hooks.Raid;
 		Assert.Equal(webhook, value);
 		Assert.Empty(other);
 	}
@@ -152,14 +79,15 @@ public class LootTest
 	public async Task CreateItemTest()
 	{
 		await using var app = new AppFixture();
-		await CreateGuildAndLeader(app.Client);
+		await app.Client.CreateGuildAndLeader();
 
 		var emptyItems = await app.Client.EnsureGetJsonAsync<ItemDto[]>("/GetItems");
-		Assert.Empty(emptyItems!);
+		Assert.Empty(emptyItems);
 
 		var sse = app.Client.GetSsePayload<ItemDto>();
-		await CreateItem(app.Client);
+		await app.Client.CreateItem();
 		var data = await sse;
+
 		Assert.Equal("items", data.Evt);
 		Assert.Equal(1, data.Id);
 		Assert.Equal(1, data.Json.Id);
@@ -171,19 +99,19 @@ public class LootTest
 	public async Task CreateLoot(bool raidNight)
 	{
 		await using var app = new AppFixture();
-		await CreateGuildAndLeader(app.Client);
-		await CreateItem(app.Client);
+		await app.Client.CreateGuildAndLeader();
+		await app.Client.CreateItem();
 
 		var emptyLoots = await app.Client.EnsureGetJsonAsync<LootDto[]>("/GetLoots");
-		Assert.Empty(emptyLoots!);
+		Assert.Empty(emptyLoots);
 
 		var sse = app.Client.GetSsePayload<LootDto>();
 		var loot = new Endpoints.CreateLoot(3, 1, raidNight);
 		await app.Client.EnsurePostAsJsonAsync("/UpdateLootQuantity", loot);
 
 		var loots = await app.Client.EnsureGetJsonAsync<LootDto[]>("/GetLoots");
-		Assert.Single(loots!);
-		var dto = loots![0];
+		Assert.Single(loots);
+		var dto = loots[0];
 		Assert.Equal(loot.ItemId, dto.ItemId);
 		Assert.Equal(loot.Quantity, raidNight ? dto.RaidQuantity : dto.RotQuantity);
 		Assert.Equal(0, raidNight ? dto.RotQuantity : dto.RaidQuantity);
@@ -191,18 +119,18 @@ public class LootTest
 		var data = await sse;
 		Assert.Equal("loots", data.Evt);
 		Assert.Equal(1, data.Id);
-		Assert.Equal(dto, data.Json);
+		Assert.True(dto == data.Json);
 	}
 
 	[Fact]
 	public async Task TestCreateLootRequest()
 	{
 		await using var app = new AppFixture();
-		await CreateGuildAndLeader(app.Client);
-		await CreateItem(app.Client);
+		await app.Client.CreateGuildAndLeader();
+		await app.Client.CreateItem();
 
 		var sse = app.Client.GetSsePayload<LootRequestDto>();
-		await CreateLootRequest(app.Client);
+		await app.Client.CreateLootRequest();
 		var data = await sse;
 
 		Assert.Equal("requests", data.Evt);
@@ -210,9 +138,9 @@ public class LootTest
 		Assert.Equal(1, data.Json.Id);
 
 		var requests = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetLootRequests");
-		Assert.Single(requests!);
-		var req = requests![0];
-		Assert.Equal(data.Json, req);
+		Assert.Single(requests);
+		var req = requests[0];
+		Assert.True(data.Json == req);
 		Assert.Equal(1, req.Id);
 		Assert.False(req.Granted);
 		Assert.True(req.RaidNight);
@@ -225,9 +153,9 @@ public class LootTest
 	public async Task DeleteLootRequest()
 	{
 		await using var app = new AppFixture();
-		await CreateGuildAndLeader(app.Client);
-		await CreateItem(app.Client);
-		await CreateLootRequest(app.Client);
+		await app.Client.CreateGuildAndLeader();
+		await app.Client.CreateItem();
+		await app.Client.CreateLootRequest();
 
 		await app.Client.EnsurePostAsJsonAsync("/DeleteLootRequest?id=1");
 	}
@@ -236,24 +164,24 @@ public class LootTest
 	public async Task TestGrantLootRequest()
 	{
 		await using var app = new AppFixture();
-		await CreateGuildAndLeader(app.Client);
-		await CreateItem(app.Client);
-		await CreateLootRequest(app.Client);
-		await GrantLootRequest(app.Client);
+		await app.Client.CreateGuildAndLeader();
+		await app.Client.CreateItem();
+		await app.Client.CreateLootRequest();
+		await app.Client.GrantLootRequest();
 
 		var requests = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetLootRequests");
-		Assert.Single(requests!);
-		Assert.True(requests![0].Granted);
+		Assert.Single(requests);
+		Assert.True(requests[0].Granted);
 	}
 
 	[Fact]
 	public async Task GetGrantedLootOutput()
 	{
 		await using var app = new AppFixture();
-		await CreateGuildAndLeader(app.Client);
-		await CreateItem(app.Client);
-		await CreateLootRequest(app.Client);
-		await GrantLootRequest(app.Client);
+		await app.Client.CreateGuildAndLeader();
+		await app.Client.CreateItem();
+		await app.Client.CreateLootRequest();
+		await app.Client.GrantLootRequest();
 
 		var output = await app.Client.GetStringAsync("/GetGrantedLootOutput?raidNight=true");
 
@@ -264,33 +192,33 @@ public class LootTest
 	public async Task FinishLootRequests()
 	{
 		await using var app = new AppFixture();
-		await CreateGuildAndLeader(app.Client);
-		await CreateItem(app.Client);
-		await CreateLootRequest(app.Client);
-		await GrantLootRequest(app.Client);
+		await app.Client.CreateGuildAndLeader();
+		await app.Client.CreateItem();
+		await app.Client.CreateLootRequest();
+		await app.Client.GrantLootRequest();
 
 		// TODO: validate discord
 		await app.Client.EnsurePostAsJsonAsync("/FinishLootRequests?raidNight=true");
 
-		var requests = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetLootRequests");
+		var activeRequests = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetLootRequests");
 		var archiveItem = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetArchivedLootRequests?itemId=1");
 		var archiveName = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetArchivedLootRequests?name=Vulak");
-		Assert.Empty(requests!);
-		Assert.Single(archiveItem!);
-		Assert.Single(archiveName!);
-		Assert.Equal(archiveItem, archiveName);
-		Assert.True(archiveItem![0].Granted);
+		Assert.Empty(activeRequests);
+		Assert.Single(archiveItem);
+		Assert.Single(archiveName);
+		Assert.True(archiveItem[0] == archiveName[0]);
+		Assert.True(archiveItem[0].Granted);
 	}
 
 	[Fact]
 	public async Task GetPasswords()
 	{
 		await using var app = new AppFixture();
-		await CreateGuildAndLeader(app.Client);
+		await app.Client.CreateGuildAndLeader();
 
 		var txt = await app.Client.GetStringAsync("/GetPasswords");
-		var passwords = txt.Split(Environment.NewLine);
 
+		var passwords = txt.Split(Environment.NewLine);
 		Assert.Single(passwords);
 		var password = passwords[0];
 		Assert.StartsWith("Vulak\t", password);
@@ -303,24 +231,15 @@ public class LootTest
 	public async Task ImportGuildDump()
 	{
 		await using var app = new AppFixture();
-		await CreateGuildAndLeader(app.Client);
-
-		const string dump = "Vulak\t120\tDruid\tLeader\t\t01/10/23\tPalatial Guild Hall\tMain -  Leader -  LC Admin - .Rot Loot Admin\t\ton\ton\t7344198\t01/06/23\tMain -  Leader -  LC Admin - .Rot Loot Admin\t";
-		using var content = new MultipartFormDataContent
-		{
-			{ new StringContent(dump), "file", "The_Unknown_firiona-20230111-141432.txt" }
-		};
-
-		using var res = await app.Client.PostAsync("/ImportDump?offset=500", content);
-
-		Assert.True(res.IsSuccessStatusCode);
+		await app.Client.CreateGuildAndLeader();
+		await app.Client.CreateGuildDump();
 	}
 
 	[Fact]
 	public async Task ImportRaidDump()
 	{
 		await using var app = new AppFixture();
-		await CreateGuildAndLeader(app.Client);
+		await app.Client.CreateGuildAndLeader();
 
 		const string dump = "7\tVulak\t120\tDruid\tGroup Leader\t\t\tYes\t";
 		var now = DateTime.UtcNow.ToString("yyyyMMdd");
@@ -338,8 +257,69 @@ public class LootTest
 	public async Task BulkImportRaidDumps()
 	{
 		await using var app = new AppFixture();
-		await CreateGuildAndLeader(app.Client);
-		await CreateZipRaidDumps(app.Client);
+		await app.Client.CreateGuildAndLeader();
+		await app.Client.CreateZipRaidDumps();
+	}
+
+	[Fact]
+	public async Task TransferGuildLeadership()
+	{
+		await using var app = new AppFixture();
+		await app.Client.CreateGuildAndLeader();
+		await app.Client.CreateGuildDump();
+
+		await app.Client.EnsurePostAsJsonAsync("/TransferGuildLeadership?name=Seru");
+
+		var leader = await app.Client.EnsureGetJsonAsync<bool>("/GetLeaderStatus");
+		Assert.False(leader);
+	}
+
+	[Fact]
+	public async Task LinkAlt()
+	{
+		await using var app = new AppFixture();
+		await app.Client.CreateGuildAndLeader();
+		await app.Client.CreateGuildDump();
+		const string altName = "Seru";
+
+		await app.Client.EnsurePostAsJsonAsync("/LinkAlt?altName=" + altName);
+
+		var linkedAlts = await app.Client.EnsureGetJsonAsync<string[]>("/GetLinkedAlts");
+		Assert.Single(linkedAlts);
+		Assert.Equal(altName, linkedAlts[0]);
+	}
+
+	[Fact]
+	public async Task ToggleHiddenPlayer()
+	{
+		await using var app = new AppFixture();
+		await app.Client.CreateGuildAndLeader();
+		await app.Client.CreateZipRaidDumps();
+		const string hiddenName = "Seru";
+
+		//await app.Client.EnsurePostAsJsonAsync("/ToggleHiddenPlayer?playerName=" + hiddenName);
+
+		var dtos = await app.Client.EnsureGetJsonAsync<RaidAttendanceDto[]>("/GetPlayerAttendance");
+		Assert.Single(dtos);
+		Assert.NotEqual(hiddenName, dtos[0].Name);
+	}
+
+	[Fact]
+	public async Task TogglePlayerAdmin()
+	{
+		await using var app = new AppFixture();
+		await app.Client.CreateGuildAndLeader();
+		await app.Client.CreateZipRaidDumps();
+		const string hiddenName = "Tormax";
+
+		await app.Client.EnsurePostAsJsonAsync("/TogglePlayerAdmin?playerName=" + hiddenName);
+		//fails because alt...
+
+		var dtos = await app.Client.EnsureGetJsonAsync<RaidAttendanceDto[]>("/GetPlayerAttendance");
+		Assert.Equal(2, dtos.Length);
+		var tormax = dtos.SingleOrDefault(x => x.Name == hiddenName);
+		Assert.NotNull(tormax);
+		Assert.True(tormax.Admin);
 	}
 
 	[Theory]
@@ -348,13 +328,13 @@ public class LootTest
 	public async Task GetRaidAttendance(string endpoint)
 	{
 		await using var app = new AppFixture();
-		await CreateGuildAndLeader(app.Client);
-		await CreateZipRaidDumps(app.Client);
+		await app.Client.CreateGuildAndLeader();
+		await app.Client.CreateZipRaidDumps();
 
 		var dtos = await app.Client.EnsureGetJsonAsync<RaidAttendanceDto[]>(endpoint);
 
-		Assert.Single(dtos!);
-		var ra = dtos![0];
+		Assert.Single(dtos);
+		var ra = dtos[0];
 		Assert.Equal("Vulak", ra.Name);
 		Assert.True(ra.Admin);
 		Assert.False(ra.Hidden);

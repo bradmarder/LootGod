@@ -10,7 +10,7 @@ public record SsePayload<T>
 	public required int Id { get; init; }
 }
 
-public static class Extensions
+public static class HttpExtensions
 {
 	private static readonly JsonSerializerOptions _options = new() { PropertyNameCaseInsensitive = true };
 

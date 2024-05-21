@@ -391,9 +391,8 @@ public class Endpoints(string _adminKey, string _backup)
 				await lootService.DiscordWebhook(output, webhook);
 			}
 
-			var t1 = lootService.RefreshLoots(guildId);
-			var t2 = lootService.RefreshRequests(guildId);
-			await Task.WhenAll(t1, t2);
+			await lootService.RefreshLoots(guildId);
+			await lootService.RefreshRequests(guildId);
 		});
 
 		app.MapPost("TransferGuildLeadership", (LootGodContext db, LootService lootService, string name) =>
@@ -413,9 +412,6 @@ public class Endpoints(string _adminKey, string _backup)
 			newLeader.Admin = true;
 			newLeader.RankId = oldLeader.RankId;
 			oldLeader.RankId = null;
-
-			// should transfering leadership remove admin status?
-			// oldLeader.Admin = false;
 
 			db.SaveChanges();
 		});
