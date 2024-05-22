@@ -45,6 +45,7 @@ builder.Services.AddScoped<LootService>();
 builder.Services.AddSingleton(x => Channel.CreateUnbounded<Payload>(new() { SingleReader = true, SingleWriter = false }));
 builder.Services.AddSingleton<ConcurrentDictionary<string, DataSink>>();
 builder.Services.AddHttpClient<LootService>();
+builder.Services.AddHostedService<PayloadDeliveryService>();
 builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
 builder.Services.AddLogging(x => x
 	.ClearProviders()
@@ -65,10 +66,6 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 	var db = scope.ServiceProvider.GetRequiredService<LootGodContext>();
 
 	db.Database.EnsureCreated();
-
-	_ = scope.ServiceProvider
-		.GetRequiredService<LootService>()
-		.DeliverPayloads();
 }
 
 if (app.Environment.IsDevelopment())

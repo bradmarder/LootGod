@@ -1,5 +1,6 @@
 ﻿using LootGod;
 using System.IO.Compression;
+using System.Text;
 
 namespace LootGodIntegration.Tests;
 
@@ -20,20 +21,12 @@ public static class PostExtensions
 		return key;
 	}
 
-	//private static async Task CreateZipDump(ZipArchive zip, byte[] dump)
-	//{
-	//	var now = DateTime.UtcNow.ToString("yyyyMMdd");
-	//	var entry = zip.CreateEntry($"RaidRoster_firiona-{now}-210727.txt");
-	//	await using var ent = entry.Open();
-	//	await ent.WriteAsync(dump);
-	//	await ent.DisposeAsync();
-	//}
-
 	public static async Task CreateZipRaidDumps(this HttpClient client)
 	{
-		var leader = "7\tVulak\t120\tDruid\tGroup Leader\t\t\tYes\t"u8.ToArray();
-		var newbie = "7\tTormax\t120\tWizard\tGroup Leader\t\t\tYes\t"u8.ToArray();
-		var dumps = new[] { leader, newbie };
+		var vulak = "7\tVulak\t120\tDruid\tGroup Leader\t\t\tYes\t";
+		var tormax = "7\tTormax\t120\tWizard\tGroup Leader\t\t\tYes\t";
+		var lines = string.Join(Environment.NewLine, [vulak, tormax]);
+		var dump = Encoding.UTF8.GetBytes(lines);
 
 		await using var stream = new MemoryStream();
 		using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
@@ -41,11 +34,7 @@ public static class PostExtensions
 			var now = DateTime.UtcNow.ToString("yyyyMMdd");
 			var entry = zip.CreateEntry($"RaidRoster_firiona-{now}-210727.txt");
 			await using var ent = entry.Open();
-			foreach (var x in dumps)
-			{
-				await ent.WriteAsync(x);
-			}
-			await ent.DisposeAsync();
+			await ent.WriteAsync(dump);
 		}
 
 		using var content = new MultipartFormDataContent
@@ -60,8 +49,10 @@ public static class PostExtensions
 
 	public static async Task CreateGuildDump(this HttpClient client)
 	{
-		const string line = "Vulak\t120\tDruid\tLeader\t\t01/10/23\tPalatial Guild Hall\tMain -  Leader -  LC Admin - .Rot Loot Admin\t\ton\ton\t7344198\t01/06/23\tMain -  Leader -  LC Admin - .Rot Loot Admin\t";
-		var dump = line + Environment.NewLine + line.Replace("Vulak", "Seru").Replace("Leader", "Knight").Replace("\t\t01/10/23", "\tA\t01/10/23");
+		const string vulak = "Vulak\t120\tDruid\tLeader\t\t01/10/23\tPalatial Guild Hall\tMain -  Leader -  LC Admin - .Rot Loot Admin\t\ton\ton\t7344198\t01/06/23\tMain -  Leader -  LC Admin - .Rot Loot Admin\t";
+		var seru = vulak.Replace("Vulak", "Seru").Replace("Leader", "Knight").Replace("\t\t01/10/23", "\tA\t01/10/23");
+		var tormax = vulak.Replace("Vulak", "Tormax").Replace("Leader", "Knight");
+		var dump = string.Join(Environment.NewLine, [vulak, seru, tormax]);
 		using var content = new MultipartFormDataContent
 		{
 			{ new StringContent(dump), "file", "The_Unknown_firiona-20230111-141432.txt" }

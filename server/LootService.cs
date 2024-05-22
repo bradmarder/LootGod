@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -172,45 +171,6 @@ public class LootService(
 	}
 
 	public bool RemoveDataSink(string connectionId) => _dataSinks.Remove(connectionId, out _);
-
-	public async Task DeliverPayloads()
-	{
-		await foreach (var payload in _payloadChannel.Reader.ReadAllAsync())
-		{
-			var watch = Stopwatch.StartNew(); 
-
-			foreach (var sink in _dataSinks)
-			{
-				if (payload.GuildId is not null && payload.GuildId != sink.Value.GuildId)
-				{
-					continue;
-				}
-
-				var text = new StringBuilder()
-					.Append($"event: {payload.Event}\n")
-					.Append($"data: {payload.JsonData}\n")
-					.Append($"id: {sink.Value.EventId++}\n")
-					.Append("\n\n")
-					.ToString();
-				try
-				{
-					using var failsafe = new CancellationTokenSource(1_000);
-					using var lts = CancellationTokenSource.CreateLinkedTokenSource(failsafe.Token, sink.Value.Token);
-
-					var res = sink.Value.Response;
-					await res.WriteAsync(text, lts.Token);
-					await res.Body.FlushAsync(lts.Token);
-				}
-				catch (Exception ex)
-				{
-					_logger.LogError(ex, "Orphan connection removed - {ConnectionId}", sink.Key);
-					RemoveDataSink(sink.Key);
-				}
-			}
-
-			_logger.LogWarning("Payload loop for '{Event}' completed in {Duration}ms", payload.Event, watch.ElapsedMilliseconds);
-		}
-	}
 
 	public ItemDto[] LoadItems()
 	{

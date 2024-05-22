@@ -294,14 +294,17 @@ public class LootTest
 	{
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
+		await app.Client.CreateGuildDump();
 		await app.Client.CreateZipRaidDumps();
-		const string hiddenName = "Seru";
+		const string hiddenName = "Tormax";
 
-		//await app.Client.EnsurePostAsJsonAsync("/ToggleHiddenPlayer?playerName=" + hiddenName);
+		await app.Client.EnsurePostAsJsonAsync("/ToggleHiddenPlayer?playerName=" + hiddenName);
 
-		var dtos = await app.Client.EnsureGetJsonAsync<RaidAttendanceDto[]>("/GetPlayerAttendance");
-		Assert.Single(dtos);
-		Assert.NotEqual(hiddenName, dtos[0].Name);
+		var players = await app.Client.EnsureGetJsonAsync<RaidAttendanceDto[]>("/GetPlayerAttendance");
+		Assert.Equal(2, players.Length);
+		var tormax = players.SingleOrDefault(x => x.Name == hiddenName);
+		Assert.NotNull(tormax);
+		Assert.True(tormax.Hidden);
 	}
 
 	[Fact]
@@ -309,15 +312,15 @@ public class LootTest
 	{
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
+		await app.Client.CreateGuildDump();
 		await app.Client.CreateZipRaidDumps();
 		const string hiddenName = "Tormax";
 
 		await app.Client.EnsurePostAsJsonAsync("/TogglePlayerAdmin?playerName=" + hiddenName);
-		//fails because alt...
 
-		var dtos = await app.Client.EnsureGetJsonAsync<RaidAttendanceDto[]>("/GetPlayerAttendance");
-		Assert.Equal(2, dtos.Length);
-		var tormax = dtos.SingleOrDefault(x => x.Name == hiddenName);
+		var players = await app.Client.EnsureGetJsonAsync<RaidAttendanceDto[]>("/GetPlayerAttendance");
+		Assert.Equal(2, players.Length);
+		var tormax = players.SingleOrDefault(x => x.Name == hiddenName);
 		Assert.NotNull(tormax);
 		Assert.True(tormax.Admin);
 	}
