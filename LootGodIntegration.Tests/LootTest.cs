@@ -88,9 +88,13 @@ public class LootTest
 		await app.Client.CreateItem();
 		var data = await sse;
 
+		var items = await app.Client.EnsureGetJsonAsync<ItemDto[]>("/GetItems");
+		Assert.Single(items);
+		var item = items[0];
 		Assert.Equal("items", data.Evt);
 		Assert.Equal(1, data.Id);
 		Assert.Equal(1, data.Json.Id);
+		Assert.True(item == data.Json);
 	}
 
 	[Theory]
@@ -106,8 +110,9 @@ public class LootTest
 		Assert.Empty(emptyLoots);
 
 		var sse = app.Client.GetSsePayload<LootDto>();
-		var loot = new Endpoints.CreateLoot(3, 1, raidNight);
+		var loot = new CreateLoot(3, 1, raidNight);
 		await app.Client.EnsurePostAsJsonAsync("/UpdateLootQuantity", loot);
+		var data = await sse;
 
 		var loots = await app.Client.EnsureGetJsonAsync<LootDto[]>("/GetLoots");
 		Assert.Single(loots);
@@ -115,8 +120,6 @@ public class LootTest
 		Assert.Equal(loot.ItemId, dto.ItemId);
 		Assert.Equal(loot.Quantity, raidNight ? dto.RaidQuantity : dto.RotQuantity);
 		Assert.Equal(0, raidNight ? dto.RotQuantity : dto.RaidQuantity);
-
-		var data = await sse;
 		Assert.Equal("loots", data.Evt);
 		Assert.Equal(1, data.Id);
 		Assert.True(dto == data.Json);

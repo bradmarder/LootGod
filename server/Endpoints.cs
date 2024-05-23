@@ -3,11 +3,11 @@ using System.Text;
 
 namespace LootGod;
 
+public record CreateLoot(byte Quantity, int ItemId, bool RaidNight);
+public record CreateGuild(string LeaderName, string GuildName, Server Server);
+
 public class Endpoints(string _adminKey, string _backup)
 {
-	public record CreateLoot(byte Quantity, int ItemId, bool RaidNight);
-	public record CreateGuild(string LeaderName, string GuildName, Server Server);
-
 	void EnsureOwner(string key)
 	{
 		if (key != _adminKey)

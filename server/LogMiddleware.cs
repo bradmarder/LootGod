@@ -6,11 +6,17 @@ public class LogMiddleware(RequestDelegate _next, ILogger<LogMiddleware> _logger
 {
 	public async Task InvokeAsync(HttpContext context)
 	{
+		if (context.Request.Method != "POST")
+		{
+			await _next(context);
+			return;
+		}
+
 		await using var scope = _scopeFactory.CreateAsyncScope();
 		var db = scope.ServiceProvider.GetRequiredService<LootGodContext>();
 		var service = scope.ServiceProvider.GetRequiredService<LootService>();
 		
-		if (context.Request.Method != "POST" || service.GetPlayerKey() is null)
+		if (service.GetPlayerKey() is null)
 		{
 			await _next(context);
 			return;

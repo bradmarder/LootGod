@@ -8,7 +8,7 @@ public static class PostExtensions
 {
 	public static async Task<string> CreateGuildAndLeader(this HttpClient client)
 	{
-		var dto = new Endpoints.CreateGuild("Vulak", "The Unknown", Server.FirionaVie);
+		var dto = new CreateGuild("Vulak", "The Unknown", Server.FirionaVie);
 		var json = await client.EnsurePostAsJsonAsync("/CreateGuild", dto);
 		var key = json[1..^1];
 		var success = Guid.TryParse(key, out var pKey);
