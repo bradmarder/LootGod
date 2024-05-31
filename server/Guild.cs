@@ -32,6 +32,8 @@ public class Guild
 	[StringLength(255)]
 	public string? RotDiscordWebhookUrl { get; set; }
 
+	public string? MessageOfTheDay { get; set; }
+
 	[InverseProperty(nameof(Player.Guild))]
 	public virtual List<Player> Players { get; } = new();
 

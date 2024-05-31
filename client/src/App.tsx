@@ -40,6 +40,7 @@ export default function App() {
 	const [cacheKey, setCacheKey] = useState(0);
 	const [linkedAltsCacheKey, setLinkedAltsCacheKey] = useState(0);
 	const [intro, setIntro] = useState(!hasKey);
+	const [messageOfTheDay, setMessageOfTheDay] = useState('');
 
 	const refreshCache = () => setCacheKey(Date.now());
 	const refreshLinkedAltsCacheKey = () => setLinkedAltsCacheKey(Date.now());
@@ -79,6 +80,12 @@ export default function App() {
 			.then(x => setLootLock(x.data))
 			.catch(() => { });
 	};
+	const getMessageOfTheDay = (signal: AbortSignal) => {
+		axios
+			.get<string>('/GetMessageOfTheDay', { signal })
+			.then(x => setMessageOfTheDay(x.data))
+			.catch(() => { });
+	};
 	const enableLootLock = () => {
 		setLoading(true);
 		axios
@@ -112,6 +119,7 @@ export default function App() {
 		getLootRequests(ac.signal);
 		getLeaderStatus(ac.signal);
 		getItems(ac.signal);
+		getMessageOfTheDay(ac.signal);
 
 		return () => ac.abort();
 	}, [intro]);
@@ -155,6 +163,12 @@ export default function App() {
 			}
 			{!error && !intro && raidNight != null &&
 				<h1>{raidNight ? 'Raid' : 'Rot'} Loot</h1>
+			}
+			{!error && !intro && messageOfTheDay &&
+				<Alert variant='warning'>
+					<h4>MOTD</h4>
+					{messageOfTheDay}
+				</Alert>
 			}
 			{!error && !intro && raidNight == null &&
 				<>

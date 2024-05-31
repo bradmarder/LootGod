@@ -10,6 +10,7 @@ export default function leaderModule() {
 	const [transferName, setTransferName] = useState('');
 	const [discordSuccess, setDiscordSuccess] = useState(false);
 	const [transferSuccess, setTransferSuccess] = useState(false);
+	const [messageOfTheDay, setMessageOfTheDay] = useState('');
 
 	const transferLeadership = () => {
 		setIsLoading(true);
@@ -37,7 +38,19 @@ export default function leaderModule() {
 			})
 			.finally(() => setIsLoading(false));
 	};
+	const getMessageOfTheDay = () => {
+		axios
+			.get<string>('/GetMessageOfTheDay')
+			.then(x => setMessageOfTheDay(x.data));
+	};
+	const uploadMessageOfTheDay = () => {
+		setIsLoading(true);
+		axios
+			.post('/UploadMessageOfTheDay?motd=' + encodeURIComponent(messageOfTheDay))
+			.finally(() => setIsLoading(false));
+	};
 	useEffect(getDiscord, []);
+	useEffect(getMessageOfTheDay, []);
 
 	return (
 		<Alert variant='dark'>
@@ -68,6 +81,15 @@ export default function leaderModule() {
 				{discordSuccess &&
 					<Alert variant='success'>Successfully updated Discord webhook URL</Alert>
 				}
+			</Form>
+			<hr />
+			<Form onSubmit={e => e.preventDefault()}>
+				<Form.Group>
+					<Form.Label>Guild Message of the Day</Form.Label>
+					<Form.Control type="text" placeholder='Enter guild MOTD' value={messageOfTheDay} onChange={e => setMessageOfTheDay(e.target.value)} />
+				</Form.Group>
+				<br />
+				<Button variant='primary' disabled={isLoading} onClick={uploadMessageOfTheDay}>Update</Button>
 			</Form>
 		</Alert>
 	);

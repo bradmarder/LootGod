@@ -66,6 +66,12 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 	var db = scope.ServiceProvider.GetRequiredService<LootGodContext>();
 
 	db.Database.EnsureCreated();
+
+	try
+	{
+		db.Database.ExecuteSqlRaw($"ALTER TABLE Guilds ADD {nameof(Guild.MessageOfTheDay)} TEXT");
+	}
+	catch { }
 }
 
 if (app.Environment.IsDevelopment())

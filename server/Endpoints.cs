@@ -323,6 +323,24 @@ public class Endpoints(string _adminKey, string _backup)
 		app.MapGet("GetAdminStatus", (LootService x) => x.GetAdminStatus());
 		app.MapGet("GetLeaderStatus", (LootService x) => x.IsGuildLeader());
 
+		app.MapGet("GetMessageOfTheDay", (LootService lootService, LootGodContext db) =>
+		{
+			var guildId = lootService.GetGuildId();
+			var guild = db.Guilds.Single(x => x.Id == EF.Constant(guildId));
+
+			return guild.MessageOfTheDay ?? "";
+		});
+
+		app.MapPost("UploadMessageOfTheDay", (LootService lootService, LootGodContext db, string motd) =>
+		{
+			lootService.EnsureGuildLeader();
+
+			var guildId = lootService.GetGuildId();
+			db.Guilds
+				.Where(x => x.Id == guildId)
+				.ExecuteUpdate(x => x.SetProperty(y => y.MessageOfTheDay, motd));
+		});
+
 		app.MapPost("GrantLootRequest", async (LootGodContext db, LootService lootService, int id, bool grant) =>
 		{
 			lootService.EnsureAdminStatus();
