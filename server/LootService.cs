@@ -237,6 +237,13 @@ public class LootService(
 		await _payloadChannel.Writer.WriteAsync(payload);
 	}
 
+	public async Task RefreshMessageOfTheDay(int guildId, string motd)
+	{
+		var payload = new Payload(guildId, "motd", motd);
+
+		await _payloadChannel.Writer.WriteAsync(payload);
+	}
+
 	public async Task RefreshItems()
 	{
 		var items = LoadItems();

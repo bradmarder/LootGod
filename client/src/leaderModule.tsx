@@ -56,6 +56,15 @@ export default function leaderModule() {
 		<Alert variant='dark'>
 			<Form onSubmit={e => e.preventDefault()}>
 				<Form.Group>
+					<Form.Label>Guild Message of the Day</Form.Label>
+					<Form.Control as="textarea" rows={3} placeholder='Enter guild MOTD' value={messageOfTheDay} onChange={e => setMessageOfTheDay(e.target.value)} />
+				</Form.Group>
+				<br />
+				<Button variant='primary' disabled={isLoading} onClick={uploadMessageOfTheDay}>Update</Button>
+			</Form>
+			<hr />
+			<Form onSubmit={e => e.preventDefault()}>
+				<Form.Group>
 					<Form.Label>Transfer Guild Leadership</Form.Label>
 					<Form.Control type="text" placeholder='Enter new guild leader name' value={transferName} onChange={e => setTransferName(e.target.value)} />
 				</Form.Group>
@@ -81,15 +90,6 @@ export default function leaderModule() {
 				{discordSuccess &&
 					<Alert variant='success'>Successfully updated Discord webhook URL</Alert>
 				}
-			</Form>
-			<hr />
-			<Form onSubmit={e => e.preventDefault()}>
-				<Form.Group>
-					<Form.Label>Guild Message of the Day</Form.Label>
-					<Form.Control type="text" placeholder='Enter guild MOTD' value={messageOfTheDay} onChange={e => setMessageOfTheDay(e.target.value)} />
-				</Form.Group>
-				<br />
-				<Button variant='primary' disabled={isLoading} onClick={uploadMessageOfTheDay}>Update</Button>
 			</Form>
 		</Alert>
 	);

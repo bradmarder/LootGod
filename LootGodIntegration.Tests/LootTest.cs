@@ -52,6 +52,24 @@ public class LootTest
 		Assert.True(data.Json);
 	}
 
+	[Fact]
+	public async Task MessageOfTheDay()
+	{
+		await using var app = new AppFixture();
+		await app.Client.CreateGuildAndLeader();
+
+		const string motd = "Welcome!";
+
+		var sse = app.Client.GetStringSsePayload();
+		await app.Client.EnsurePostAsJsonAsync("/UploadMessageOfTheDay?motd=" + motd);
+		var data = await sse;
+
+		var dto = await app.Client.GetStringAsync("/GetMessageOfTheDay");
+		Assert.Equal(motd, dto);
+		Assert.Equal("motd", data.Evt);
+		Assert.Equal(motd, data.Json);
+	}
+
 	[Theory]
 	[InlineData(true)]
 	[InlineData(false)]

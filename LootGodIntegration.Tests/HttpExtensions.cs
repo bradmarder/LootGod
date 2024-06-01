@@ -65,6 +65,19 @@ public static class HttpExtensions
 
 	public static async Task<SsePayload<T>> GetSsePayload<T>(this HttpClient client)
 	{
+		var payload = await client.GetStringSsePayload();
+		var data = JsonSerializer.Deserialize<T[]>(payload.Json, _options)![0];
+
+		return new SsePayload<T>
+		{
+			Evt = payload.Evt,
+			Id = payload.Id,
+			Json = data,
+		};
+	}
+
+	public static async Task<SsePayload<string>> GetStringSsePayload(this HttpClient client)
+	{
 		var key = client.DefaultRequestHeaders.SingleOrDefault(x => x.Key == "Player-Key");
 		Assert.NotEqual(default, key);
 		await using var stream = await client.GetStreamAsync("/SSE?playerKey=" + key.Key);
@@ -81,10 +94,10 @@ public static class HttpExtensions
 			var json = await sr.ReadLineAsync(cts.Token);
 			var id = await sr.ReadLineAsync(cts.Token);
 
-			return new SsePayload<T>
+			return new SsePayload<string>
 			{
 				Evt = e![7..], // event:
-				Json = JsonSerializer.Deserialize<T[]>(json![6..], _options)![0], // data:
+				Json = json![6..], // data:
 				Id = int.Parse(id![4..]), // id:
 			};
 		}

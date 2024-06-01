@@ -331,7 +331,7 @@ public class Endpoints(string _adminKey, string _backup)
 			return guild.MessageOfTheDay ?? "";
 		});
 
-		app.MapPost("UploadMessageOfTheDay", (LootService lootService, LootGodContext db, string motd) =>
+		app.MapPost("UploadMessageOfTheDay", async (LootService lootService, LootGodContext db, string motd) =>
 		{
 			lootService.EnsureGuildLeader();
 
@@ -339,6 +339,8 @@ public class Endpoints(string _adminKey, string _backup)
 			db.Guilds
 				.Where(x => x.Id == guildId)
 				.ExecuteUpdate(x => x.SetProperty(y => y.MessageOfTheDay, motd));
+
+			await lootService.RefreshMessageOfTheDay(guildId, motd);
 		});
 
 		app.MapPost("GrantLootRequest", async (LootGodContext db, LootService lootService, int id, bool grant) =>

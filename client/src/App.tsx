@@ -129,6 +129,7 @@ export default function App() {
 
 		const es = new EventSource('/api/SSE?playerKey=' + localStorage.getItem('key'));
 		es.addEventListener('lock', e => setLootLock(e.data === '[true]'));
+		es.addEventListener('motd', e => setMessageOfTheDay(e.data));
 		es.addEventListener('loots', e => setLoots(JSON.parse(e.data)));
 		es.addEventListener('items', e => setItems(JSON.parse(e.data)));
 		es.addEventListener('requests', e => setRequests(JSON.parse(e.data)));
@@ -165,10 +166,14 @@ export default function App() {
 				<h1>{raidNight ? 'Raid' : 'Rot'} Loot</h1>
 			}
 			{!error && !intro && messageOfTheDay &&
+				<Row>
+				<Col xs={12} xl={6}>
 				<Alert variant='warning'>
-					<h4>MOTD</h4>
+					<h5>MOTD</h5>
 					{messageOfTheDay}
 				</Alert>
+				</Col>
+				</Row>
 			}
 			{!error && !intro && raidNight == null &&
 				<>
