@@ -20,27 +20,26 @@ Console.CancelKeyPress += (o, e) =>
 
 var useInMemoryDatabase = source is null;
 var connString = useInMemoryDatabase
-	? new SqliteConnectionStringBuilder
-	{
-		DataSource = Guid.NewGuid().ToString(), // unique name required to avoid sharing the database between integration tests
-		Cache = SqliteCacheMode.Shared,
-		Mode = SqliteOpenMode.Memory,
-	}
+	? new SqliteConnectionStringBuilder { Mode = SqliteOpenMode.Memory }
 	: new SqliteConnectionStringBuilder { DataSource = source };
 
-// required to keep in-memory database alive
 if (useInMemoryDatabase)
 {
+	// in-memory database should re-use the same connection
 	var conn = new SqliteConnection(connString.ConnectionString);
 	conn.Open();
-	builder.Services.AddSingleton(x => conn);
+	builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite(conn));
+	builder.Services.AddHealthChecks();
+}
+else
+{
+	builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite(connString.ConnectionString));
+	builder.Services
+		.AddHealthChecks()
+		.AddDbContextCheck<LootGodContext>();
 }
 
-builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite(connString.ConnectionString));
 builder.Services.AddHttpContextAccessor();
-builder.Services
-	.AddHealthChecks()
-	.AddDbContextCheck<LootGodContext>();
 builder.Services.AddScoped<LootService>();
 builder.Services.AddSingleton(x => Channel.CreateUnbounded<Payload>(new() { SingleReader = true, SingleWriter = false }));
 builder.Services.AddSingleton<ConcurrentDictionary<string, DataSink>>();
@@ -90,13 +89,16 @@ else
 
 app.UseResponseCompression();
 app.UseDefaultFiles();
+
+// waiting on .net9 to support serving pre-compressed files (gzip/br)
 app.UseStaticFiles(new StaticFileOptions
 {
 	OnPrepareResponse = x =>
 	{
-		x.Context.Response.Headers.ContentSecurityPolicy = "default-src 'self'; child-src 'none';";
-		x.Context.Response.Headers.XFrameOptions = "DENY";
-		x.Context.Response.Headers["Referrer-Policy"] = "no-referrer";
+		var headers = x.Context.Response.Headers;
+		headers.ContentSecurityPolicy = "default-src 'self'; child-src 'none';";
+		headers.XFrameOptions = "DENY";
+		headers["Referrer-Policy"] = "no-referrer";
 	}
 });
 app.UsePathBase("/api");

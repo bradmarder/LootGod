@@ -80,7 +80,13 @@ public static class HttpExtensions
 	{
 		var key = client.DefaultRequestHeaders.SingleOrDefault(x => x.Key == "Player-Key");
 		Assert.NotEqual(default, key);
-		await using var stream = await client.GetStreamAsync("/SSE?playerKey=" + key.Key);
+
+		// get the stream synchronously
+		await using var stream = client
+			.GetStreamAsync("/SSE?playerKey=" + key.Key)
+			.GetAwaiter()
+			.GetResult();
+
 		using var sr = new StreamReader(stream);
 
 		Assert.Equal("data: empty", await sr.ReadLineAsync());

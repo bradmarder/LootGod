@@ -8,15 +8,15 @@
 		"axios": "1.7.2",
 		"bootstrap": "5.3.3",
 		"react": "18.3.1",
-		"react-bootstrap": "2.10.2",
+		"react-bootstrap": "2.10.3",
 		"react-dom": "18.3.1",
-		"typescript": "5.4.5"
+		"typescript": "5.5.2"
 	},
 	"source": "public/index.html",
 	"browserslist": "> 0.5%, last 2 versions, not dead",
 	"scripts": {
 		"start": "parcel --cert localhost.pem --key localhost.key",
-		"build": "parcel build --no-source-maps",
+		"build": "parcel build --no-source-maps public/index.html",
 		"check": "tsc --noEmit"
 	},
 	"eslintConfig": {

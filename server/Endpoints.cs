@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.Concurrent;
 using System.Text;
 
 namespace LootGod;
@@ -32,11 +33,21 @@ public class Endpoints(string _adminKey, string _backup)
 
 	public void Map(IEndpointRouteBuilder app)
 	{
-		app.MapGet("SSE", async (HttpContext ctx, LootService service) =>
+		app.MapGet("SSE", async (HttpContext ctx, IServiceScopeFactory factory, ConcurrentDictionary<string, DataSink> dataSinks) =>
 		{
 			var res = ctx.Response;
 			var token = ctx.RequestAborted;
 			var connectionId = ctx.Connection.Id ?? "";
+
+			// avoid keeping a persistant reference to LootService -> DbContext
+			await using (var scope = factory.CreateAsyncScope())
+			{
+				scope.ServiceProvider
+					.GetRequiredService<LootService>()
+					.AddDataSink(connectionId, res, token);
+			}
+
+			token.Register(() => dataSinks.Remove(connectionId, out _));
 
 			res.Headers.Append("Content-Type", "text/event-stream");
 			res.Headers.Append("Cache-Control", "no-cache");
@@ -44,10 +55,6 @@ public class Endpoints(string _adminKey, string _backup)
 
 			await res.WriteAsync("data: empty\n\n\n", token);
 			await res.Body.FlushAsync(token);
-
-			service.AddDataSink(connectionId, res, token);
-			token.Register(() => service.RemoveDataSink(connectionId));
-
 			await Task.Delay(Timeout.InfiniteTimeSpan, token);
 		});
 
@@ -107,9 +114,7 @@ public class Endpoints(string _adminKey, string _backup)
 				.Where(x => x.Archived)
 				.Where(x => name == null || x.AltName!.StartsWith(name) || x.Player.Name.StartsWith(name))
 				.Where(x => itemId == null || x.ItemId == itemId)
-				.OrderByDescending(x => x.Spell != null)
-				.ThenBy(x => x.ItemId)
-				.ThenByDescending(x => x.AltName ?? x.Player.Name)
+				.OrderByDescending(x => x.CreatedDate)
 				.Select(x => new LootRequestDto
 				{
 					Id = x.Id,

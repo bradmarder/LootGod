@@ -140,12 +140,13 @@ public class LootService(
 			.ToArray();
 
 		var rotLoot = _db.Loots
+			.Where(_ => raidNight) // only show rot loot for raid night
 			.Where(x => x.GuildId == guildId)
-			.Where(x => (raidNight ? x.RaidQuantity : x.RotQuantity) > 0)
+			.Where(x => x.RaidQuantity > 0)
 			.Select(x => new
 			{
 				x.Item.Name,
-				Quantity = (raidNight ? x.RaidQuantity : x.RotQuantity) - x.Item.LootRequests.Count(x => x.Player.GuildId == guildId && x.Granted && !x.Archived && x.RaidNight == raidNight),
+				Quantity = x.RaidQuantity - x.Item.LootRequests.Count(x => x.Player.GuildId == guildId && x.Granted && !x.Archived && x.RaidNight == raidNight),
 			})
 			.Where(x => x.Quantity > 0)
 			.Select(x => new LootOutput(x.Name, "ROT", x.Quantity))
