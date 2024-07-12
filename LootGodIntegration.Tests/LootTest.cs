@@ -52,13 +52,12 @@ public class LootTest
 		Assert.True(data.Json);
 	}
 
-	[Fact]
-	public async Task MessageOfTheDay()
+	[Theory]
+	[InlineData("Welcome!")]
+	public async Task MessageOfTheDay(string motd)
 	{
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
-
-		const string motd = "Welcome!";
 
 		var sse = app.Client.GetStringSsePayload();
 		await app.Client.EnsurePostAsJsonAsync("/UploadMessageOfTheDay?motd=" + motd);
@@ -256,13 +255,13 @@ public class LootTest
 		await app.Client.CreateGuildDump();
 	}
 
-	[Fact]
-	public async Task ImportRaidDump()
+	[Theory]
+	[InlineData("7\tVulak\t120\tDruid\tGroup Leader\t\t\tYes\t")]
+	public async Task ImportRaidDump(string dump)
 	{
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
 
-		const string dump = "7\tVulak\t120\tDruid\tGroup Leader\t\t\tYes\t";
 		var now = DateTime.UtcNow.ToString("yyyyMMdd");
 		using var content = new MultipartFormDataContent
 		{
@@ -295,13 +294,13 @@ public class LootTest
 		Assert.False(leader);
 	}
 
-	[Fact]
-	public async Task LinkAlt()
+	[Theory]
+	[InlineData("Seru")]
+	public async Task LinkAlt(string altName)
 	{
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
 		await app.Client.CreateGuildDump();
-		const string altName = "Seru";
 
 		await app.Client.EnsurePostAsJsonAsync("/LinkAlt?altName=" + altName);
 
@@ -310,14 +309,14 @@ public class LootTest
 		Assert.Equal(altName, linkedAlts[0]);
 	}
 
-	[Fact]
-	public async Task ToggleHiddenPlayer()
+	[Theory]
+	[InlineData("Tormax")]
+	public async Task ToggleHiddenPlayer(string hiddenName)
 	{
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
 		await app.Client.CreateGuildDump();
 		await app.Client.CreateZipRaidDumps();
-		const string hiddenName = "Tormax";
 
 		await app.Client.EnsurePostAsJsonAsync("/ToggleHiddenPlayer?playerName=" + hiddenName);
 
@@ -328,22 +327,22 @@ public class LootTest
 		Assert.True(tormax.Hidden);
 	}
 
-	[Fact]
-	public async Task TogglePlayerAdmin()
+	[Theory]
+	[InlineData("Tormax")]
+	public async Task TogglePlayerAdmin(string hiddenName)
 	{
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
 		await app.Client.CreateGuildDump();
 		await app.Client.CreateZipRaidDumps();
-		const string hiddenName = "Tormax";
 
 		await app.Client.EnsurePostAsJsonAsync("/TogglePlayerAdmin?playerName=" + hiddenName);
 
 		var players = await app.Client.EnsureGetJsonAsync<RaidAttendanceDto[]>("/GetPlayerAttendance");
 		Assert.Equal(2, players.Length);
-		var tormax = players.SingleOrDefault(x => x.Name == hiddenName);
-		Assert.NotNull(tormax);
-		Assert.True(tormax.Admin);
+		var tormax = players.Where(x => x.Name == hiddenName).ToArray();
+		Assert.Single(tormax);
+		Assert.True(tormax[0].Admin);
 	}
 
 	[Theory]

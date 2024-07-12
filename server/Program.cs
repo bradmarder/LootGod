@@ -23,20 +23,18 @@ var connString = useInMemoryDatabase
 	? new SqliteConnectionStringBuilder { Mode = SqliteOpenMode.Memory }
 	: new SqliteConnectionStringBuilder { DataSource = source };
 
+var healthCheck = builder.Services.AddHealthChecks();
 if (useInMemoryDatabase)
 {
 	// in-memory database should re-use the same connection
 	var conn = new SqliteConnection(connString.ConnectionString);
 	conn.Open();
 	builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite(conn));
-	builder.Services.AddHealthChecks();
 }
 else
 {
 	builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite(connString.ConnectionString));
-	builder.Services
-		.AddHealthChecks()
-		.AddDbContextCheck<LootGodContext>();
+	healthCheck.AddDbContextCheck<LootGodContext>();
 }
 
 builder.Services.AddHttpContextAccessor();

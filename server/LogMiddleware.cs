@@ -15,7 +15,7 @@ public class LogMiddleware(RequestDelegate _next, ILogger<LogMiddleware> _logger
 		await using var scope = _scopeFactory.CreateAsyncScope();
 		var db = scope.ServiceProvider.GetRequiredService<LootGodContext>();
 		var service = scope.ServiceProvider.GetRequiredService<LootService>();
-		
+
 		if (service.GetPlayerKey() is null)
 		{
 			await _next(context);
