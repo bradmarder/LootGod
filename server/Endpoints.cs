@@ -79,13 +79,13 @@ public class Endpoints(string _adminKey, string _backup)
 			return db.Database.ExecuteSqlRaw("VACUUM");
 		});
 
-		app.MapGet("Backup", (LootGodContext db, string key) =>
+		app.MapGet("Backup", (LootGodContext db, TimeProvider time, string key) =>
 		{
 			EnsureOwner(key);
 
 			db.Database.ExecuteSqlRaw("VACUUM INTO {0}", _backup);
 
-			var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+			var now = time.GetUtcNow().ToUnixTimeSeconds();
 
 			return Results.File(_backup, fileDownloadName: $"backup-{now}.db");
 		});
@@ -462,17 +462,17 @@ public class Endpoints(string _adminKey, string _backup)
 			}
 		}).DisableAntiforgery();
 
-		app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService) =>
+		app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService, TimeProvider time) =>
 		{
 			var guildId = lootService.GetGuildId();
-			var now = DateTime.UtcNow;
+			var now = time.GetUtcNow();
 			var oneHundredEighty = now.AddDays(-180);
 			var ninety = now.AddDays(-90);
 			var thirty = now.AddDays(-30);
-			var ninetyDaysAgo = DateOnly.FromDateTime(ninety);
-			var thirtyDaysAgo = DateOnly.FromDateTime(thirty);
-			var oneHundredEightyDaysAgo = DateOnly.FromDateTime(oneHundredEighty);
-			var threshold = DateTimeOffset.UtcNow.AddDays(-180).ToUnixTimeSeconds();
+			var ninetyDaysAgo = DateOnly.FromDateTime(ninety.DateTime);
+			var thirtyDaysAgo = DateOnly.FromDateTime(thirty.DateTime);
+			var oneHundredEightyDaysAgo = DateOnly.FromDateTime(oneHundredEighty.DateTime);
+			var threshold = oneHundredEighty.ToUnixTimeSeconds();
 
 			var playerMap = db.Players
 				.AsNoTracking()
@@ -538,10 +538,10 @@ public class Endpoints(string _adminKey, string _backup)
 				.ToArray();
 		});
 
-		app.MapGet("GetPlayerAttendance_V2", (LootGodContext db, LootService lootService) =>
+		app.MapGet("GetPlayerAttendance_V2", (LootGodContext db, LootService lootService, TimeProvider time) =>
 		{
 			var guildId = lootService.GetGuildId();
-			var now = DateTimeOffset.UtcNow;
+			var now = time.GetUtcNow();
 			var oneHundredEightyDaysAgo = now.AddDays(-180).ToUnixTimeSeconds();
 			var ninetyDaysAgo = now.AddDays(-90).ToUnixTimeSeconds();
 			var thirtyDaysAgo = now.AddDays(-30).ToUnixTimeSeconds();
@@ -598,20 +598,20 @@ public class Endpoints(string _adminKey, string _backup)
 				.ToArray();
 		});
 
-		app.MapGet("GetGrantedLootOutput", (LootService lootService, bool raidNight) =>
+		app.MapGet("GetGrantedLootOutput", (LootService lootService, TimeProvider time, bool raidNight) =>
 		{
 			lootService.EnsureAdminStatus();
 
 			var output = lootService.GetGrantedLootOutput(raidNight);
 			var bytes = Encoding.UTF8.GetBytes(output);
-			var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+			var now = time.GetUtcNow().ToUnixTimeSeconds();
 
 			return Results.File(bytes,
 				contentType: "text/plain",
 				fileDownloadName: $"RaidLootOutput-{now}.txt");
 		});
 
-		app.MapGet("GetPasswords", (LootGodContext db, LootService lootService) =>
+		app.MapGet("GetPasswords", (LootGodContext db, LootService lootService, TimeProvider time) =>
 		{
 			lootService.EnsureGuildLeader();
 
@@ -625,7 +625,7 @@ public class Endpoints(string _adminKey, string _backup)
 				.ToArray();
 			var data = string.Join(Environment.NewLine, namePasswordsMap);
 			var bytes = Encoding.UTF8.GetBytes(data);
-			var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+			var now = time.GetUtcNow().ToUnixTimeSeconds();
 
 			return Results.File(bytes,
 				contentType: "text/plain",

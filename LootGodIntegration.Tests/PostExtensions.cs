@@ -31,7 +31,7 @@ public static class PostExtensions
 		await using var stream = new MemoryStream();
 		using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
 		{
-			var now = DateTime.UtcNow.ToString("yyyyMMdd");
+			const string now = "20240704";
 			var entry = zip.CreateEntry($"RaidRoster_firiona-{now}-210727.txt");
 			await using var ent = entry.Open();
 			await ent.WriteAsync(dump);

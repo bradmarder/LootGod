@@ -331,7 +331,7 @@ public class LootService(
 			.Where(x => x.Length > 4) // filter out "missing" rows that start with a number, but have nothing after
 			.ToDictionary(x => x[1], x => x[3]);
 
-		// create players who do not exist
+		// create new players by comparing names with preexisting ones
 		var existingNames = _db.Players
 			.Where(x => x.GuildId == guildId)
 			.Select(x => x.Name)
@@ -345,20 +345,16 @@ public class LootService(
 
 		// save raid dumps for all players
 		var timestamp = ParseTimestamp(fileName, offset);
-		var entity = _db.Model.FindEntityType(typeof(RaidDump));
-		var sb = new StringBuilder()
-			.AppendLine($"INSERT INTO '{entity!.GetTableName()}' ('{nameof(RaidDump.PlayerId)}', '{nameof(RaidDump.Timestamp)}') VALUES");
 		var values = _db.Players
 			.Where(x => x.GuildId == guildId)
 			.Where(x => nameToClassMap.Keys.Contains(x.Name)) // ContainsKey cannot be translated by EFCore
 			.Select(x => $"({x.Id}, {timestamp})")
 			.ToArray();
-		sb.AppendLine(string.Join(',', values));
-
-		// UPSERT - Ignore unique constraint on the primary composite key for RaidDump (Timestamp/Player)
-		sb.AppendLine("ON CONFLICT DO NOTHING");
-
-		var sql = sb.ToString();
+		var sql = new StringBuilder()
+			.AppendLine($"INSERT INTO '{nameof(RaidDump)}s' ('{nameof(RaidDump.PlayerId)}', '{nameof(RaidDump.Timestamp)}') VALUES")
+			.AppendLine(string.Join(',', values))
+			.AppendLine("ON CONFLICT DO NOTHING") // UPSERT - Ignore unique constraint on the primary composite key for RaidDump (Timestamp/Player)
+			.ToString();
 		_db.Database.ExecuteSqlRaw(sql);
 	}
 

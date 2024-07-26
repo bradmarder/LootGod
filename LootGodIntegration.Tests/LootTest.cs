@@ -262,7 +262,7 @@ public class LootTest
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
 
-		var now = DateTime.UtcNow.ToString("yyyyMMdd");
+		const string now = "20240704";
 		using var content = new MultipartFormDataContent
 		{
 			{ new StringContent(dump), "file", $"RaidRoster_firiona-{now}-210727.txt" }

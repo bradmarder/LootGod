@@ -39,6 +39,7 @@ else
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<LootService>();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(x => Channel.CreateUnbounded<Payload>(new() { SingleReader = true, SingleWriter = false }));
 builder.Services.AddSingleton<ConcurrentDictionary<string, DataSink>>();
 builder.Services.AddHttpClient<LootService>();
