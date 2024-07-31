@@ -434,6 +434,9 @@ public class LootService(
 
 				// TODO: shouldn't be necessary, bug with Kyoto class defaulting to Bard
 				player.Class = Player._classNameToEnumMap[dump.Class];
+
+				// if a player switches their main to a previously linked alt, reset the MainId to null
+				if (!dump.Alt) { player.MainId = null; }
 			}
 			else
 			{
