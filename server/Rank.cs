@@ -7,6 +7,8 @@ namespace LootGod;
 [Index(nameof(GuildId), nameof(Name), IsUnique = true)]
 public class Rank
 {
+	public const string Leader = "Leader";
+
 	private Rank() { }
 	public Rank(string name, Guild guild)
 	{

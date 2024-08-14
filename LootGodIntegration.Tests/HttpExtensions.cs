@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Json;
+﻿using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace LootGodIntegration.Tests;
@@ -111,6 +112,27 @@ public static class HttpExtensions
 		{
 			Assert.Fail("Never received SSE payload");
 			throw;
+		}
+	}
+
+	public static async Task<HttpContentHeaders> EnsureGetHeadersAsync(this HttpClient client, string requestUri)
+	{
+		HttpResponseMessage? response = null;
+		try
+		{
+			response = await client.GetAsync(requestUri);
+
+			return response.EnsureSuccessStatusCode().Content.Headers;
+		}
+		catch
+		{
+			Assert.NotNull(response);
+			Assert.Fail(response.ToString() + Environment.NewLine + await response.Content.ReadAsStringAsync());
+			throw;
+		}
+		finally
+		{
+			response?.Dispose();
 		}
 	}
 }

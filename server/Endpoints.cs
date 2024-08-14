@@ -7,7 +7,12 @@ namespace LootGod;
 public record CreateLoot(byte Quantity, int ItemId, bool RaidNight);
 public record CreateGuild(string LeaderName, string GuildName, Server Server);
 
-public class Endpoints(string _adminKey, string _backup)
+public class SelfDestruct(string path) : IDisposable
+{
+	public void Dispose() => File.Delete(path);
+}
+
+public class Endpoints(string _adminKey)
 {
 	void EnsureOwner(string key)
 	{
@@ -79,21 +84,19 @@ public class Endpoints(string _adminKey, string _backup)
 			return db.Database.ExecuteSqlRaw("VACUUM");
 		});
 
-		app.MapGet("Backup", (LootGodContext db, TimeProvider time, string key) =>
+		app.MapGet("Backup", (HttpContext ctx, LootGodContext db, TimeProvider time, string key) =>
 		{
 			EnsureOwner(key);
-
-			db.Database.ExecuteSqlRaw("VACUUM INTO {0}", _backup);
 
 			var now = time.GetUtcNow().ToUnixTimeSeconds();
+			var tempFileName = Path.GetTempFileName();
+			db.Database.ExecuteSqlRaw("VACUUM INTO {0}", tempFileName);
 
-			return Results.File(_backup, fileDownloadName: $"backup-{now}.db");
-		});
+			// ensure the backup temp file is deleted once the request finishes processing
+			var delete = new SelfDestruct(tempFileName);
+			ctx.Response.RegisterForDispose(delete);
 
-		app.MapGet("DeleteBackup", (string key) =>
-		{
-			EnsureOwner(key);
-			File.Delete(_backup);
+			return Results.File(tempFileName, fileDownloadName: $"backup-{now}.db"); ;
 		});
 
 		app.MapGet("GetLootRequests", (LootService lootService) =>

@@ -7,7 +7,6 @@ using System.Threading.Channels;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 var adminKey = builder.Configuration["ADMIN_KEY"]!;
-var backup = builder.Configuration["BACKUP_URL"]!;
 var source = builder.Configuration["DATABASE_URL"]!;
 
 using var cts = new CancellationTokenSource();
@@ -104,7 +103,7 @@ app.UsePathBase("/api");
 app.UseMiddleware<LogMiddleware>();
 app.MapHealthChecks("/healthz");
 
-new Endpoints(adminKey, backup).Map(app);
+new Endpoints(adminKey).Map(app);
 
 await app.RunAsync(cts.Token);
 

@@ -50,7 +50,7 @@ public class Player
 		Key = GetRandomGuid();
 		Class = EQClass.Bard; // default - will be updated during guild dump
 		Guild = new(guildName, server);
-		Rank = new("Leader", Guild);
+		Rank = new(Rank.Leader, Guild);
 	}
 
 	/// <summary>

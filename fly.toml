@@ -8,7 +8,6 @@ primary_region = "ord"
 
 [env]
   DATABASE_URL = "/mnt/loot.db"
-  BACKUP_URL = "/mnt/backup.db"
 
 [experimental]
   allowed_public_ports = []

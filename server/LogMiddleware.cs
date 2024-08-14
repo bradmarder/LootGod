@@ -2,7 +2,10 @@
 
 namespace LootGod;
 
-public class LogMiddleware(RequestDelegate _next, ILogger<LogMiddleware> _logger, IServiceScopeFactory _scopeFactory)
+public class LogMiddleware(
+	RequestDelegate _next,
+	ILogger<LogMiddleware> _logger,
+	IServiceScopeFactory _scopeFactory)
 {
 	public async Task InvokeAsync(HttpContext context)
 	{

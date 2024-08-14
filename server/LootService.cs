@@ -80,7 +80,7 @@ public class LootService(
 	{
 		var key = GetPlayerKey();
 
-		return _db.Players.Any(x => x.Key == key && x.Rank!.Name == "Leader");
+		return _db.Players.Any(x => x.Key == key && x.Rank!.Name == Rank.Leader);
 	}
 
 	public bool GetRaidLootLock()
@@ -383,16 +383,16 @@ public class LootService(
 		var dumps = await ParseGuildDump(file);
 
 		// ensure not partial guild dump by checking a leader exists
-		if (!dumps.Any(x => StringComparer.OrdinalIgnoreCase.Equals("Leader", x.Rank)))
+		if (!dumps.Any(x => StringComparer.OrdinalIgnoreCase.Equals(Rank.Leader, x.Rank)))
 		{
 			throw new Exception("Partial Guild Dump - Missing Leader Rank");
 		}
 
 		// ensure guild leader does not change (must use TransferGuildLeadership endpoint instead)
-		var existingLeader = _db.Players.Single(x => x.GuildId == guildId && x.Rank!.Name == "Leader");
+		var existingLeader = _db.Players.Single(x => x.GuildId == guildId && x.Rank!.Name == Rank.Leader);
 		if (!dumps.Any(x =>
 			StringComparer.OrdinalIgnoreCase.Equals(x.Name, existingLeader.Name)
-			&& StringComparer.OrdinalIgnoreCase.Equals(x.Rank, "Leader")))
+			&& StringComparer.OrdinalIgnoreCase.Equals(x.Rank, Rank.Leader)))
 		{
 			throw new Exception("Cannot transfer guild leadership during a dump");
 		}

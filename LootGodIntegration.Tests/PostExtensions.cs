@@ -13,7 +13,7 @@ public static class PostExtensions
 		var key = json[1..^1];
 		var success = Guid.TryParse(key, out var pKey);
 
-		Assert.True(success);
+		Assert.True(success, json);
 		Assert.NotEqual(Guid.Empty, pKey);
 
 		client.DefaultRequestHeaders.Add("Player-Key", key);
@@ -23,8 +23,8 @@ public static class PostExtensions
 
 	public static async Task CreateZipRaidDumps(this HttpClient client)
 	{
-		var vulak = "7\tVulak\t120\tDruid\tGroup Leader\t\t\tYes\t";
-		var tormax = "7\tTormax\t120\tWizard\tGroup Leader\t\t\tYes\t";
+		const string vulak = "7\tVulak\t120\tDruid\tGroup Leader\t\t\tYes\t";
+		const string tormax = "7\tTormax\t120\tWizard\tGroup Leader\t\t\tYes\t";
 		var lines = string.Join(Environment.NewLine, [vulak, tormax]);
 		var dump = Encoding.UTF8.GetBytes(lines);
 
@@ -49,9 +49,9 @@ public static class PostExtensions
 
 	public static async Task CreateGuildDump(this HttpClient client)
 	{
-		const string vulak = "Vulak\t120\tDruid\tLeader\t\t01/10/23\tPalatial Guild Hall\tMain -  Leader -  LC Admin - .Rot Loot Admin\t\ton\ton\t7344198\t01/06/23\tMain -  Leader -  LC Admin - .Rot Loot Admin\t";
-		var seru = vulak.Replace("Vulak", "Seru").Replace("Leader", "Knight").Replace("\t\t01/10/23", "\tA\t01/10/23");
-		var tormax = vulak.Replace("Vulak", "Tormax").Replace("Leader", "Knight");
+		const string vulak = $"Vulak\t120\tDruid\t{Rank.Leader}\t\t01/10/23\tPalatial Guild Hall\tMain -  Leader -  LC Admin - .Rot Loot Admin\t\ton\ton\t7344198\t01/06/23\tMain -  Leader -  LC Admin - .Rot Loot Admin\t";
+		var seru = vulak.Replace("Vulak", "Seru").Replace(Rank.Leader, "Knight").Replace("\t\t01/10/23", "\tA\t01/10/23");
+		var tormax = vulak.Replace("Vulak", "Tormax").Replace(Rank.Leader, "Knight");
 		var dump = string.Join(Environment.NewLine, [vulak, seru, tormax]);
 		using var content = new MultipartFormDataContent
 		{

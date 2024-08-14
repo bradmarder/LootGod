@@ -17,6 +17,20 @@ public class LootTest
 	}
 
 	[Fact]
+	public async Task DatabaseBackup()
+	{
+		await using var app = new AppFixture();
+
+		var headers = await app.Client.EnsureGetHeadersAsync("/Backup?key=" + app.AdminKey);
+
+		var disposition = headers.SingleOrDefault(x => x.Key == "Content-Disposition");
+		Assert.NotEqual(default, disposition);
+		var values = disposition.Value.ToArray();
+		Assert.Single(values);
+		Assert.Equal("attachment; filename=backup-1721678244.db; filename*=UTF-8''backup-1721678244.db", values[0]);
+	}
+
+	[Fact]
 	public async Task CreateGuild()
 	{
 		await using var app = new AppFixture();
@@ -361,7 +375,7 @@ public class LootTest
 		Assert.Equal("Vulak", ra.Name);
 		Assert.True(ra.Admin);
 		Assert.False(ra.Hidden);
-		Assert.Equal("Leader", ra.Rank);
+		Assert.Equal(Rank.Leader, ra.Rank);
 		Assert.Equal(100, ra._30);
 		Assert.Equal(100, ra._90);
 		Assert.Equal(100, ra._180);
