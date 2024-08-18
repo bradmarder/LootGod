@@ -48,56 +48,54 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 				<FormCheck.Input checked={filter75} onChange={e => setFilter75(e.target.checked)} />
 				<FormCheck.Label>Show only players with 75%+ RA for past 30 days</FormCheck.Label>
 			</FormCheck>
-			<>
-				<Table striped bordered hover size="sm">
-					<thead>
-						<tr>
-							<th>Name</th>
-							<th>Rank</th>
-							<th>30 Days</th>
-							<th>90 Days</th>
-							<th>180 Days</th>
+			<Table striped bordered hover size="sm">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Rank</th>
+						<th>30 Days</th>
+						<th>90 Days</th>
+						<th>180 Days</th>
+						{props.isAdmin &&
+							<th>Hide/Show (Admin Only)</th>
+						}
+						{props.isAdmin &&
+							<th>Enable/Disable Admin (Leader Only)</th>
+						}
+					</tr>
+				</thead>
+				<tbody>
+					{ra.filter(x => props.isAdmin ? true : !x.hidden).filter(x => !filter75 || x._30 >= 75).map(item =>
+						<tr key={item.name}>
+							<td>{item.name}</td>
+							<td>{item.rank}</td>
+							<td className={getTextColor(item._30)}>{item._30}%</td>
+							<td className={getTextColor(item._90)}>{item._90}%</td>
+							<td className={getTextColor(item._180)}>{item._180}%</td>
 							{props.isAdmin &&
-								<th>Hide/Show (Admin Only)</th>
+								<td>
+									{item.hidden &&
+										<Button variant='warning' disabled={isLoading} onClick={() => toggleHidden(item.name)}>Show</Button>
+									}
+									{item.hidden === false &&
+										<Button variant='success' disabled={isLoading} onClick={() => toggleHidden(item.name)}>Hide</Button>
+									}
+								</td>
 							}
 							{props.isAdmin &&
-								<th>Enable/Disable Admin (Leader Only)</th>
+								<td>
+									{!item.admin &&
+										<Button variant='success' disabled={isLoading} onClick={() => toggleAdmin(item.name)}>Enable</Button>
+									}
+									{item.admin &&
+										<Button variant='danger' disabled={isLoading} onClick={() => toggleAdmin(item.name)}>Disable</Button>
+									}
+								</td>
 							}
 						</tr>
-					</thead>
-					<tbody>
-						{ra.filter(x => props.isAdmin ? true : !x.hidden).filter(x => !filter75 || x._30 >= 75).map(item =>
-							<tr key={item.name}>
-								<td>{item.name}</td>
-								<td>{item.rank}</td>
-								<td className={getTextColor(item._30)}>{item._30}%</td>
-								<td className={getTextColor(item._90)}>{item._90}%</td>
-								<td className={getTextColor(item._180)}>{item._180}%</td>
-								{props.isAdmin &&
-									<td>
-										{item.hidden &&
-											<Button variant='warning' disabled={isLoading} onClick={() => toggleHidden(item.name)}>Show</Button>
-										}
-										{item.hidden === false &&
-											<Button variant='success' disabled={isLoading} onClick={() => toggleHidden(item.name)}>Hide</Button>
-										}
-									</td>
-								}
-								{props.isAdmin &&
-									<td>
-										{!item.admin &&
-											<Button variant='success' disabled={isLoading} onClick={() => toggleAdmin(item.name)}>Enable</Button>
-										}
-										{item.admin &&
-											<Button variant='danger' disabled={isLoading} onClick={() => toggleAdmin(item.name)}>Disable</Button>
-										}
-									</td>
-								}
-							</tr>
-						)}
-					</tbody>
-				</Table>
-			</>
+					)}
+				</tbody>
+			</Table>
 		</>
 	);
 }

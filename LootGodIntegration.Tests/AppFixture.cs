@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LootGodIntegration.Tests;
@@ -8,15 +7,19 @@ namespace LootGodIntegration.Tests;
 public class AppFixture : IAsyncDisposable
 {
 	private readonly LootGodApplicationFactory _app = new();
-	private readonly IConfiguration _config;
 
 	public HttpClient Client { get; private set; }
-	public string AdminKey => _config.GetValue<string>("ADMIN_KEY") ?? throw new Exception("Missing ADMIN_KEY");
+	public string AdminKey => Environment.GetEnvironmentVariable("ADMIN_KEY")!;
+
+	static AppFixture()
+	{
+		Environment.SetEnvironmentVariable("ADMIN_KEY", "TEST");
+		Environment.SetEnvironmentVariable("USE_SQLITE_MEMORY", "true");
+	}
 
 	public AppFixture()
 	{
 		Client = _app.CreateDefaultClient();
-		_config = _app.Services.GetRequiredService<IConfiguration>();
 	}
 
 	public async ValueTask DisposeAsync()

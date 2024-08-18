@@ -17,6 +17,16 @@ public class LootTest
 	}
 
 	[Fact]
+	public async Task Vacuum()
+	{
+		await using var app = new AppFixture();
+
+		var value = await app.Client.EnsureGetJsonAsync<int>("/Vacuum");
+
+		Assert.Equal(0, value);
+	}
+
+	[Fact]
 	public async Task DatabaseBackup()
 	{
 		await using var app = new AppFixture();

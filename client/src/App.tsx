@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Container, Row, Col, Button, Alert } from 'react-bootstrap';
-import axios from 'axios';
+import axios, { CanceledError } from 'axios';
 import LootRequests from './lootRequests';
 import CreateLootRequest from './createLootRequest';
 import CreateLoot from './createLoot';
@@ -27,6 +27,11 @@ if (hasKey) {
 }
 axios.defaults.baseURL = 'api/';
 
+const swallowAbortErrors = (error: unknown) => {
+	if (error instanceof CanceledError) { return; }
+	throw error;
+};
+
 export default function App() {
 	const [raidNight, setRaidNight] = useState<boolean | null>(null);
 	const [loading, setLoading] = useState(false);
@@ -48,43 +53,43 @@ export default function App() {
 		axios
 			.get<boolean>('/GetAdminStatus', { signal })
 			.then(x => setIsAdmin(x.data))
-			.catch(() => { });
+			.catch(swallowAbortErrors);
 	};
 	const getLeaderStatus = (signal: AbortSignal) => {
 		axios
 			.get<boolean>('/GetLeaderStatus', { signal })
 			.then(x => setIsLeader(x.data))
-			.catch(() => { });
+			.catch(swallowAbortErrors);
 	};
 	const getLoots = (signal: AbortSignal) => {
 		axios
 			.get<ILoot[]>('/GetLoots', { signal })
 			.then(x => setLoots(x.data))
-			.catch(() => { });
+			.catch(swallowAbortErrors);
 	};
 	const getItems = (signal: AbortSignal) => {
 		axios
 			.get<IItem[]>('/GetItems', { signal })
 			.then(x => setItems(x.data))
-			.catch(() => { });
+			.catch(swallowAbortErrors);
 	};
 	const getLootRequests = (signal: AbortSignal) => {
 		axios
 			.get<ILootRequest[]>('/GetLootRequests', { signal })
 			.then(x => setRequests(x.data))
-			.catch(() => { });
+			.catch(swallowAbortErrors);
 	};
 	const getLootLock = (signal: AbortSignal) => {
 		axios
 			.get<boolean>('/GetLootLock', { signal })
 			.then(x => setLootLock(x.data))
-			.catch(() => { });
+			.catch(swallowAbortErrors);
 	};
 	const getMessageOfTheDay = (signal: AbortSignal) => {
 		axios
 			.get<string>('/GetMessageOfTheDay', { signal })
 			.then(x => setMessageOfTheDay(x.data))
-			.catch(() => { });
+			.catch(swallowAbortErrors);
 	};
 	const enableLootLock = () => {
 		setLoading(true);
@@ -120,7 +125,7 @@ export default function App() {
 		getLeaderStatus(ac.signal);
 		getItems(ac.signal);
 		getMessageOfTheDay(ac.signal);
-
+		
 		return () => ac.abort();
 	}, [intro]);
 

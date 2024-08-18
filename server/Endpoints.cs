@@ -78,11 +78,7 @@ public class Endpoints(string _adminKey)
 				.ExecuteUpdate(x => x.SetProperty(y => raidNight ? y.RaidDiscordWebhookUrl : y.RotDiscordWebhookUrl, webhook));
 		});
 
-		app.MapGet("Vacuum", (LootGodContext db, string key) =>
-		{
-			EnsureOwner(key);
-			return db.Database.ExecuteSqlRaw("VACUUM");
-		});
+		app.MapGet("Vacuum", (LootGodContext db) => db.Database.ExecuteSqlRaw("VACUUM"));
 
 		app.MapGet("Backup", (HttpContext ctx, LootGodContext db, TimeProvider time, string key) =>
 		{

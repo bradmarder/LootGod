@@ -1,6 +1,6 @@
 FROM node:alpine
 WORKDIR /app
-COPY localhost.pem localhost.key ./
+COPY /client/localhost.pem /client/localhost.key ./
 COPY /client/.parcelrc /client/package.json /client/package-lock.json ./
 RUN npm ci
 COPY ./client/ .

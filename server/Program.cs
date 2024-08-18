@@ -8,6 +8,7 @@ using System.Threading.Channels;
 var builder = WebApplication.CreateSlimBuilder(args);
 var adminKey = builder.Configuration["ADMIN_KEY"]!;
 var source = builder.Configuration["DATABASE_URL"]!;
+var useSqliteMemory = builder.Configuration["USE_SQLITE_MEMORY"] == "true";
 
 using var cts = new CancellationTokenSource();
 
@@ -17,13 +18,12 @@ Console.CancelKeyPress += (o, e) =>
 	cts.Cancel();
 };
 
-var useInMemoryDatabase = source is null;
-var connString = useInMemoryDatabase
+var connString = useSqliteMemory
 	? new SqliteConnectionStringBuilder { Mode = SqliteOpenMode.Memory }
-	: new SqliteConnectionStringBuilder { DataSource = source };
+	: new SqliteConnectionStringBuilder { DataSource = source ?? Path.GetTempFileName() };
 
 var healthCheck = builder.Services.AddHealthChecks();
-if (useInMemoryDatabase)
+if (useSqliteMemory)
 {
 	// in-memory database should re-use the same connection
 	var conn = new SqliteConnection(connString.ConnectionString);
