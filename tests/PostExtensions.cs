@@ -2,8 +2,6 @@
 using System.IO.Compression;
 using System.Text;
 
-namespace LootGodIntegration.Tests;
-
 public static class PostExtensions
 {
 	public static async Task<string> CreateGuildAndLeader(this HttpClient client)

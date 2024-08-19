@@ -2,8 +2,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 
-namespace LootGodIntegration.Tests;
-
 public record SsePayload<T>
 {
 	public required string Evt { get; init; }

@@ -1,7 +1,5 @@
 using LootGod;
 
-namespace LootGodIntegration.Tests;
-
 record Hooks(string Raid, string Rot);
 
 public class LootTest

@@ -2,8 +2,6 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace LootGodIntegration.Tests;
-
 public class AppFixture : IAsyncDisposable
 {
 	private readonly LootGodApplicationFactory _app = new();
