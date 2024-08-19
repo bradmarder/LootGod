@@ -16,11 +16,9 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import CreateGuild from './createGuild';
 import NewLoot from './newLoot';
 
-const params = new Proxy(new URLSearchParams(window.location.search), {
-	get: (searchParams, prop) => searchParams.get(prop as string),
-});
-const key = (params as any).key || localStorage.getItem('key');
-const hasKey = key?.length > 0;
+const params = new URLSearchParams(window.location.search);
+const key = params.get('key') ?? localStorage.getItem('key') ?? '';
+const hasKey = key.length > 0;
 if (hasKey) {
 	localStorage.setItem('key', key);
 	axios.defaults.headers.common['Player-Key'] = key;
