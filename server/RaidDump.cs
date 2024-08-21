@@ -1,8 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace LootGod;
-
 [PrimaryKey(nameof(Timestamp), nameof(PlayerId))]
 public class RaidDump
 {

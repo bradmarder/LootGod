@@ -6,8 +6,6 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
 
-namespace LootGod;
-
 public record DataSink(int GuildId, HttpResponse Response, CancellationToken Token)
 {
 	public int EventId { get; set; } = 1;

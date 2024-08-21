@@ -1,8 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace LootGod;
-
 [PrimaryKey(nameof(GuildId), nameof(ItemId))]
 public class Loot
 {

@@ -2,8 +2,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace LootGod;
-
 [Index(nameof(CreatedDate))]
 [Index(nameof(Archived), nameof(Granted))]
 public class LootRequest

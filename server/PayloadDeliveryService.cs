@@ -3,8 +3,6 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading.Channels;
 
-namespace LootGod;
-
 public class PayloadDeliveryService(
 	ILogger<PayloadDeliveryService> _logger,
 	Channel<Payload> _payloadChannel,

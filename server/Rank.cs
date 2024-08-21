@@ -2,8 +2,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace LootGod;
-
 [Index(nameof(GuildId), nameof(Name), IsUnique = true)]
 public class Rank
 {

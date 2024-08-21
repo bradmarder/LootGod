@@ -1,6 +1,4 @@
-﻿namespace LootGod;
-
-public record LootRequestDto
+﻿public record LootRequestDto
 {
 	public required int Id { get; init; }
 	public required int PlayerId { get; init; }

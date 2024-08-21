@@ -1,5 +1,4 @@
-﻿using LootGod;
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Text;
 
 public static class PostExtensions

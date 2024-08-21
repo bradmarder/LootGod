@@ -1,7 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace LootGod;
-
 public record CreateLootRequest
 {
 	public bool RaidNight { get; init; }

@@ -1,7 +1,3 @@
-using LootGod;
-
-record Hooks(string Raid, string Rot);
-
 public class LootTest
 {
 	[Fact]
@@ -42,12 +38,12 @@ public class LootTest
 	public async Task CreateGuild()
 	{
 		await using var app = new AppFixture();
+
 		await app.Client.CreateGuildAndLeader();
 
 		var id = await app.Client.EnsureGetJsonAsync<int>("/GetPlayerId");
 		var admin = await app.Client.EnsureGetJsonAsync<bool>("/GetAdminStatus");
 		var leader = await app.Client.EnsureGetJsonAsync<bool>("/GetLeaderStatus");
-
 		Assert.Equal(1, id);
 		Assert.True(admin);
 		Assert.True(leader);
@@ -200,6 +196,9 @@ public class LootTest
 		await app.Client.CreateLootRequest();
 
 		await app.Client.EnsurePostAsJsonAsync("/DeleteLootRequest?id=1");
+
+		var requests = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetLootRequests");
+		Assert.Empty(requests);
 	}
 
 	[Fact]

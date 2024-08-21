@@ -1,5 +1,3 @@
-namespace LootGod;
-
 public record GuildDumpPlayerOutput(string[] _output)
 {
 	public string Name => _output[0];

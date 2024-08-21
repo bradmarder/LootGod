@@ -2,8 +2,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace LootGod;
-
 public enum Expansion : byte
 {
 	CoV = 0,

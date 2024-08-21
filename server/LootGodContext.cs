@@ -1,7 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace LootGod;
-
 public class LootGodContext : DbContext
 {
 	public LootGodContext(DbContextOptions<LootGodContext> options) : base(options)

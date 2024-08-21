@@ -1,7 +1,5 @@
 ﻿using System.Collections.Frozen;
 
-namespace LootGod;
-
 public record LootDto
 {
 	private static readonly FrozenSet<string> _spellPrefixes = FrozenSet.ToFrozenSet(

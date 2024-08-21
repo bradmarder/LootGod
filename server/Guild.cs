@@ -2,8 +2,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace LootGod;
-
 [Index(nameof(Name), nameof(Server), IsUnique = true)]
 public class Guild
 {

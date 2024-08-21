@@ -2,10 +2,9 @@
 using System.Collections.Concurrent;
 using System.Text;
 
-namespace LootGod;
-
 public record CreateLoot(byte Quantity, int ItemId, bool RaidNight);
 public record CreateGuild(string LeaderName, string GuildName, Server Server);
+public record Hooks(string Raid, string Rot);
 
 public class SelfDestruct(string path) : IDisposable
 {
@@ -158,11 +157,7 @@ public class Endpoints(string _adminKey)
 
 			return db.Guilds
 				.Where(x => x.Id == guildId)
-				.Select(x => new
-				{
-					Raid = x.RaidDiscordWebhookUrl ?? "",
-					Rot = x.RotDiscordWebhookUrl ?? "",
-				})
+				.Select(x => new Hooks(x.RaidDiscordWebhookUrl ?? "", x.RotDiscordWebhookUrl ?? ""))
 				.Single();
 		});
 

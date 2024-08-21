@@ -1,7 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace LootGod;
-
 public class LogMiddleware(
 	RequestDelegate _next,
 	ILogger<LogMiddleware> _logger,

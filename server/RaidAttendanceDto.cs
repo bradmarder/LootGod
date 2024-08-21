@@ -1,6 +1,4 @@
-﻿namespace LootGod;
-
-public record RaidAttendanceDto
+﻿public record RaidAttendanceDto
 {
 	public required string Name { get; init; }
 	public required bool Hidden { get; init; }
