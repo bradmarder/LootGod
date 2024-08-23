@@ -24,5 +24,3 @@ services:
         - action: sync
           path: /server
           target: /app
-        - action: rebuild
-          path: /server/LootGod.csproj

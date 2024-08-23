@@ -4,14 +4,15 @@ using Microsoft.Extensions.DependencyInjection;
 
 public class AppFixture : IAsyncDisposable
 {
+	public const string AdminKey = "TEST";
+
 	private readonly LootGodApplicationFactory _app = new();
 
 	public HttpClient Client { get; private set; }
-	public string AdminKey => Environment.GetEnvironmentVariable("ADMIN_KEY")!;
 
 	static AppFixture()
 	{
-		Environment.SetEnvironmentVariable("ADMIN_KEY", "TEST");
+		Environment.SetEnvironmentVariable("ADMIN_KEY", AdminKey);
 		Environment.SetEnvironmentVariable("USE_SQLITE_MEMORY", "true");
 	}
 

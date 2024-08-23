@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http;
+
 public class LootTest
 {
 	[Fact]
@@ -25,7 +27,7 @@ public class LootTest
 	{
 		await using var app = new AppFixture();
 
-		var headers = await app.Client.EnsureGetHeadersAsync("/Backup?key=" + app.AdminKey);
+		var headers = await app.Client.EnsureGetHeadersAsync("/Backup?key=" + AppFixture.AdminKey);
 
 		var disposition = headers.SingleOrDefault(x => x.Key == "Content-Disposition");
 		Assert.NotEqual(default, disposition);
@@ -78,7 +80,7 @@ public class LootTest
 		await app.Client.CreateGuildAndLeader();
 
 		var sse = app.Client.GetStringSsePayload();
-		await app.Client.EnsurePostAsJsonAsync("/UploadMessageOfTheDay?motd=" + motd);
+		await app.Client.EnsurePostAsJsonAsync("/UploadMessageOfTheDay" + QueryString.Create("motd", motd));
 		var data = await sse;
 
 		var dto = await app.Client.GetStringAsync("/GetMessageOfTheDay");
