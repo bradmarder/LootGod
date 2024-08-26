@@ -499,6 +499,6 @@ public class LootService(
 			Name = player.Name,
 			GuildName = player.Guild.Name,
 		});
-		_logger.LogWarning(nameof(AddDataSink));
+		_logger.LogInformation(nameof(AddDataSink));
 	}
 }

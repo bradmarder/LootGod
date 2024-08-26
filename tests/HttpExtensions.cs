@@ -77,7 +77,7 @@ public static class HttpExtensions
 
 	public static async Task<SsePayload<string>> GetStringSsePayload(this HttpClient client)
 	{
-		var key = client.DefaultRequestHeaders.SingleOrDefault(x => x.Key == "Player-Key");
+		var key = client.DefaultRequestHeaders.SingleOrDefault(x => x.Key is "Player-Key");
 		Assert.NotEqual(default, key);
 
 		// get the stream synchronously

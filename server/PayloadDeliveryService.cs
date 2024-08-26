@@ -43,7 +43,7 @@ public class PayloadDeliveryService(
 				}
 			}
 
-			_logger.LogWarning("Payload loop for '{Event}' completed in {Duration}ms", payload.Event, watch.ElapsedMilliseconds);
+			_logger.LogInformation("Payload loop for '{Event}' completed in {Duration}ms", payload.Event, watch.ElapsedMilliseconds);
 		}
 	}
 }

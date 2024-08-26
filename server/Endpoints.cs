@@ -260,7 +260,7 @@ public class Endpoints(string _adminKey)
 				: loot.RotQuantity = dto.Quantity;
 
 			// if quantities are zero, then remove the loot record
-			if (loot.RaidQuantity == 0 && loot.RotQuantity == 0)
+			if (loot.RaidQuantity is 0 && loot.RotQuantity is 0)
 			{
 				db.Loots.Remove(loot);
 			}
@@ -395,7 +395,7 @@ public class Endpoints(string _adminKey)
 				}
 
 				// if quantities are zero, then remove the loot record
-				if (loot.RaidQuantity == 0 && loot.RotQuantity == 0)
+				if (loot.RaidQuantity is 0 && loot.RotQuantity is 0)
 				{
 					db.Loots.Remove(loot);
 				}
@@ -503,7 +503,7 @@ public class Endpoints(string _adminKey)
 
 			static byte GetPercent(IEnumerable<DateOnly> values, DateOnly daysAgo, int max)
 			{
-				return (byte)(max == 0 ? 0 : Math.Round(100d * values.Count(y => y >= daysAgo) / max, 0, MidpointRounding.AwayFromZero));
+				return (byte)(max is 0 ? 0 : Math.Round(100d * values.Count(y => y >= daysAgo) / max, 0, MidpointRounding.AwayFromZero));
 			}
 
 			return dumps
@@ -566,7 +566,7 @@ public class Endpoints(string _adminKey)
 
 			static byte GetPercent(IEnumerable<long> values, long daysAgo, int max)
 			{
-				return (byte)(max == 0 ? 0 : Math.Round(100d * values.Count(y => y >= daysAgo) / max, 0, MidpointRounding.AwayFromZero));
+				return (byte)(max is 0 ? 0 : Math.Round(100d * values.Count(y => y >= daysAgo) / max, 0, MidpointRounding.AwayFromZero));
 			}
 
 			return dumps

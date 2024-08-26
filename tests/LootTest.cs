@@ -29,7 +29,7 @@ public class LootTest
 
 		var headers = await app.Client.EnsureGetHeadersAsync("/Backup?key=" + AppFixture.AdminKey);
 
-		var disposition = headers.SingleOrDefault(x => x.Key == "Content-Disposition");
+		var disposition = headers.SingleOrDefault(x => x.Key is "Content-Disposition");
 		Assert.NotEqual(default, disposition);
 		var values = disposition.Value.ToArray();
 		Assert.Single(values);

@@ -7,7 +7,7 @@ using System.Threading.Channels;
 var builder = WebApplication.CreateSlimBuilder(args);
 var adminKey = builder.Configuration["ADMIN_KEY"]!;
 var source = builder.Configuration["DATABASE_URL"]!;
-var useSqliteMemory = builder.Configuration["USE_SQLITE_MEMORY"] == "true";
+var useSqliteMemory = builder.Configuration["USE_SQLITE_MEMORY"] is "true";
 
 using var cts = new CancellationTokenSource();
 
@@ -37,6 +37,7 @@ else
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<LootService>();
+builder.Services.AddScoped<LogMiddleware>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(x => Channel.CreateUnbounded<Payload>(new() { SingleReader = true, SingleWriter = false }));
 builder.Services.AddSingleton<ConcurrentDictionary<string, DataSink>>();
