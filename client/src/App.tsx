@@ -25,7 +25,7 @@ if (hasKey) {
 }
 axios.defaults.baseURL = 'api/';
 
-const swallowAbortErrors = (error: unknown) => {
+const swallowAbortError = (error: unknown) => {
 	if (error instanceof CanceledError) { return; }
 	throw error;
 };
@@ -40,54 +40,54 @@ export default function App() {
 	const [requests, setRequests] = useState<ILootRequest[]>([]);
 	const [loots, setLoots] = useState<ILoot[]>([]);
 	const [items, setItems] = useState<IItem[]>([]);
-	const [cacheKey, setCacheKey] = useState(0);
+	const [attendanceCacheKey, setAttendanceCacheKey] = useState(0);
 	const [linkedAltsCacheKey, setLinkedAltsCacheKey] = useState(0);
 	const [intro, setIntro] = useState(!hasKey);
 	const [messageOfTheDay, setMessageOfTheDay] = useState('');
 
-	const refreshCache = () => setCacheKey(Date.now());
-	const refreshLinkedAltsCacheKey = () => setLinkedAltsCacheKey(Date.now());
+	const refreshCache = () => setAttendanceCacheKey(x => x + 1);
+	const refreshLinkedAltsCacheKey = () => setLinkedAltsCacheKey(x => x + 1);
 	const getAdminStatus = (signal: AbortSignal) => {
 		axios
 			.get<boolean>('/GetAdminStatus', { signal })
 			.then(x => setIsAdmin(x.data))
-			.catch(swallowAbortErrors);
+			.catch(swallowAbortError);
 	};
 	const getLeaderStatus = (signal: AbortSignal) => {
 		axios
 			.get<boolean>('/GetLeaderStatus', { signal })
 			.then(x => setIsLeader(x.data))
-			.catch(swallowAbortErrors);
+			.catch(swallowAbortError);
 	};
 	const getLoots = (signal: AbortSignal) => {
 		axios
 			.get<ILoot[]>('/GetLoots', { signal })
 			.then(x => setLoots(x.data))
-			.catch(swallowAbortErrors);
+			.catch(swallowAbortError);
 	};
 	const getItems = (signal: AbortSignal) => {
 		axios
 			.get<IItem[]>('/GetItems', { signal })
 			.then(x => setItems(x.data))
-			.catch(swallowAbortErrors);
+			.catch(swallowAbortError);
 	};
 	const getLootRequests = (signal: AbortSignal) => {
 		axios
 			.get<ILootRequest[]>('/GetLootRequests', { signal })
 			.then(x => setRequests(x.data))
-			.catch(swallowAbortErrors);
+			.catch(swallowAbortError);
 	};
 	const getLootLock = (signal: AbortSignal) => {
 		axios
 			.get<boolean>('/GetLootLock', { signal })
 			.then(x => setLootLock(x.data))
-			.catch(swallowAbortErrors);
+			.catch(swallowAbortError);
 	};
 	const getMessageOfTheDay = (signal: AbortSignal) => {
 		axios
 			.get<string>('/GetMessageOfTheDay', { signal })
 			.then(x => setMessageOfTheDay(x.data))
-			.catch(swallowAbortErrors);
+			.catch(swallowAbortError);
 	};
 	const enableLootLock = () => {
 		setLoading(true);
@@ -109,6 +109,10 @@ export default function App() {
 			flushSync(() => setRaidNight(raid));
 			return new Promise(resolve => setTimeout(resolve, 50));
 		});
+	};
+	const createGuildCallback = () => {
+		setIsAdmin(true);
+		setIntro(false);
 	};
 
 	useEffect(() => {
@@ -141,11 +145,6 @@ export default function App() {
 
 		return () => es.close();
 	}, [intro]);
-
-	const createGuildCallback = () => {
-		setIsAdmin(true);
-		setIntro(false);
-	};
 
 	return (
 		<Container fluid>
@@ -241,7 +240,7 @@ export default function App() {
 						<br />
 						<Loots requests={requests} loots={loots} isAdmin={isAdmin} spell={false} raidNight={raidNight} items={items}></Loots>
 						<br />
-						<RaidAttendance isAdmin={isAdmin} cacheKey={cacheKey}></RaidAttendance>
+						<RaidAttendance isAdmin={isAdmin} cacheKey={attendanceCacheKey}></RaidAttendance>
 					</Col>
 				</Row>
 			}

@@ -28,9 +28,9 @@ declare interface ILootRequest {
 declare interface IContext {
 	readonly raidNight: boolean;
 	readonly isAdmin: boolean;
-	readonly loots: ReadonlyArray<ILoot>;
-	readonly items: ReadonlyArray<IItem>;
-	readonly requests: ReadonlyArray<ILootRequest>;
+	readonly loots: readonly ILoot[];
+	readonly items: readonly IItem[];
+	readonly requests: readonly ILootRequest[];
 	readonly spell?: boolean;
 	readonly lootLocked?: boolean;
 	readonly linkedAltsCacheKey?: number;
