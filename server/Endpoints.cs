@@ -440,20 +440,14 @@ public class Endpoints(string _adminKey)
 			lootService.EnsureAdminStatus();
 
 			var ext = Path.GetExtension(file.FileName);
-			switch (ext, file.FileName)
+			var import = (ext, file.FileName) switch
 			{
-				case (".zip", _):
-					await lootService.BulkImportRaidDump(file, offset);
-					break;
-				case (".txt", var x) when x.StartsWith("RaidRoster"):
-					await lootService.ImportRaidDump(file, offset);
-					break;
-				case (".txt", var x) when x.Split('-') is [_, _, _]:
-					await lootService.ImportGuildDump(file);
-					break;
-				default:
-					throw new Exception($"Cannot determine dump for ext '{ext}' with filename '{file.FileName}'");
-			}
+				(".zip", _) => lootService.BulkImportRaidDump(file, offset),
+				(".txt", var x) when x.StartsWith("RaidRoster") => lootService.ImportRaidDump(file, offset),
+				(".txt", var x) when x.Split('-').Length is 3 => lootService.ImportGuildDump(file),
+				_ => throw new Exception($"Cannot determine dump for ext '{ext}' with filename '{file.FileName}'")
+			};
+			await import;
 		}).DisableAntiforgery();
 
 		app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService, TimeProvider time) =>
