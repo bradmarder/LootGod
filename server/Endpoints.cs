@@ -91,7 +91,7 @@ public class Endpoints(string _adminKey)
 			var delete = new SelfDestruct(tempFileName);
 			ctx.Response.RegisterForDispose(delete);
 
-			return Results.File(tempFileName, fileDownloadName: $"backup-{now}.db"); ;
+			return Results.File(tempFileName, fileDownloadName: $"backup-{now}.db");
 		});
 
 		app.MapGet("GetLootRequests", (LootService lootService) =>
@@ -153,12 +153,11 @@ public class Endpoints(string _adminKey)
 		app.MapGet("GetDiscordWebhooks", (LootGodContext db, LootService lootService) =>
 		{
 			lootService.EnsureGuildLeader();
-			var guildId = lootService.GetGuildId();
 
-			return db.Guilds
-				.Where(x => x.Id == guildId)
-				.Select(x => new Hooks(x.RaidDiscordWebhookUrl ?? "", x.RotDiscordWebhookUrl ?? ""))
-				.Single();
+			var guildId = lootService.GetGuildId();
+			var guild =  db.Guilds.Single(x => x.Id == EF.Constant(guildId));
+
+			return new Hooks(guild.RaidDiscordWebhookUrl ?? "", guild.RotDiscordWebhookUrl ?? "");
 		});
 
 		app.MapGet("GetItems", (LootService lootService) =>

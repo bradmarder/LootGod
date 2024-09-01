@@ -5,8 +5,9 @@ using Microsoft.Extensions.DependencyInjection;
 public class AppFixture : IAsyncDisposable
 {
 	public const string AdminKey = "TEST";
+	public static readonly DateTimeOffset DefaultNow = DateTimeOffset.FromUnixTimeMilliseconds(1721678244259);
 
-	private readonly LootGodApplicationFactory _app = new();
+	private readonly WebApplicationFactory<Program> _app;
 
 	public HttpClient Client { get; private set; }
 
@@ -16,8 +17,11 @@ public class AppFixture : IAsyncDisposable
 		Environment.SetEnvironmentVariable("USE_SQLITE_MEMORY", "true");
 	}
 
-	public AppFixture()
+	public AppFixture(double futureDays = 0)
 	{
+		var now = DefaultNow.AddDays(futureDays);
+
+		_app = new LootGodApplicationFactory(now);
 		Client = _app.CreateDefaultClient();
 	}
 
@@ -28,18 +32,18 @@ public class AppFixture : IAsyncDisposable
 	}
 }
 
-public class LootGodApplicationFactory : WebApplicationFactory<Program>
+public class LootGodApplicationFactory(DateTimeOffset now) : WebApplicationFactory<Program>
 {
 	protected override void ConfigureWebHost(IWebHostBuilder builder)
 	{
 		builder.ConfigureServices(x =>
 		{
-			x.AddSingleton<TimeProvider, FixedTimeProvider>();
+			x.AddSingleton<TimeProvider>(new FixedTimeProvider(now));
 		});
 	}
 }
 
-public class FixedTimeProvider : TimeProvider
+public class FixedTimeProvider(DateTimeOffset now) : TimeProvider
 {
-	public override DateTimeOffset GetUtcNow() => DateTimeOffset.FromUnixTimeMilliseconds(1721678244259);
+	public override DateTimeOffset GetUtcNow() => now;
 }

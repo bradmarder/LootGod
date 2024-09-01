@@ -369,15 +369,28 @@ public class LootTest
 	}
 
 	[Theory]
-	[InlineData("/GetPlayerAttendance")]
-	[InlineData("/GetPlayerAttendance_V2")]
-	public async Task GetRaidAttendance(string endpoint)
+	[InlineData("/GetPlayerAttendance", 0, 100, 100, 100)]
+	[InlineData("/GetPlayerAttendance", 30, 0, 100, 100)]
+	[InlineData("/GetPlayerAttendance", 90, 0, 0, 100)]
+	[InlineData("/GetPlayerAttendance", 180, 0, 0, 0)]
+	[InlineData("/GetPlayerAttendance_V2", 0, 100, 100, 100)]
+	[InlineData("/GetPlayerAttendance_V2", 30, 0, 100, 100)]
+	[InlineData("/GetPlayerAttendance_V2", 90, 0, 0, 100)]
+	[InlineData("/GetPlayerAttendance_V2", 180, 0, 0, 0)]
+	public async Task GetRaidAttendance(string endpoint, double futureDays, byte expected30, byte expected90, byte expected180)
 	{
-		await using var app = new AppFixture();
+		await using var app = new AppFixture(futureDays);
 		await app.Client.CreateGuildAndLeader();
 		await app.Client.CreateZipRaidDumps();
 
 		var dtos = await app.Client.EnsureGetJsonAsync<RaidAttendanceDto[]>(endpoint);
+
+		// if there is zero RA for past 180 days, the player/leader will not even appear
+		if (expected180 is 0)
+		{
+			Assert.Empty(dtos);
+			return;
+		}
 
 		Assert.Single(dtos);
 		var ra = dtos[0];
@@ -385,8 +398,8 @@ public class LootTest
 		Assert.True(ra.Admin);
 		Assert.False(ra.Hidden);
 		Assert.Equal(Rank.Leader, ra.Rank);
-		Assert.Equal(100, ra._30);
-		Assert.Equal(100, ra._90);
-		Assert.Equal(100, ra._180);
+		Assert.Equal(expected30, ra._30);
+		Assert.Equal(expected90, ra._90);
+		Assert.Equal(expected180, ra._180);
 	}
 }
