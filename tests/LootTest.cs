@@ -228,7 +228,7 @@ public class LootTest
 
 		var output = await app.Client.GetStringAsync("/GetGrantedLootOutput?raidNight=true");
 
-		Assert.Equal("Godly Plate of the Whale  | Vulak   | x1", output);
+		Assert.Equal($"{TestData.DefaultItemName}  | {TestData.GuildLeader}   | x1", output);
 	}
 
 	[Fact]
@@ -245,7 +245,7 @@ public class LootTest
 
 		var activeRequests = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetLootRequests");
 		var archiveItem = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetArchivedLootRequests?itemId=1");
-		var archiveName = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetArchivedLootRequests?name=Vulak");
+		var archiveName = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetArchivedLootRequests?name=" + TestData.GuildLeader);
 		Assert.Empty(activeRequests);
 		Assert.Single(archiveItem);
 		Assert.Single(archiveName);
@@ -264,7 +264,7 @@ public class LootTest
 		var passwords = txt.Split(Environment.NewLine);
 		Assert.Single(passwords);
 		var password = passwords[0];
-		Assert.StartsWith("Vulak\t", password);
+		Assert.StartsWith(TestData.GuildLeader + "\t", password);
 		var success = Guid.TryParse(password[^36..], out var val);
 		Assert.True(success);
 		Assert.NotEqual(Guid.Empty, val);
@@ -279,7 +279,7 @@ public class LootTest
 	}
 
 	[Theory]
-	[InlineData("7\tVulak\t120\tDruid\tGroup Leader\t\t\tYes\t")]
+	[InlineData($"7\t{TestData.GuildLeader}\t120\tDruid\tGroup Leader\t\t\tYes\t")]
 	public async Task ImportRaidDump(string dump)
 	{
 		await using var app = new AppFixture();
@@ -333,7 +333,7 @@ public class LootTest
 	}
 
 	[Theory]
-	[InlineData("Tormax")]
+	[InlineData(TestData.Commander)]
 	public async Task ToggleHiddenPlayer(string hiddenName)
 	{
 		await using var app = new AppFixture();
@@ -351,7 +351,7 @@ public class LootTest
 	}
 
 	[Theory]
-	[InlineData("Tormax")]
+	[InlineData(TestData.Commander)]
 	public async Task TogglePlayerAdmin(string hiddenName)
 	{
 		await using var app = new AppFixture();
@@ -394,7 +394,7 @@ public class LootTest
 
 		Assert.Single(dtos);
 		var ra = dtos[0];
-		Assert.Equal("Vulak", ra.Name);
+		Assert.Equal(TestData.GuildLeader, ra.Name);
 		Assert.True(ra.Admin);
 		Assert.False(ra.Hidden);
 		Assert.Equal(Rank.Leader, ra.Rank);

@@ -5,7 +5,7 @@ public static class PostExtensions
 {
 	public static async Task<string> CreateGuildAndLeader(this HttpClient client)
 	{
-		var dto = new CreateGuild("Vulak", "The Unknown", Server.FirionaVie);
+		var dto = new CreateGuild(TestData.GuildLeader, "The Unknown", Server.FirionaVie);
 		var json = await client.EnsurePostAsJsonAsync("/CreateGuild", dto);
 		var key = json[1..^1];
 		var success = Guid.TryParse(key, out var pKey);
@@ -20,8 +20,8 @@ public static class PostExtensions
 
 	public static async Task CreateZipRaidDumps(this HttpClient client)
 	{
-		const string vulak = "7\tVulak\t120\tDruid\tGroup Leader\t\t\tYes\t";
-		const string tormax = "7\tTormax\t120\tWizard\tGroup Leader\t\t\tYes\t";
+		const string vulak = $"7\t{TestData.GuildLeader}\t120\tDruid\tGroup Leader\t\t\tYes\t";
+		const string tormax = $"7\t{TestData.Commander}\t120\tWizard\tGroup Leader\t\t\tYes\t";
 		var lines = string.Join(Environment.NewLine, [vulak, tormax]);
 		var dump = Encoding.UTF8.GetBytes(lines);
 
@@ -46,9 +46,9 @@ public static class PostExtensions
 
 	public static async Task CreateGuildDump(this HttpClient client)
 	{
-		const string vulak = $"Vulak\t120\tDruid\t{Rank.Leader}\t\t01/10/23\tPalatial Guild Hall\tMain -  Leader -  LC Admin - .Rot Loot Admin\t\ton\ton\t7344198\t01/06/23\tMain -  Leader -  LC Admin - .Rot Loot Admin\t";
-		var seru = vulak.Replace("Vulak", "Seru").Replace(Rank.Leader, "Knight").Replace("\t\t01/10/23", "\tA\t01/10/23");
-		var tormax = vulak.Replace("Vulak", "Tormax").Replace(Rank.Leader, "Knight");
+		const string vulak = $"{TestData.GuildLeader}\t120\tDruid\t{Rank.Leader}\t\t01/10/23\tHall\tMain -  Leader\t\ton\ton\t7344198\t01/06/23\tMain - Leader\t";
+		var seru = vulak.Replace(TestData.GuildLeader, "Seru").Replace(Rank.Leader, "Knight").Replace("\t\t01/10/23", "\tA\t01/10/23");
+		var tormax = vulak.Replace(TestData.GuildLeader, TestData.Commander).Replace(Rank.Leader, "Knight");
 		var dump = string.Join(Environment.NewLine, [vulak, seru, tormax]);
 		using var content = new MultipartFormDataContent
 		{
@@ -62,13 +62,12 @@ public static class PostExtensions
 
 	public static async Task CreateItem(this HttpClient client)
 	{
-		const string name = "Godly Plate of the Whale";
-		await client.EnsurePostAsJsonAsync("/CreateItem?name=" + name);
+		await client.EnsurePostAsJsonAsync("/CreateItem?name=" + TestData.DefaultItemName);
 
 		var items = await client.EnsureGetJsonAsync<ItemDto[]>("/GetItems");
 		Assert.Single(items);
 		var item = items[0];
-		Assert.Equal(name, item.Name);
+		Assert.Equal(TestData.DefaultItemName, item.Name);
 		Assert.Equal(1, item.Id);
 	}
 
