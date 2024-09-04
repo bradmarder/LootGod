@@ -228,7 +228,7 @@ public class LootTest
 
 		var output = await app.Client.GetStringAsync("/GetGrantedLootOutput?raidNight=true");
 
-		Assert.Equal($"{TestData.DefaultItemName}  | {TestData.GuildLeader}   | x1", output);
+		Assert.Equal($"{TestData.DefaultItemName} | {TestData.GuildLeader} | x1", output);
 	}
 
 	[Fact]

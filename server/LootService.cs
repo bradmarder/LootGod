@@ -120,21 +120,17 @@ public class LootService(
 		var guildId = GetGuildId();
 
 		var grantedLoot = _db.LootRequests
-			.AsNoTracking()
-			.Include(x => x.Item)
-			.Include(x => x.Player)
 			.Where(x => x.Player.GuildId == guildId)
 			.Where(x => x.Granted && !x.Archived)
 			.Where(x => x.RaidNight == raidNight)
-			.OrderBy(x => x.ItemId)
-			.ThenBy(x => x.AltName ?? x.Player.Name)
-			.ToList()
-			.GroupBy(x => (x.ItemId, x.AltName ?? x.Player.Name))
-			.Select(x =>
+			.GroupBy(x => new
 			{
-				var request = x.First();
-				return new LootOutput(request.Item.Name, request.AltName ?? request.Player.Name, x.Sum(y => y.Quantity));
+				ItemName = x.Item.Name,
+				PlayerName = x.AltName ?? x.Player.Name,
 			})
+			.OrderBy(x => x.Key.ItemName)
+			.ThenBy(x => x.Key.PlayerName)
+			.Select(x => new LootOutput(x.Key.ItemName, x.Key.PlayerName, x.Sum(y => y.Quantity)))
 			.ToArray();
 
 		var rotLoot = _db.Loots
@@ -150,12 +146,11 @@ public class LootService(
 			.Select(x => new LootOutput(x.Name, "ROT", x.Quantity))
 			.ToArray();
 
-		var lootAndRot = grantedLoot.Concat(rotLoot).ToArray();
-		if (lootAndRot.Length == 0) { return ""; }
-		var maxLoot = lootAndRot.Max(x => x.Loot.Length);
-		var maxName = lootAndRot.Max(x => x.Name.Length);
-		var format = $"{{0,-{maxLoot + 1}}} | {{1,-{maxName + 2}}} | x{{2}}";
-		var output = lootAndRot.Select(x => string.Format(format, x.Loot, x.Name, x.Quantity));
+		LootOutput[] lootAndRot = [..grantedLoot, ..rotLoot];
+		if (!lootAndRot.Any()) { return ""; }
+		var maxLootLength = lootAndRot.Max(x => x.Loot.Length);
+		var maxNameLength = lootAndRot.Max(x => x.Name.Length);
+		var output = lootAndRot.Select(x => $"{x.Loot.PadRight(maxLootLength)} | {x.Name.PadRight(maxNameLength)} | x{x.Quantity}");
 
 		return string.Join(Environment.NewLine, output);
 	}
