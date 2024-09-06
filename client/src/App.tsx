@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Container, Row, Col, Button, Alert } from 'react-bootstrap';
-import axios, { CanceledError } from 'axios';
+import axios from 'axios';
 import LootRequests from './lootRequests';
 import CreateLootRequest from './createLootRequest';
 import CreateLoot from './createLoot';
@@ -15,6 +15,7 @@ import LeaderModule from './leaderModule';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import CreateGuild from './createGuild';
 import NewLoot from './newLoot';
+import { swallowAbortError } from './utils';
 
 const params = new URLSearchParams(window.location.search);
 const key = params.get('key') ?? localStorage.getItem('key') ?? '';
@@ -24,11 +25,6 @@ if (hasKey) {
 	axios.defaults.headers.common['Player-Key'] = key;
 }
 axios.defaults.baseURL = 'api/';
-
-const swallowAbortError = (error: unknown) => {
-	if (error instanceof CanceledError) { return; }
-	throw error;
-};
 
 export default function App() {
 	const [raidNight, setRaidNight] = useState<boolean | null>(null);

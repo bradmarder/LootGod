@@ -1,19 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Table, Button, FormCheck } from 'react-bootstrap';
 import axios from 'axios';
+import { swallowAbortError } from './utils';
 
 export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: number }) {
 
 	const [isLoading, setIsLoading] = useState(true);
 	const [filter75, setFilter75] = useState(false);
 	const [ra, setRa] = useState<IRaidAttendance[]>([]);
-
-	const getRA = () => {
-		axios
-			.get<IRaidAttendance[]>('/GetPlayerAttendance')
-			.then(x => setRa(x.data))
-			.finally(() => setIsLoading(false));
-	};
+	const [cache, setCache] = useState(0);
 
 	const getTextColor = (ra: number) => {
 		return ra >= 70 ? 'text-success'
@@ -25,17 +20,27 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 		setIsLoading(true);
 		axios
 			.post('/ToggleHiddenPlayer?playerName=' + name)
-			.then(getRA);
+			.then(() => setCache(x => x + 1));
 	};
 
 	const toggleAdmin = (name: string) => {
 		setIsLoading(true);
 		axios
 			.post('/TogglePlayerAdmin?playerName=' + name)
-			.then(getRA);
+			.then(() => setCache(x => x + 1));
 	};
 
-	useEffect(getRA, [props.cacheKey]);
+	useEffect(() => {
+		const ac = new AbortController();
+		
+		axios
+			.get<IRaidAttendance[]>('/GetPlayerAttendance', { signal: ac.signal })
+			.then(x => setRa(x.data))
+			.catch(swallowAbortError)
+			.finally(() => setIsLoading(false));
+
+		return () => ac.abort();	
+	}, [props.cacheKey, cache]);
 
 	return (
 		<>
