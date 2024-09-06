@@ -47,8 +47,13 @@ public static class PostExtensions
 	public static async Task CreateGuildDump(this HttpClient client)
 	{
 		const string vulak = $"{TestData.GuildLeader}\t120\tDruid\t{Rank.Leader}\t\t01/10/23\tHall\tMain -  Leader\t\ton\ton\t7344198\t01/06/23\tMain - Leader\t";
-		var seru = vulak.Replace(TestData.GuildLeader, "Seru").Replace(Rank.Leader, "Knight").Replace("\t\t01/10/23", "\tA\t01/10/23");
-		var tormax = vulak.Replace(TestData.GuildLeader, TestData.Commander).Replace(Rank.Leader, "Knight");
+		var seru = vulak
+			.Replace(TestData.GuildLeader, "Seru")
+			.Replace(Rank.Leader, "Knight")
+			.Replace("\t\t01/10/23", "\tA\t01/10/23");
+		var tormax = vulak
+			.Replace(TestData.GuildLeader, TestData.Commander)
+			.Replace(Rank.Leader, "Knight");
 		var dump = string.Join(Environment.NewLine, [vulak, seru, tormax]);
 		using var content = new MultipartFormDataContent
 		{

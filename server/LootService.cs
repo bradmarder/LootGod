@@ -416,28 +416,27 @@ public class LootService(
 		foreach (var player in players)
 		{
 			var dump = dumps.SingleOrDefault(x => x.Name == player.Name);
-			if (dump is not null)
-			{
-				player.Active = true;
-				player.RankId = rankNameToIdMap[dump.Rank];
-				player.LastOnDate = dump.LastOnDate;
-				player.Level = dump.Level;
-				player.Alt = dump.Alt;
-				player.Notes = dump.Notes;
 
-				// TODO: shouldn't be necessary, bug with Kyoto class defaulting to Bard
-				player.Class = Player._classNameToEnumMap[dump.Class];
-
-				// if a player switches their main to a previously linked alt, reset the MainId to null
-				if (!dump.Alt) { player.MainId = null; }
-			}
-			else
+			// if a player no longer appears in a guild dump output, we assert them inactive
+			if (dump is null)
 			{
-				// if a player no longer appears in a guild dump output, we assert them inactive
-				// TODO: disconnect removed player/connection from hub
 				player.Active = false;
 				player.Admin = false;
+				continue;
 			}
+
+			player.Active = true;
+			player.RankId = rankNameToIdMap[dump.Rank];
+			player.LastOnDate = dump.LastOnDate;
+			player.Level = dump.Level;
+			player.Alt = dump.Alt;
+			player.Notes = dump.Notes;
+
+			// TODO: shouldn't be necessary, bug with Kyoto class defaulting to Bard
+			player.Class = Player._classNameToEnumMap[dump.Class];
+
+			// if a player switches their main to a previously linked alt, reset the MainId to null
+			if (!dump.Alt) { player.MainId = null; }
 		}
 		_db.SaveChanges();
 
