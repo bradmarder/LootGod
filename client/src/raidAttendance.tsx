@@ -5,7 +5,7 @@ import { swallowAbortError } from './utils';
 
 export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: number }) {
 
-	const [isLoading, setIsLoading] = useState(true);
+	const [loading, setLoading] = useState(true);
 	const [filter75, setFilter75] = useState(false);
 	const [ra, setRa] = useState<IRaidAttendance[]>([]);
 	const [cache, setCache] = useState(0);
@@ -17,14 +17,14 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 	};
 
 	const toggleHidden = (name: string) => {
-		setIsLoading(true);
+		setLoading(true);
 		axios
 			.post('/ToggleHiddenPlayer?playerName=' + name)
 			.then(() => setCache(x => x + 1));
 	};
 
 	const toggleAdmin = (name: string) => {
-		setIsLoading(true);
+		setLoading(true);
 		axios
 			.post('/TogglePlayerAdmin?playerName=' + name)
 			.then(() => setCache(x => x + 1));
@@ -37,7 +37,7 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 			.get<IRaidAttendance[]>('/GetPlayerAttendance', { signal: ac.signal })
 			.then(x => setRa(x.data))
 			.catch(swallowAbortError)
-			.finally(() => setIsLoading(false));
+			.finally(() => setLoading(false));
 
 		return () => ac.abort();	
 	}, [props.cacheKey, cache]);
@@ -80,20 +80,20 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 							{props.isAdmin &&
 								<td>
 									{item.hidden &&
-										<Button variant='warning' disabled={isLoading} onClick={() => toggleHidden(item.name)}>Show</Button>
+										<Button variant='warning' disabled={loading} onClick={() => toggleHidden(item.name)}>Show</Button>
 									}
 									{item.hidden === false &&
-										<Button variant='success' disabled={isLoading} onClick={() => toggleHidden(item.name)}>Hide</Button>
+										<Button variant='success' disabled={loading} onClick={() => toggleHidden(item.name)}>Hide</Button>
 									}
 								</td>
 							}
 							{props.isAdmin &&
 								<td>
 									{!item.admin &&
-										<Button variant='success' disabled={isLoading} onClick={() => toggleAdmin(item.name)}>Enable</Button>
+										<Button variant='success' disabled={loading} onClick={() => toggleAdmin(item.name)}>Enable</Button>
 									}
 									{item.admin &&
-										<Button variant='danger' disabled={isLoading} onClick={() => toggleAdmin(item.name)}>Disable</Button>
+										<Button variant='danger' disabled={loading} onClick={() => toggleAdmin(item.name)}>Disable</Button>
 									}
 								</td>
 							}

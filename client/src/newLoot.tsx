@@ -4,15 +4,15 @@ import axios from 'axios';
 
 export default function NewLoot() {
 
-	const [isLoading, setIsLoading] = useState(false);
+	const [loading, setLoading] = useState(false);
 	const [createLootName, setCreateLootName] = useState('');
 
 	const createItem = () => {
-		setIsLoading(true);
+		setLoading(true);
 		axios
 			.post('/CreateItem?name=' + encodeURIComponent(createLootName))
 			.then(() => setCreateLootName(''))
-			.finally(() => setIsLoading(false));
+			.finally(() => setLoading(false));
 	};
 
 	return (
@@ -28,7 +28,7 @@ export default function NewLoot() {
 					</Col>
 				</Row>
 				<br />
-				<Button variant='success' disabled={isLoading || createLootName.length < 2} onClick={createItem}>Create</Button>
+				<Button variant='success' disabled={loading || createLootName.length < 2} onClick={createItem}>Create</Button>
 			</Form>
 		</Alert>
 	);

@@ -4,7 +4,7 @@ import axios from 'axios';
 
 export default function leaderModule() {
 
-	const [isLoading, setIsLoading] = useState(true);
+	const [loading, setLoading] = useState(true);
 	const [raidDiscord, setRaidDiscord] = useState('');
 	const [rotDiscord, setRotDiscord] = useState('');
 	const [transferName, setTransferName] = useState('');
@@ -13,21 +13,21 @@ export default function leaderModule() {
 	const [messageOfTheDay, setMessageOfTheDay] = useState('');
 
 	const transferLeadership = () => {
-		setIsLoading(true);
+		setLoading(true);
 		axios
 			.post('/TransferGuildLeadership?name=' + transferName)
 			.then(_ => setTransferSuccess(true))
-			.finally(() => setIsLoading(false));
+			.finally(() => setLoading(false));
 	};
 	const updateDiscord = async () => {
-		setIsLoading(true);
+		setLoading(true);
 		setDiscordSuccess(false);
 		const a = axios.post('/GuildDiscord?raidNight=true&webhook=' + encodeURIComponent(raidDiscord));
 		const b = axios.post('/GuildDiscord?raidNight=false&webhook=' + encodeURIComponent(rotDiscord));
 		Promise
 			.all([a, b])
 			.then(() => setDiscordSuccess(true))
-			.finally(() => setIsLoading(false));
+			.finally(() => setLoading(false));
 	};
 	const getDiscord = () => {
 		axios
@@ -36,7 +36,7 @@ export default function leaderModule() {
 				setRaidDiscord(x.data.raid);
 				setRotDiscord(x.data.rot);
 			})
-			.finally(() => setIsLoading(false));
+			.finally(() => setLoading(false));
 	};
 	const getMessageOfTheDay = () => {
 		axios
@@ -44,10 +44,10 @@ export default function leaderModule() {
 			.then(x => setMessageOfTheDay(x.data));
 	};
 	const uploadMessageOfTheDay = () => {
-		setIsLoading(true);
+		setLoading(true);
 		axios
 			.post('/UploadMessageOfTheDay?motd=' + encodeURIComponent(messageOfTheDay))
-			.finally(() => setIsLoading(false));
+			.finally(() => setLoading(false));
 	};
 	useEffect(getDiscord, []);
 	useEffect(getMessageOfTheDay, []);
@@ -60,7 +60,7 @@ export default function leaderModule() {
 					<Form.Control as="textarea" rows={3} placeholder='Enter guild MOTD' value={messageOfTheDay} onChange={e => setMessageOfTheDay(e.target.value)} />
 				</Form.Group>
 				<br />
-				<Button variant='primary' disabled={isLoading} onClick={uploadMessageOfTheDay}>Update</Button>
+				<Button variant='primary' disabled={loading} onClick={uploadMessageOfTheDay}>Update</Button>
 			</Form>
 			<hr />
 			<Form onSubmit={e => e.preventDefault()}>
@@ -69,7 +69,7 @@ export default function leaderModule() {
 					<Form.Control type="text" placeholder='Enter new guild leader name' value={transferName} onChange={e => setTransferName(e.target.value)} />
 				</Form.Group>
 				<br />
-				<Button variant='warning' disabled={isLoading || transferName.length < 4} onClick={transferLeadership}>Transfer</Button>
+				<Button variant='warning' disabled={loading || transferName.length < 4} onClick={transferLeadership}>Transfer</Button>
 				{transferSuccess &&
 					<Alert variant='success'>Successfully transferred leadership</Alert>
 				}
@@ -86,7 +86,7 @@ export default function leaderModule() {
 					<Form.Control type="text" placeholder='Enter Rot Discord webhook URL' value={rotDiscord} onChange={e => setRotDiscord(e.target.value)} />
 				</Form.Group>
 				<br />
-				<Button variant='warning' disabled={isLoading} onClick={updateDiscord}>Update</Button>
+				<Button variant='warning' disabled={loading} onClick={updateDiscord}>Update</Button>
 				{discordSuccess &&
 					<Alert variant='success'>Successfully updated Discord webhook URL</Alert>
 				}

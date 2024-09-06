@@ -4,12 +4,12 @@ import axios from 'axios';
 
 export default function Upload(props: { refreshCache: () => void }) {
 
-	const [isLoading, setIsLoading] = useState(false);
+	const [loading, setLoading] = useState(false);
 	const [key, setKey] = useState(1);
 	const [uploaded, setUploaded] = useState<string[]>([]);
 
 	const uploadDump = (file: File) => {
-		setIsLoading(true);
+		setLoading(true);
 		const formData = new FormData();
 		const offset = new Date().getTimezoneOffset();
 		formData.append("file", file);
@@ -21,7 +21,7 @@ export default function Upload(props: { refreshCache: () => void }) {
 			})
 			.finally(() => {
 				setKey(x => x + 1);
-				setIsLoading(false);
+				setLoading(false);
 			});
 	};
 
@@ -30,7 +30,7 @@ export default function Upload(props: { refreshCache: () => void }) {
 			<h4>Upload Guild/Raid Dumps (Admin only)</h4>
 			<hr />
 			<Form>
-				<input type='file' key={key} accept='.txt,.zip' disabled={isLoading} onChange={e => uploadDump(e.target.files![0]!)} />
+				<input type='file' key={key} accept='.txt,.zip' disabled={loading} onChange={e => uploadDump(e.target.files![0]!)} />
 				<hr />
 				{uploaded.length > 0 &&
 					<ToastContainer className="position-static">

@@ -5,30 +5,30 @@ import classes from './eqClasses';
 
 export default function Loots(props: IContext) {
 
-	const [isLoading, setIsLoading] = useState(false);
+	const [loading, setLoading] = useState(false);
 
 	const grantLootRequest = (id: number) => {
-		setIsLoading(true);
+		setLoading(true);
 		axios
 			.post('/GrantLootRequest?id=' + id + '&grant=true')
-			.finally(() => setIsLoading(false));
+			.finally(() => setLoading(false));
 	};
 
 	const updateLootQuantity = (itemId: number, value: number) => {
-		setIsLoading(true);
+		setLoading(true);
 		const loot = props.loots.find(x => x.itemId === itemId)!;
 		const quantity = value + (props.raidNight ? loot.raidQuantity : loot.rotQuantity);
 		const dto = { itemId, quantity, raidNight: props.raidNight };
 		axios
 			.post('/UpdateLootQuantity', dto)
-			.finally(() => setIsLoading(false));
+			.finally(() => setLoading(false));
 	};
 
 	const ungrantLootRequest = (id: number) => {
-		setIsLoading(true);
+		setLoading(true);
 		axios
 			.post('/GrantLootRequest?id=' + id + '&grant=false')
-			.finally(() => setIsLoading(false));
+			.finally(() => setLoading(false));
 	};
 
 	const lootRequests = props.requests.filter(x => props.raidNight === x.raidNight);
@@ -96,18 +96,18 @@ export default function Loots(props: IContext) {
 										{(props.raidNight ? loot.raidQuantity : loot.rotQuantity) === 0 &&
 											<Alert variant={'warning'}><strong>Grant Disabled</strong> - Already Allotted Maximum Quantity</Alert>
 										}
-										<Button variant={'warning'} size={'sm'} disabled={isLoading} onClick={() => updateLootQuantity(loot.itemId, 1)}>Increment Quantity</Button>
-										<Button variant={'danger'} size={'sm'} disabled={isLoading || (props.raidNight ? loot.raidQuantity : loot.rotQuantity) === 0} onClick={() => updateLootQuantity(loot.itemId, -1)}>Decrement Quantity</Button>
+										<Button variant={'warning'} size={'sm'} disabled={loading} onClick={() => updateLootQuantity(loot.itemId, 1)}>Increment Quantity</Button>
+										<Button variant={'danger'} size={'sm'} disabled={loading || (props.raidNight ? loot.raidQuantity : loot.rotQuantity) === 0} onClick={() => updateLootQuantity(loot.itemId, -1)}>Decrement Quantity</Button>
 										<br /><br />
 										{lootRequests.filter(x => x.itemId === loot.itemId).map(req =>
 											<span key={req.id}>
 												{getText(req)}
 												&nbsp;
 												{props.isAdmin && req.granted &&
-													<Button variant={'danger'} disabled={isLoading} onClick={() => ungrantLootRequest(req.id)}>Un-Grant</Button>
+													<Button variant={'danger'} disabled={loading} onClick={() => ungrantLootRequest(req.id)}>Un-Grant</Button>
 												}
 												{props.isAdmin && !req.granted && (props.raidNight ? loot.raidQuantity : loot.rotQuantity) > 0 &&
-													<Button variant={'success'} disabled={isLoading} onClick={() => grantLootRequest(req.id)}>Grant</Button>
+													<Button variant={'success'} disabled={loading} onClick={() => grantLootRequest(req.id)}>Grant</Button>
 												}
 												<br />
 											</span>

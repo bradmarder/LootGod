@@ -6,7 +6,7 @@ import { EQClass } from './eqClass';
 
 export default function CreateLootRequest(props: IContext) {
 
-	const [isLoading, setIsLoading] = useState(true);
+	const [loading, setLoading] = useState(true);
 	const [altName, setAltName] = useState('');
 	const [spell, setSpell] = useState('');
 	const [currentItem, setCurrentItem] = useState('');
@@ -25,12 +25,12 @@ export default function CreateLootRequest(props: IContext) {
 		setClass('');
 		setSpell('');
 		setCurrentItem('');
-		setIsLoading(false);
+		setLoading(false);
 	};
 
 	const isCreateLootDisabled =
 		hasQtyLoots.length === 0
-		|| isLoading
+		|| loading
 		|| itemId === 0
 		|| quantity < 1
 
@@ -50,7 +50,7 @@ export default function CreateLootRequest(props: IContext) {
 			CurrentItem: currentItem,
 			RaidNight: props.raidNight,
 		};
-		setIsLoading(true);
+		setLoading(true);
 		axios
 			.post('/CreateLootRequest', data)
 			.catch(() => alert('duplicate request for name and loot, maybe?'))
@@ -67,11 +67,11 @@ export default function CreateLootRequest(props: IContext) {
 		setItemId(itemId);
 	};
 	const loadLinkedAlts = () => {
-		setIsLoading(true);
+		setLoading(true);
         axios
             .get<string[]>('/GetLinkedAlts')
             .then(x => setLinkedAlts(x.data))
-            .finally(() => setIsLoading(false));
+            .finally(() => setLoading(false));
     };
     useEffect(loadLinkedAlts, [props.linkedAltsCacheKey]);
 

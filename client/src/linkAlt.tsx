@@ -4,14 +4,14 @@ import axios from 'axios';
 
 export default function LinkAlt(props: { refreshLinkedAltsCacheKey: () => void }) {
 
-	const [isLoading, setIsLoading] = useState(true);
+	const [loading, setLoading] = useState(true);
 	const [altName, setAltName] = useState('');
     const [result, setResult] = useState<number | undefined>();
     const [linkedAlts, setLinkedAlts] = useState<string[]>([]);
 
 	const linkAlt = () => {
         setResult(undefined);
-		setIsLoading(true);
+		setLoading(true);
 		axios
             .post<number>('/LinkAlt?altName=' + altName)
             .then(x => {
@@ -20,13 +20,13 @@ export default function LinkAlt(props: { refreshLinkedAltsCacheKey: () => void }
                 loadLinkedAlts();
                 props.refreshLinkedAltsCacheKey();
             })
-            .finally(() => setIsLoading(false));
+            .finally(() => setLoading(false));
 	};
     const loadLinkedAlts = () => {
         axios
             .get<string[]>('/GetLinkedAlts')
             .then(x => setLinkedAlts(x.data))
-            .finally(() => setIsLoading(false));
+            .finally(() => setLoading(false));
     };
     useEffect(loadLinkedAlts, []);
 
@@ -45,7 +45,7 @@ export default function LinkAlt(props: { refreshLinkedAltsCacheKey: () => void }
 					<Form.Control type="text" placeholder='Enter alt name' value={altName} onChange={e => setAltName(e.target.value)} />
 				</Form.Group>
 				<br />
-				<Button variant='success' disabled={isLoading || altName.length < 4} onClick={linkAlt}>Link</Button>
+				<Button variant='success' disabled={loading || altName.length < 4} onClick={linkAlt}>Link</Button>
 			</Form>
             {result === 1 &&
                 <Alert variant='success'>Successfully linked alt. You earn raid credit on your main for any raid dumps that include your alt.</Alert>

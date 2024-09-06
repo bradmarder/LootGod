@@ -4,7 +4,7 @@ import axios from 'axios';
 
 export default function CreateLoot(props: { items: IItem[], raidNight: boolean }) {
 
-	const [isLoading, setIsLoading] = useState(false);
+	const [loading, setLoading] = useState(false);
 	const [createItemId, setCreateItemId] = useState(0);
 	const [createLootQuantity, setCreateLootQuantity] = useState(1);
 
@@ -14,14 +14,14 @@ export default function CreateLoot(props: { items: IItem[], raidNight: boolean }
 			Quantity: createLootQuantity,
 			RaidNight: props.raidNight,
 		};
-		setIsLoading(true);
+		setLoading(true);
 		axios
 			.post('/UpdateLootQuantity', data)
 			.then(() => {
 				setCreateItemId(0);
 				setCreateLootQuantity(1);
 			})
-			.finally(() => setIsLoading(false));
+			.finally(() => setLoading(false));
 	};
 
 	return (
@@ -48,7 +48,7 @@ export default function CreateLoot(props: { items: IItem[], raidNight: boolean }
 					</Col>
 				</Row>
 				<br />
-				<Button variant='success' disabled={isLoading || createItemId === 0} onClick={createLoot}>Create</Button>
+				<Button variant='success' disabled={loading || createItemId === 0} onClick={createLoot}>Create</Button>
 			</Form>
 		</Alert>
 	);

@@ -5,14 +5,14 @@ import classes from './eqClasses';
 
 export default function ArchivedLoot(props: IContext) {
 
-	const [isLoading, setIsLoading] = useState(false);
+	const [loading, setLoading] = useState(false);
 	const [granted, setGranted] = useState(false);
 	const [requests, setRequests] = useState<ILootRequest[]>([]);
 	const [name, setName] = useState('');
 	const [itemId, setItemId] = useState('');
 
 	const getLootRequests = () => {
-		setIsLoading(true);
+		setLoading(true);
 		const params = {
 			name: name || null,
 			itemId: itemId || null,
@@ -20,7 +20,7 @@ export default function ArchivedLoot(props: IContext) {
 		axios
 			.get<ILootRequest[]>('/GetArchivedLootRequests', { params })
 			.then(res => setRequests(res.data))
-			.finally(() => setIsLoading(false));
+			.finally(() => setLoading(false));
 	};
 
 	return (
@@ -50,7 +50,7 @@ export default function ArchivedLoot(props: IContext) {
 						</Form.Group>
 					</Col>
 				</Row>
-				<Button variant='success' disabled={isLoading || (name === '' && itemId === '')} onClick={getLootRequests}>Search</Button>
+				<Button variant='success' disabled={loading || (name === '' && itemId === '')} onClick={getLootRequests}>Search</Button>
 			</Form>
 			{requests.length > 0 &&
 				<Table striped bordered hover size="sm">

@@ -5,7 +5,7 @@ import classes from './eqClasses';
 
 export default function LootRequests(props: IContext) {
 
-	const [isLoading, setIsLoading] = useState(false);
+	const [loading, setLoading] = useState(false);
 	const [playerId, setPlayerId] = useState(0);
 
 	useEffect(() => {
@@ -15,10 +15,10 @@ export default function LootRequests(props: IContext) {
 	}, []);
 
 	const deleteLootRequest = (id: number) => {
-		setIsLoading(true);
+		setLoading(true);
 		axios
 			.post('/DeleteLootRequest?id=' + id)
-			.finally(() => setIsLoading(false));
+			.finally(() => setLoading(false));
 	};
 
 	const myLootRequests = props.requests.filter(x => x.playerId === playerId);
@@ -56,7 +56,7 @@ export default function LootRequests(props: IContext) {
 										<Alert variant={'danger'}>Loot Locked</Alert>
 									}
 									{!props.lootLocked &&
-										<Button variant='danger' disabled={isLoading} onClick={() => deleteLootRequest(item.id)}>Delete</Button>
+										<Button variant='danger' disabled={loading} onClick={() => deleteLootRequest(item.id)}>Delete</Button>
 									}
 								</td>
 							</tr>

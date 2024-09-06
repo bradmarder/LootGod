@@ -5,13 +5,13 @@ import servers from './servers';
 
 export default function CreateGuild(props: { finish: () => void }) {
 
-	const [isLoading, setIsLoading] = useState(false);
+	const [loading, setLoading] = useState(false);
 	const [LeaderName, setLeaderName] = useState('');
 	const [GuildName, setGuildName] = useState('');
 	const [Server, setServer] = useState('');
 
 	const createGuild = () => {
-		setIsLoading(true);
+		setLoading(true);
 		const data = { LeaderName, GuildName, Server: Number(Server) };
 		axios
 			.post<string>('/CreateGuild', data)
@@ -20,7 +20,7 @@ export default function CreateGuild(props: { finish: () => void }) {
 				localStorage.setItem('key', x.data);
 				props.finish();
 			})
-			.finally(() => setIsLoading(false));
+			.finally(() => setLoading(false));
 	};
 
 	return (
@@ -44,7 +44,7 @@ export default function CreateGuild(props: { finish: () => void }) {
 					</Form.Select>
 				</Form.Group>
 				<br />
-				<Button variant='success' disabled={isLoading || LeaderName.length < 4 || GuildName.length < 4 || Server === ''} onClick={createGuild}>Create Guild/Leader</Button>
+				<Button variant='success' disabled={loading || LeaderName.length < 4 || GuildName.length < 4 || Server === ''} onClick={createGuild}>Create Guild/Leader</Button>
 			</Form>
 		</Alert>
 	);

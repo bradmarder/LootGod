@@ -5,19 +5,19 @@ import classes from './eqClasses';
 
 export default function GrantedLoots(props: IContext) {
 
-	const [isLoading, setIsLoading] = useState(false);
+	const [loading, setLoading] = useState(false);
 
 	const ungrantLootRequest = (id: number) => {
-		setIsLoading(true);
+		setLoading(true);
 		axios
 			.post('/GrantLootRequest?id=' + id + '&grant=false')
-			.then(() => setIsLoading(false));
+			.then(() => setLoading(false));
 	};
 	const finishLootGranting =  () => {
-		setIsLoading(true);
+		setLoading(true);
 		axios
 			.post('/FinishLootRequests?raidNight=' + props.raidNight)
-			.then(() => setIsLoading(false));
+			.then(() => setLoading(false));
 	};
 
 	const grantedLootRequests = props.requests.filter(x => x.granted);
@@ -35,7 +35,7 @@ export default function GrantedLoots(props: IContext) {
 					<strong>WARNING!</strong> This archives all active loot requests and resets quantities. If you have a Discord webhook set, this will also
 					post the granted loot output to that channel.
 					<br />
-					<Button variant={'success'} disabled={isLoading} onClick={finishLootGranting}>Finish Granting Loots</Button>
+					<Button variant={'success'} disabled={loading} onClick={finishLootGranting}>Finish Granting Loots</Button>
 				</Alert>
 				<Table striped bordered hover size="sm">
 					<thead>
@@ -57,7 +57,7 @@ export default function GrantedLoots(props: IContext) {
 								<td>{item.lootName}</td>
 								<td>{item.spell || item.quantity}</td>
 								<td>
-									<Button variant='danger' disabled={isLoading} onClick={() => ungrantLootRequest(item.id)}>Ungrant</Button>
+									<Button variant='danger' disabled={loading} onClick={() => ungrantLootRequest(item.id)}>Ungrant</Button>
 								</td>
 							</tr>
 						)}
