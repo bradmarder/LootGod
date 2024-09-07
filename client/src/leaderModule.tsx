@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 import axios from 'axios';
+import { swallowAbortError } from './utils';
 
 export default function leaderModule() {
 
@@ -19,7 +20,7 @@ export default function leaderModule() {
 			.then(_ => setTransferSuccess(true))
 			.finally(() => setLoading(false));
 	};
-	const updateDiscord = async () => {
+	const updateDiscord = () => {
 		setLoading(true);
 		setDiscordSuccess(false);
 		const a = axios.post('/GuildDiscord?raidNight=true&webhook=' + encodeURIComponent(raidDiscord));
@@ -29,28 +30,31 @@ export default function leaderModule() {
 			.then(() => setDiscordSuccess(true))
 			.finally(() => setLoading(false));
 	};
-	const getDiscord = () => {
-		axios
-			.get<{ raid: string, rot: string }>('/GetDiscordWebhooks')
-			.then(x => {
-				setRaidDiscord(x.data.raid);
-				setRotDiscord(x.data.rot);
-			})
-			.finally(() => setLoading(false));
-	};
-	const getMessageOfTheDay = () => {
-		axios
-			.get<string>('/GetMessageOfTheDay')
-			.then(x => setMessageOfTheDay(x.data));
-	};
 	const uploadMessageOfTheDay = () => {
 		setLoading(true);
 		axios
 			.post('/UploadMessageOfTheDay?motd=' + encodeURIComponent(messageOfTheDay))
 			.finally(() => setLoading(false));
 	};
-	useEffect(getDiscord, []);
-	useEffect(getMessageOfTheDay, []);
+	useEffect(() => {
+		const ac = new AbortController();
+		const { signal } = ac;
+		const a = axios
+			.get<string>('/GetMessageOfTheDay', { signal })
+			.then(x => setMessageOfTheDay(x.data))
+			.catch(swallowAbortError);
+		const b = axios
+			.get<IDiscordWebhooks>('/GetDiscordWebhooks', { signal })
+			.then(x => {
+				setRaidDiscord(x.data.raid);
+				setRotDiscord(x.data.rot);
+			})
+			.catch(swallowAbortError);
+		Promise
+			.all([a, b])
+			.then(() => setLoading(false));
+		return () => ac.abort();
+	}, []);
 
 	return (
 		<Alert variant='dark'>

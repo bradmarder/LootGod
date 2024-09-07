@@ -44,3 +44,7 @@ declare interface IRaidAttendance {
 	readonly _90: number;
 	readonly _180: number;
 }
+declare interface IDiscordWebhooks {
+	readonly raid: string;
+	readonly rot: string;
+}

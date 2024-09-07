@@ -32,13 +32,12 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 
 	useEffect(() => {
 		const ac = new AbortController();
-		
+		setLoading(true);
 		axios
 			.get<IRaidAttendance[]>('/GetPlayerAttendance', { signal: ac.signal })
 			.then(x => setRa(x.data))
 			.catch(swallowAbortError)
 			.finally(() => setLoading(false));
-
 		return () => ac.abort();	
 	}, [props.cacheKey, cache]);
 
@@ -70,7 +69,7 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 					</tr>
 				</thead>
 				<tbody>
-					{ra.filter(x => props.isAdmin ? true : !x.hidden).filter(x => !filter75 || x._30 >= 75).map(item =>
+					{ra.filter(x => props.isAdmin || !x.hidden).filter(x => !filter75 || x._30 >= 75).map(item =>
 						<tr key={item.name}>
 							<td>{item.name}</td>
 							<td>{item.rank}</td>
