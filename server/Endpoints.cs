@@ -2,15 +2,6 @@
 using System.Collections.Concurrent;
 using System.Text;
 
-public record CreateLoot(byte Quantity, int ItemId, bool RaidNight);
-public record CreateGuild(string LeaderName, string GuildName, Server Server);
-public record Hooks(string Raid, string Rot);
-
-public class SelfDestruct(string path) : IDisposable
-{
-	public void Dispose() => File.Delete(path);
-}
-
 public class Endpoints(string _adminKey)
 {
 	void EnsureOwner(string key)

@@ -6,18 +6,6 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
 
-public record DataSink(int GuildId, HttpResponse Response, CancellationToken Token)
-{
-	public int EventId { get; set; } = 1;
-}
-
-/// <summary>
-/// null GuildId implies the payload is sent to every client (items)
-/// </summary>
-public record Payload(int? GuildId, string Event, string JsonData);
-
-public record LootOutput(string Loot, string Name, int Quantity);
-
 public class LootService(
 	ILogger<LootService> _logger,
 	IHttpContextAccessor _httpContextAccessor,
@@ -46,10 +34,8 @@ public class LootService(
 		var key = GetPlayerKey();
 
 		return _db.Players
-			.Where(x => x.Key == key)
-			.Where(x => x.Active != false)
-			.Select(x => x.Id)
-			.Single();
+			.Single(x => x.Key == key && x.Active != false)
+			.Id;
 	}
 
 	public int GetGuildId()
@@ -57,10 +43,8 @@ public class LootService(
 		var key = GetPlayerKey();
 
 		return _db.Players
-			.Where(x => x.Key == key)
-			.Where(x => x.Active != false)
-			.Select(x => x.GuildId)
-			.Single();
+			.Single(x => x.Key == key && x.Active != false)
+			.GuildId;
 	}
 
 	public bool GetAdminStatus()
@@ -68,10 +52,8 @@ public class LootService(
 		var key = GetPlayerKey();
 
 		return _db.Players
-			.Where(x => x.Key == key)
-			.Where(x => x.Active == true)
-			.Select(x => x.Admin)
-			.Single();
+			.Single(x => x.Key == key && x.Active == true)
+			.Admin;
 	}
 
 	public bool IsGuildLeader()
