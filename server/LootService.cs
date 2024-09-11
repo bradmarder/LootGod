@@ -137,13 +137,18 @@ public class LootService(
 		return string.Join(Environment.NewLine, output);
 	}
 
-	public void AddDataSink(string connectionId, HttpResponse response, CancellationToken token)
+	public bool AddDataSink(string connectionId, HttpResponse response, CancellationToken token)
 	{
 		LogNewDataSink();
 
 		var guildId = GetGuildId();
-		var sink = new DataSink(guildId, response, token);
-		_dataSinks.TryAdd(connectionId, sink);
+		var sink = new DataSink
+		{
+			GuildId = guildId,
+			Response = response,
+			Token = token,
+		};
+		return _dataSinks.TryAdd(connectionId, sink);
 	}
 
 	public bool RemoveDataSink(string connectionId) => _dataSinks.Remove(connectionId, out _);

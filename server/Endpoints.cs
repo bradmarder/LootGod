@@ -1,9 +1,18 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 using System.Text;
 
 public class Endpoints(string _adminKey)
 {
+	static void EnsureSingle(int rows)
+	{
+		if (rows is not 1)
+		{
+			throw new Exception("Expected 1 row updated, actual = " + rows);
+		}
+	}
+
 	void EnsureOwner(string key)
 	{
 		if (key != _adminKey)
@@ -14,7 +23,7 @@ public class Endpoints(string _adminKey)
 
 	public static bool IsValidDiscordWebhook(string webhook)
 	{
-		return new Uri(webhook, UriKind.Absolute) is
+		return Uri.TryCreate(webhook, UriKind.Absolute, out var uri) && uri is
 		{
 			Port: 443,
 			Scheme: "https",
@@ -53,19 +62,22 @@ public class Endpoints(string _adminKey)
 			await Task.Delay(Timeout.InfiniteTimeSpan, token);
 		});
 
-		app.MapPost("GuildDiscord", (LootGodContext db, LootService lootService, string webhook, bool raidNight) =>
+		app.MapPost("GuildDiscord", Results<Ok, BadRequest<string>> (LootGodContext db, LootService lootService, string webhook, bool raidNight) =>
 		{
 			lootService.EnsureGuildLeader();
 
 			if (!string.IsNullOrEmpty(webhook) && !IsValidDiscordWebhook(webhook))
 			{
-				throw new Exception(webhook);
+				return TypedResults.BadRequest("Invalid Discord Webhook Format");
 			}
 
 			var guildId = lootService.GetGuildId();
-			db.Guilds
+			var rows = db.Guilds
 				.Where(x => x.Id == guildId)
 				.ExecuteUpdate(x => x.SetProperty(y => raidNight ? y.RaidDiscordWebhookUrl : y.RotDiscordWebhookUrl, webhook));
+			EnsureSingle(rows);
+
+			return TypedResults.Ok();
 		});
 
 		app.MapGet("Vacuum", (LootGodContext db) => db.Database.ExecuteSqlRaw("VACUUM"));
@@ -171,10 +183,11 @@ public class Endpoints(string _adminKey)
 
 			var guildId = lootService.GetGuildId();
 
-			db.Players
+			var rows = db.Players
 				.Where(x => x.GuildId == guildId)
 				.Where(x => x.Name == playerName)
 				.ExecuteUpdate(x => x.SetProperty(y => y.Hidden, y => !y.Hidden));
+			EnsureSingle(rows);
 		});
 
 		app.MapPost("TogglePlayerAdmin", (string playerName, LootGodContext db, LootService lootService) =>
@@ -183,10 +196,11 @@ public class Endpoints(string _adminKey)
 
 			var guildId = lootService.GetGuildId();
 
-			db.Players
+			var rows = db.Players
 				.Where(x => x.GuildId == guildId)
 				.Where(x => x.Name == playerName)
 				.ExecuteUpdate(x => x.SetProperty(y => y.Admin, y => !y.Admin));
+			EnsureSingle(rows);
 		});
 
 		app.MapPost("CreateLootRequest", async (CreateLootRequest dto, LootGodContext db, LootService lootService) =>
@@ -274,9 +288,10 @@ public class Endpoints(string _adminKey)
 			lootService.EnsureAdminStatus();
 
 			var guildId = lootService.GetGuildId();
-			db.Guilds
+			var rows = db.Guilds
 				.Where(x => x.Id == guildId)
 				.ExecuteUpdate(x => x.SetProperty(y => y.LootLocked, enable));
+			EnsureSingle(rows);
 
 			await lootService.RefreshLock(guildId, enable);
 		});
@@ -299,12 +314,13 @@ public class Endpoints(string _adminKey)
 			var guildId = lootService.GetGuildId();
 			var validAltName = char.ToUpperInvariant(altName[0]) + altName.Substring(1).ToLowerInvariant();
 
-			return db.Players
+			var rows = db.Players
 				.Where(x => x.GuildId == guildId)
 				.Where(x => x.Alt == true)
 				.Where(x => x.MainId == null)
 				.Where(x => x.Name == validAltName)
 				.ExecuteUpdate(x => x.SetProperty(y => y.MainId, playerId));
+			EnsureSingle(rows);
 		});
 
 		app.MapGet("GetLootLock", (LootService x) => x.GetRaidLootLock());
@@ -325,9 +341,10 @@ public class Endpoints(string _adminKey)
 			lootService.EnsureGuildLeader();
 
 			var guildId = lootService.GetGuildId();
-			db.Guilds
+			var rows = db.Guilds
 				.Where(x => x.Id == guildId)
 				.ExecuteUpdate(x => x.SetProperty(y => y.MessageOfTheDay, motd));
+			EnsureSingle(rows);
 
 			await lootService.RefreshMessageOfTheDay(guildId, motd);
 		});
@@ -337,10 +354,11 @@ public class Endpoints(string _adminKey)
 			lootService.EnsureAdminStatus();
 
 			var guildId = lootService.GetGuildId();
-			db.LootRequests
+			var rows = db.LootRequests
 				.Where(x => x.Id == id)
 				.Where(x => x.Player.GuildId == guildId)
 				.ExecuteUpdate(x => x.SetProperty(y => y.Granted, grant));
+			EnsureSingle(rows);
 
 			await lootService.RefreshRequests(guildId);
 		});

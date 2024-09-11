@@ -24,7 +24,7 @@ public class PayloadDeliveryService(
 				var text = new StringBuilder()
 					.Append($"event: {payload.Event}\n")
 					.Append($"data: {payload.JsonData}\n")
-					.Append($"id: {sink.Value.EventId++}\n")
+					.Append($"id: {sink.Value.IncrementEventId()}\n")
 					.Append("\n\n")
 					.ToString();
 				try

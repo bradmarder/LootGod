@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 import axios from 'axios';
-import { swallowAbortError } from './utils';
+import { swallowAbortError, handlePostError } from './utils';
 
 export default function leaderModule() {
 
@@ -17,7 +17,7 @@ export default function leaderModule() {
 		setLoading(true);
 		axios
 			.post('/TransferGuildLeadership?name=' + transferName)
-			.then(_ => setTransferSuccess(true))
+			.then(() => setTransferSuccess(true))
 			.finally(() => setLoading(false));
 	};
 	const updateDiscord = () => {
@@ -27,6 +27,7 @@ export default function leaderModule() {
 		const b = axios.post('/GuildDiscord?raidNight=false&webhook=' + encodeURIComponent(rotDiscord));
 		Promise
 			.all([a, b])
+			.catch(handlePostError)
 			.then(() => setDiscordSuccess(true))
 			.finally(() => setLoading(false));
 	};
