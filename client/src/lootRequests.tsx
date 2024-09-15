@@ -17,7 +17,7 @@ export default function LootRequests(props: IContext) {
 	const deleteLootRequest = (id: number) => {
 		setLoading(true);
 		axios
-			.post('/DeleteLootRequest?id=' + id)
+			.delete('/DeleteLootRequest', { params: { id }})
 			.finally(() => setLoading(false));
 	};
 

@@ -7,10 +7,10 @@ export default function Loots(props: IContext) {
 
 	const [loading, setLoading] = useState(false);
 
-	const grantLootRequest = (id: number) => {
+	const grantLootRequest = (id: number, grant: boolean) => {
 		setLoading(true);
 		axios
-			.post('/GrantLootRequest?id=' + id + '&grant=true')
+			.post('/GrantLootRequest', { id, grant })
 			.finally(() => setLoading(false));
 	};
 
@@ -21,13 +21,6 @@ export default function Loots(props: IContext) {
 		const dto = { itemId, quantity, raidNight: props.raidNight };
 		axios
 			.post('/UpdateLootQuantity', dto)
-			.finally(() => setLoading(false));
-	};
-
-	const ungrantLootRequest = (id: number) => {
-		setLoading(true);
-		axios
-			.post('/GrantLootRequest?id=' + id + '&grant=false')
 			.finally(() => setLoading(false));
 	};
 
@@ -104,10 +97,10 @@ export default function Loots(props: IContext) {
 												{getText(req)}
 												&nbsp;
 												{props.isAdmin && req.granted &&
-													<Button variant={'danger'} disabled={loading} onClick={() => ungrantLootRequest(req.id)}>Un-Grant</Button>
+													<Button variant={'danger'} disabled={loading} onClick={() => grantLootRequest(req.id, false)}>Un-Grant</Button>
 												}
 												{props.isAdmin && !req.granted && (props.raidNight ? loot.raidQuantity : loot.rotQuantity) > 0 &&
-													<Button variant={'success'} disabled={loading} onClick={() => grantLootRequest(req.id)}>Grant</Button>
+													<Button variant={'success'} disabled={loading} onClick={() => grantLootRequest(req.id, true)}>Grant</Button>
 												}
 												<br />
 											</span>

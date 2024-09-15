@@ -15,7 +15,7 @@ import LeaderModule from './leaderModule';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import CreateGuild from './createGuild';
 import NewLoot from './newLoot';
-import { swallowAbortError } from './utils';
+import { setAxiosInterceptors } from './utils';
 
 const params = new URLSearchParams(window.location.search);
 const key = params.get('key') ?? localStorage.getItem('key') ?? '';
@@ -25,6 +25,7 @@ if (hasKey) {
 	axios.defaults.headers.common['Player-Key'] = key;
 }
 axios.defaults.baseURL = 'api/';
+setAxiosInterceptors();
 
 export default function App() {
 	const [raidNight, setRaidNight] = useState<boolean | null>(null);
@@ -46,55 +47,48 @@ export default function App() {
 	const getAdminStatus = (signal: AbortSignal) => {
 		axios
 			.get<boolean>('/GetAdminStatus', { signal })
-			.then(x => setIsAdmin(x.data))
-			.catch(swallowAbortError);
+			.then(x => setIsAdmin(x.data));
 	};
 	const getLeaderStatus = (signal: AbortSignal) => {
 		axios
 			.get<boolean>('/GetLeaderStatus', { signal })
-			.then(x => setIsLeader(x.data))
-			.catch(swallowAbortError);
+			.then(x => setIsLeader(x.data));
 	};
 	const getLoots = (signal: AbortSignal) => {
 		axios
 			.get<ILoot[]>('/GetLoots', { signal })
-			.then(x => setLoots(x.data))
-			.catch(swallowAbortError);
+			.then(x => setLoots(x.data));
 	};
 	const getItems = (signal: AbortSignal) => {
 		axios
 			.get<IItem[]>('/GetItems', { signal })
-			.then(x => setItems(x.data))
-			.catch(swallowAbortError);
+			.then(x => setItems(x.data));
 	};
 	const getLootRequests = (signal: AbortSignal) => {
 		axios
 			.get<ILootRequest[]>('/GetLootRequests', { signal })
-			.then(x => setRequests(x.data))
-			.catch(swallowAbortError);
+			.then(x => setRequests(x.data));
 	};
 	const getLootLock = (signal: AbortSignal) => {
 		axios
 			.get<boolean>('/GetLootLock', { signal })
-			.then(x => setLootLock(x.data))
-			.catch(swallowAbortError);
+			.then(x => setLootLock(x.data));
 	};
 	const getMessageOfTheDay = (signal: AbortSignal) => {
 		axios
 			.get<string>('/GetMessageOfTheDay', { signal })
-			.then(x => setMessageOfTheDay(x.data))
-			.catch(swallowAbortError);
+			.then(x => setMessageOfTheDay(x.data));
 	};
 	const enableLootLock = () => {
 		setLoading(true);
 		axios
-			.post('/ToggleLootLock?enable=true')
+			.post('/ToggleLootLock', { enable: true })
 			.finally(() => setLoading(false));
 	};
 	const disableLootLock = () => {
 		setLoading(true);
 		axios
-			.post('/ToggleLootLock?enable=false')
+			.post('/ToggleLootLock', { enable: false })
 			.finally(() => setLoading(false));
 	};
 	const transitionRaidNight = (raid: boolean) => {

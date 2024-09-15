@@ -10,17 +10,21 @@ export default function GrantedLoots(props: IContext) {
 	const ungrantLootRequest = (id: number) => {
 		setLoading(true);
 		axios
-			.post('/GrantLootRequest?id=' + id + '&grant=false')
+			.post('/GrantLootRequest', { id, grant: false })
 			.then(() => setLoading(false));
 	};
 	const finishLootGranting =  () => {
 		setLoading(true);
 		axios
-			.post('/FinishLootRequests?raidNight=' + props.raidNight)
+			.post('/FinishLootRequests', { raidNight: props.raidNight })
 			.then(() => setLoading(false));
 	};
 
 	const grantedLootRequests = props.requests.filter(x => x.granted);
+	const lootOutputHref = '/api/GetGrantedLootOutput?' + new URLSearchParams({
+		playerKey: localStorage.getItem('key')!,
+		raidNight: props.raidNight + '',
+	}).toString();
 
 	return (
 		<>
@@ -30,7 +34,7 @@ export default function GrantedLoots(props: IContext) {
 			}
 			{grantedLootRequests.length > 0 &&
 				<>
-				<a target="_blank" rel="noreferrer" href={'/api/GetGrantedLootOutput?playerKey=' + localStorage.getItem('key') + '&raidNight=' + props.raidNight}>Download Granted Loot Output Text File (for discord)</a>
+				<a target="_blank" rel="noreferrer" href={lootOutputHref}>Download Granted Loot Output Text File (for discord)</a>
 				<Alert variant={'warning'}>
 					<strong>WARNING!</strong> This archives all active loot requests and resets quantities. If you have a Discord webhook set, this will also
 					post the granted loot output to that channel.

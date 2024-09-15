@@ -62,11 +62,11 @@ public class Endpoints(string _adminKey)
 			await Task.Delay(Timeout.InfiniteTimeSpan, token);
 		});
 
-		app.MapPost("GuildDiscord", Results<Ok, BadRequest<string>> (LootGodContext db, LootService lootService, string webhook, bool raidNight) =>
+		app.MapPost("GuildDiscord", Results<Ok, BadRequest<string>> (LootGodContext db, LootService lootService, UpdateGuildDiscord dto) =>
 		{
 			lootService.EnsureGuildLeader();
 
-			if (!string.IsNullOrEmpty(webhook) && !IsValidDiscordWebhook(webhook))
+			if (!string.IsNullOrEmpty(dto.Webhook) && !IsValidDiscordWebhook(dto.Webhook))
 			{
 				return TypedResults.BadRequest("Invalid Discord Webhook Format");
 			}
@@ -74,7 +74,7 @@ public class Endpoints(string _adminKey)
 			var guildId = lootService.GetGuildId();
 			var rows = db.Guilds
 				.Where(x => x.Id == guildId)
-				.ExecuteUpdate(x => x.SetProperty(y => raidNight ? y.RaidDiscordWebhookUrl : y.RotDiscordWebhookUrl, webhook));
+				.ExecuteUpdate(x => x.SetProperty(y => dto.RaidNight ? y.RaidDiscordWebhookUrl : y.RotDiscordWebhookUrl, dto.Webhook));
 			EnsureSingle(rows);
 
 			return TypedResults.Ok();
@@ -177,7 +177,7 @@ public class Endpoints(string _adminKey)
 			return lootService.LoadLoots(guildId);
 		});
 
-		app.MapPost("ToggleHiddenPlayer", (string playerName, LootGodContext db, LootService lootService) =>
+		app.MapPost("ToggleHiddenPlayer", (ToggleHiddenAdminPlayer dto, LootGodContext db, LootService lootService) =>
 		{
 			lootService.EnsureAdminStatus();
 
@@ -185,12 +185,12 @@ public class Endpoints(string _adminKey)
 
 			var rows = db.Players
 				.Where(x => x.GuildId == guildId)
-				.Where(x => x.Name == playerName)
+				.Where(x => x.Name == dto.Name)
 				.ExecuteUpdate(x => x.SetProperty(y => y.Hidden, y => !y.Hidden));
 			EnsureSingle(rows);
 		});
 
-		app.MapPost("TogglePlayerAdmin", (string playerName, LootGodContext db, LootService lootService) =>
+		app.MapPost("TogglePlayerAdmin", (ToggleHiddenAdminPlayer dto, LootGodContext db, LootService lootService) =>
 		{
 			lootService.EnsureGuildLeader();
 
@@ -198,7 +198,7 @@ public class Endpoints(string _adminKey)
 
 			var rows = db.Players
 				.Where(x => x.GuildId == guildId)
-				.Where(x => x.Name == playerName)
+				.Where(x => x.Name == dto.Name)
 				.ExecuteUpdate(x => x.SetProperty(y => y.Admin, y => !y.Admin));
 			EnsureSingle(rows);
 		});
@@ -225,7 +225,7 @@ public class Endpoints(string _adminKey)
 			await lootService.RefreshRequests(guildId);
 		});
 
-		app.MapPost("DeleteLootRequest", async (LootGodContext db, int id, LootService lootService) =>
+		app.MapDelete("DeleteLootRequest", async (LootGodContext db, int id, LootService lootService) =>
 		{
 			lootService.EnsureRaidLootUnlocked();
 
@@ -283,17 +283,17 @@ public class Endpoints(string _adminKey)
 			return player.Key!.Value;
 		});
 
-		app.MapPost("ToggleLootLock", async (LootGodContext db, LootService lootService, bool enable) =>
+		app.MapPost("ToggleLootLock", async (LootGodContext db, LootService lootService, LootLock lootLock) =>
 		{
 			lootService.EnsureAdminStatus();
 
 			var guildId = lootService.GetGuildId();
 			var rows = db.Guilds
 				.Where(x => x.Id == guildId)
-				.ExecuteUpdate(x => x.SetProperty(y => y.LootLocked, enable));
+				.ExecuteUpdate(x => x.SetProperty(y => y.LootLocked, lootLock.Enable));
 			EnsureSingle(rows);
 
-			await lootService.RefreshLock(guildId, enable);
+			await lootService.RefreshLock(guildId, lootLock.Enable);
 		});
 
 		app.MapGet("GetLinkedAlts", (LootGodContext db, LootService lootService) =>
@@ -336,50 +336,50 @@ public class Endpoints(string _adminKey)
 			return guild.MessageOfTheDay ?? "";
 		});
 
-		app.MapPost("UploadMessageOfTheDay", async (LootService lootService, LootGodContext db, string motd) =>
+		app.MapPost("UploadMessageOfTheDay", async (LootService lootService, LootGodContext db, MessageOfTheDay dto) =>
 		{
 			lootService.EnsureGuildLeader();
 
 			var guildId = lootService.GetGuildId();
 			var rows = db.Guilds
 				.Where(x => x.Id == guildId)
-				.ExecuteUpdate(x => x.SetProperty(y => y.MessageOfTheDay, motd));
+				.ExecuteUpdate(x => x.SetProperty(y => y.MessageOfTheDay, dto.Message));
 			EnsureSingle(rows);
 
-			await lootService.RefreshMessageOfTheDay(guildId, motd);
+			await lootService.RefreshMessageOfTheDay(guildId, dto.Message);
 		});
 
-		app.MapPost("GrantLootRequest", async (LootGodContext db, LootService lootService, int id, bool grant) =>
+		app.MapPost("GrantLootRequest", async (LootGodContext db, LootService lootService, GrantLootRequest dto) =>
 		{
 			lootService.EnsureAdminStatus();
 
 			var guildId = lootService.GetGuildId();
 			var rows = db.LootRequests
-				.Where(x => x.Id == id)
+				.Where(x => x.Id == dto.Id)
 				.Where(x => x.Player.GuildId == guildId)
-				.ExecuteUpdate(x => x.SetProperty(y => y.Granted, grant));
+				.ExecuteUpdate(x => x.SetProperty(y => y.Granted, dto.Grant));
 			EnsureSingle(rows);
 
 			await lootService.RefreshRequests(guildId);
 		});
 
-		app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootService, bool raidNight) =>
+		app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootService, FinishLoots finish) =>
 		{
 			lootService.EnsureAdminStatus();
 
 			var guildId = lootService.GetGuildId();
 
 			// capture the output before we archive requests
-			var output = lootService.GetGrantedLootOutput(raidNight);
+			var output = lootService.GetGrantedLootOutput(finish.RaidNight);
 
 			var requests = db.LootRequests
 				.Where(x => x.Player.GuildId == guildId)
 				.Where(x => !x.Archived)
-				.Where(x => x.RaidNight == raidNight)
+				.Where(x => x.RaidNight == finish.RaidNight)
 				.ToList();
 			var loots = db.Loots
 				.Where(x => x.GuildId == guildId)
-				.Where(x => (raidNight ? x.RaidQuantity : x.RotQuantity) > 0)
+				.Where(x => (finish.RaidNight ? x.RaidQuantity : x.RotQuantity) > 0)
 				.ToList();
 
 			foreach (var request in requests)
@@ -392,7 +392,7 @@ public class Endpoints(string _adminKey)
 					.Where(x => x.ItemId == loot.ItemId && x.Granted)
 					.Sum(x => x.Quantity);
 
-				if (raidNight)
+				if (finish.RaidNight)
 				{
 					loot.RotQuantity += (byte)(loot.RaidQuantity - grantedQuantity);
 					loot.RaidQuantity = 0;
@@ -412,7 +412,7 @@ public class Endpoints(string _adminKey)
 			db.SaveChanges();
 
 			var guild = db.Guilds.Single(x => x.Id == guildId);
-			var webhook = raidNight ? guild.RaidDiscordWebhookUrl : guild.RotDiscordWebhookUrl;
+			var webhook = finish.RaidNight ? guild.RaidDiscordWebhookUrl : guild.RotDiscordWebhookUrl;
 			if (webhook is not null)
 			{
 				await lootService.DiscordWebhook(output, webhook);
@@ -422,18 +422,22 @@ public class Endpoints(string _adminKey)
 			await lootService.RefreshRequests(guildId);
 		});
 
-		app.MapPost("TransferGuildLeadership", (LootGodContext db, LootService lootService, string name) =>
+		app.MapPost("TransferGuildLeadership", Results<Ok, BadRequest<string>> (LootGodContext db, LootService lootService, TransferGuildName dto) =>
 		{
 			lootService.EnsureGuildLeader();
 
 			var guildId = lootService.GetGuildId();
 			var leaderId = lootService.GetPlayerId();
 			var oldLeader = db.Players.Single(x => x.Id == leaderId);
-			var newLeader = db.Players.Single(x => x.GuildId == guildId && x.Name == name);
+			var newLeader = db.Players.SingleOrDefault(x => x.GuildId == guildId && x.Name == dto.Name);
 
+			if (newLeader is null)
+			{
+				return TypedResults.BadRequest($"No guild member with name '{dto.Name}' found.");
+			}
 			if (oldLeader.Id == newLeader.Id)
 			{
-				throw new Exception("cannot transfer leadership to self?!");
+				return TypedResults.BadRequest("Cannot transfer guild leadership to self?!");
 			}
 
 			newLeader.Admin = true;
@@ -441,9 +445,11 @@ public class Endpoints(string _adminKey)
 			oldLeader.RankId = null;
 
 			db.SaveChanges();
+
+			return TypedResults.Ok();
 		});
 
-		app.MapPost("ImportDump", async (LootService lootService, IFormFile file, int offset) =>
+		app.MapPost("ImportDump", async Task<Results<Ok, BadRequest<string>>> (LootService lootService, IFormFile file, int offset) =>
 		{
 			lootService.EnsureAdminStatus();
 
@@ -453,9 +459,17 @@ public class Endpoints(string _adminKey)
 				(".zip", _) => lootService.BulkImportRaidDump(file, offset),
 				(".txt", var x) when x.StartsWith("RaidRoster") => lootService.ImportRaidDump(file, offset),
 				(".txt", var x) when x.Split('-').Length is 3 => lootService.ImportGuildDump(file),
-				_ => throw new Exception($"Cannot determine dump for ext '{ext}' with filename '{file.FileName}'")
+				_ => Task.FromException(new ImportException($"Cannot determine import dump for filename '{file.FileName}'"))
 			};
-			await import;
+			try
+			{
+				await import;
+				return TypedResults.Ok();
+			}
+			catch (ImportException ex)
+			{
+				return TypedResults.BadRequest(ex.Message);
+			}
 		}).DisableAntiforgery();
 
 		app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService, TimeProvider time) =>

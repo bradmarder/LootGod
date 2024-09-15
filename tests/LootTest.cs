@@ -62,7 +62,7 @@ public class LootTest
 		Assert.False(defaultLootLock);
 
 		var sse = app.Client.GetSsePayload<bool>();
-		await app.Client.EnsurePostAsJsonAsync("/ToggleLootLock?enable=true");
+		await app.Client.EnsurePostAsJsonAsync("/ToggleLootLock", new LootLock(true));
 		var data = await sse;
 
 		var lootLock = await app.Client.EnsureGetJsonAsync<bool>("/GetLootLock");
@@ -80,7 +80,7 @@ public class LootTest
 		await app.Client.CreateGuildAndLeader();
 
 		var sse = app.Client.GetStringSsePayload();
-		await app.Client.EnsurePostAsJsonAsync("/UploadMessageOfTheDay" + QueryString.Create("motd", motd));
+		await app.Client.EnsurePostAsJsonAsync("/UploadMessageOfTheDay", new MessageOfTheDay(motd));
 		var data = await sse;
 
 		var dto = await app.Client.GetStringAsync("/GetMessageOfTheDay");
@@ -103,7 +103,7 @@ public class LootTest
 
 		var webhook = "https://discord.com/api/webhooks/1/" + new string('x', 68);
 
-		await app.Client.EnsurePostAsJsonAsync($"/GuildDiscord?raidNight={raidNight}&webhook={webhook}");
+		await app.Client.EnsurePostAsJsonAsync($"/GuildDiscord", new UpdateGuildDiscord(raidNight, webhook));
 
 		var hooks = await app.Client.EnsureGetJsonAsync<Hooks>("/GetDiscordWebhooks");
 		var value = raidNight ? hooks.Raid : hooks.Rot;
@@ -197,7 +197,7 @@ public class LootTest
 		await app.Client.CreateItem();
 		await app.Client.CreateLootRequest();
 
-		await app.Client.EnsurePostAsJsonAsync("/DeleteLootRequest?id=1");
+		await app.Client.EnsureDeleteAsync("/DeleteLootRequest?id=1");
 
 		var requests = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetLootRequests");
 		Assert.Empty(requests);
@@ -241,7 +241,7 @@ public class LootTest
 		await app.Client.GrantLootRequest();
 
 		// TODO: validate discord
-		await app.Client.EnsurePostAsJsonAsync("/FinishLootRequests?raidNight=true");
+		await app.Client.EnsurePostAsJsonAsync("/FinishLootRequests", new FinishLoots(true));
 
 		var activeRequests = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetLootRequests");
 		var archiveItem = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetArchivedLootRequests?itemId=1");
@@ -311,7 +311,7 @@ public class LootTest
 		await app.Client.CreateGuildAndLeader();
 		await app.Client.CreateGuildDump();
 
-		await app.Client.EnsurePostAsJsonAsync("/TransferGuildLeadership?name=Seru");
+		await app.Client.EnsurePostAsJsonAsync("/TransferGuildLeadership", new TransferGuildName("Seru"));
 
 		var leader = await app.Client.EnsureGetJsonAsync<bool>("/GetLeaderStatus");
 		Assert.False(leader);
@@ -341,7 +341,7 @@ public class LootTest
 		await app.Client.CreateGuildDump();
 		await app.Client.CreateZipRaidDumps();
 
-		await app.Client.EnsurePostAsJsonAsync("/ToggleHiddenPlayer?playerName=" + hiddenName);
+		await app.Client.EnsurePostAsJsonAsync("/ToggleHiddenPlayer", new ToggleHiddenAdminPlayer(hiddenName));
 
 		var players = await app.Client.EnsureGetJsonAsync<RaidAttendanceDto[]>("/GetPlayerAttendance");
 		Assert.Equal(2, players.Length);
@@ -359,7 +359,7 @@ public class LootTest
 		await app.Client.CreateGuildDump();
 		await app.Client.CreateZipRaidDumps();
 
-		await app.Client.EnsurePostAsJsonAsync("/TogglePlayerAdmin?playerName=" + hiddenName);
+		await app.Client.EnsurePostAsJsonAsync("/TogglePlayerAdmin", new ToggleHiddenAdminPlayer(hiddenName));
 
 		var players = await app.Client.EnsureGetJsonAsync<RaidAttendanceDto[]>("/GetPlayerAttendance");
 		Assert.Equal(2, players.Length);

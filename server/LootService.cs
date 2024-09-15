@@ -365,7 +365,7 @@ public class LootService(
 		// ensure not partial guild dump by checking a leader exists
 		if (!dumps.Any(x => StringComparer.OrdinalIgnoreCase.Equals(Rank.Leader, x.Rank)))
 		{
-			throw new Exception("Partial Guild Dump - Missing Leader Rank");
+			throw new ImportException("Missing Leader Rank?! Ensure you check the box '' before creating a guild dump.");
 		}
 
 		// ensure guild leader does not change (must use TransferGuildLeadership endpoint instead)
@@ -374,7 +374,7 @@ public class LootService(
 			StringComparer.OrdinalIgnoreCase.Equals(x.Name, existingLeader.Name)
 			&& StringComparer.OrdinalIgnoreCase.Equals(x.Rank, Rank.Leader)))
 		{
-			throw new Exception("Cannot transfer guild leadership during a dump");
+			throw new ImportException("Cannot transfer guild leadership during a dump");
 		}
 
 		// create the new ranks

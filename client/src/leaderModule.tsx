@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 import axios from 'axios';
-import { swallowAbortError, handlePostError } from './utils';
 
 export default function leaderModule() {
 
@@ -16,25 +15,24 @@ export default function leaderModule() {
 	const transferLeadership = () => {
 		setLoading(true);
 		axios
-			.post('/TransferGuildLeadership?name=' + transferName)
+			.post('/TransferGuildLeadership', { name: transferName })
 			.then(() => setTransferSuccess(true))
 			.finally(() => setLoading(false));
 	};
 	const updateDiscord = () => {
 		setLoading(true);
 		setDiscordSuccess(false);
-		const a = axios.post('/GuildDiscord?raidNight=true&webhook=' + encodeURIComponent(raidDiscord));
-		const b = axios.post('/GuildDiscord?raidNight=false&webhook=' + encodeURIComponent(rotDiscord));
+		const a = axios.post('/GuildDiscord', { raidNight: true, webhook: raidDiscord });
+		const b = axios.post('/GuildDiscord', { raidNight: false, webhook: rotDiscord });
 		Promise
 			.all([a, b])
-			.catch(handlePostError)
 			.then(() => setDiscordSuccess(true))
 			.finally(() => setLoading(false));
 	};
 	const uploadMessageOfTheDay = () => {
 		setLoading(true);
 		axios
-			.post('/UploadMessageOfTheDay?motd=' + encodeURIComponent(messageOfTheDay))
+			.post('/UploadMessageOfTheDay', { message: messageOfTheDay })
 			.finally(() => setLoading(false));
 	};
 	useEffect(() => {
@@ -42,15 +40,13 @@ export default function leaderModule() {
 		const { signal } = ac;
 		const a = axios
 			.get<string>('/GetMessageOfTheDay', { signal })
-			.then(x => setMessageOfTheDay(x.data))
-			.catch(swallowAbortError);
+			.then(x => setMessageOfTheDay(x.data));
 		const b = axios
 			.get<IDiscordWebhooks>('/GetDiscordWebhooks', { signal })
 			.then(x => {
 				setRaidDiscord(x.data.raid);
 				setRotDiscord(x.data.rot);
-			})
-			.catch(swallowAbortError);
+			});
 		Promise
 			.all([a, b])
 			.then(() => setLoading(false));

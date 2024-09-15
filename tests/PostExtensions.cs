@@ -91,6 +91,6 @@ public static class PostExtensions
 
 	public static async Task GrantLootRequest(this HttpClient client)
 	{
-		await client.EnsurePostAsJsonAsync($"/GrantLootRequest?id={1}&grant={true}");
+		await client.EnsurePostAsJsonAsync($"/GrantLootRequest", new GrantLootRequest(1, true));
 	}
 }

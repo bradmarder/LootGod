@@ -18,6 +18,26 @@ public static class HttpExtensions
 		await client.EnsurePostAsJsonAsync<string?>(requestUri, null);
 	}
 
+	public static async Task EnsureDeleteAsync(this HttpClient client, string requestUri)
+	{
+		HttpResponseMessage? response = null;
+		try
+		{
+			response = await client.DeleteAsync(requestUri);
+			response.EnsureSuccessStatusCode();
+		}
+		catch
+		{
+			Assert.NotNull(response);
+			Assert.Fail(response.ToString() + Environment.NewLine + await response.Content.ReadAsStringAsync());
+			throw;
+		}
+		finally
+		{
+			response?.Dispose();
+		}
+	}
+
 	public static async Task<string> EnsurePostAsJsonAsync<T>(this HttpClient client, string requestUri, T? value = default)
 	{
 		HttpResponseMessage? response = null;

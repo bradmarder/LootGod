@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Table, Button, FormCheck } from 'react-bootstrap';
 import axios from 'axios';
-import { swallowAbortError } from './utils';
 
 export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: number }) {
 
@@ -19,14 +18,14 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 	const toggleHidden = (name: string) => {
 		setLoading(true);
 		axios
-			.post('/ToggleHiddenPlayer?playerName=' + name)
+			.post('/ToggleHiddenPlayer', { name })
 			.then(() => setCache(x => x + 1));
 	};
 
 	const toggleAdmin = (name: string) => {
 		setLoading(true);
 		axios
-			.post('/TogglePlayerAdmin?playerName=' + name)
+			.post('/TogglePlayerAdmin', { name })
 			.then(() => setCache(x => x + 1));
 	};
 
@@ -36,7 +35,6 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 		axios
 			.get<IRaidAttendance[]>('/GetPlayerAttendance', { signal: ac.signal })
 			.then(x => setRa(x.data))
-			.catch(swallowAbortError)
 			.finally(() => setLoading(false));
 		return () => ac.abort();	
 	}, [props.cacheKey, cache]);

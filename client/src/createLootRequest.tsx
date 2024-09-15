@@ -3,7 +3,6 @@ import { Row, Col, Alert, Button, Form } from 'react-bootstrap';
 import axios from 'axios';
 import classes from './eqClasses';
 import { EQClass } from './eqClass';
-import { swallowAbortError } from './utils';
 
 export default function CreateLootRequest(props: IContext) {
 
@@ -74,7 +73,6 @@ export default function CreateLootRequest(props: IContext) {
 		axios
 			.get<string[]>('/GetLinkedAlts', { signal: ac.signal })
 			.then(x => setLinkedAlts(x.data))
-			.catch(swallowAbortError)
 			.finally(() => setLoading(false));
 		return () => ac.abort();
 	}, [props.linkedAltsCacheKey]);
