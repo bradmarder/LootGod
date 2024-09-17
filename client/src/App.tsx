@@ -16,6 +16,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import CreateGuild from './createGuild';
 import NewLoot from './newLoot';
 import { setAxiosInterceptors } from './utils';
+import 'sweetalert2/dist/sweetalert2.css'
 
 const params = new URLSearchParams(window.location.search);
 const key = params.get('key') ?? localStorage.getItem('key') ?? '';
@@ -26,6 +27,9 @@ if (hasKey) {
 }
 axios.defaults.baseURL = 'api/';
 setAxiosInterceptors();
+
+// aborted requests are caught and throw null rejections, catch and ignore them
+window.onunhandledrejection = e => e.reason == null && e.preventDefault();
 
 export default function App() {
 	const [raidNight, setRaidNight] = useState<boolean | null>(null);
@@ -172,7 +176,7 @@ export default function App() {
 					<Row>
 					<Col xs={12} xl={6}>
 					<Alert variant={'primary'}>
-						<p>Show me <strong>RAID NIGHT</strong> loot. What does this mean? If you are in an active raid and fresh and hot loot is dropping, this is the button you want to click.
+						<p>Show me <strong>RAID NIGHT</strong> loot. What does this mean? If you are in an active raid and loot is dropping, this is the button you want to click.
 						Click the wrong button or change your mind? No worries! This isn't permanent, simply refresh to page to select again.</p>
 						<p>(ADMINS!) Click this to create/update quantities and grant requests for <strong>RAID NIGHT</strong> loots only.</p>
 						<Button variant={'success'} onClick={() => transitionRaidNight(true)}>Show Raid Night Loot</Button>
@@ -183,7 +187,7 @@ export default function App() {
 					<Row>
 					<Col xs={12} xl={6}>
 					<Alert variant={'danger'}>
-						<p>Show me <strong>ROT</strong> loot. This allows you to request junky rot loot that nobody wanted during a previous raid. You can request this loot for your alts or main.
+						<p>Show me <strong>ROT</strong> loot. This allows you to request rot loot that nobody wanted during a previous raid. You can request this loot for your alts or main.
 						Click the wrong button or change your mind? No worries! This isn't permanent, simply refresh to page to select again.</p>
 						<p>(ADMINS!) Click this to create/update quantities or grant requests for <strong>ROT</strong> loots only.</p>
 						<Button variant={'info'} onClick={() => transitionRaidNight(false)}>Show ROT Loot</Button>

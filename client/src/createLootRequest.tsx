@@ -53,7 +53,6 @@ export default function CreateLootRequest(props: IContext) {
 		setLoading(true);
 		axios
 			.post('/CreateLootRequest', data)
-			.catch(() => alert('duplicate request for name and loot, maybe?'))
 			.finally(() => reset());
 	};
 	const setLootLogic = (itemId: number) => {

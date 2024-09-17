@@ -3,6 +3,18 @@ import { Alert, Button, Accordion } from 'react-bootstrap';
 import axios from 'axios';
 import classes from './eqClasses';
 
+const spellNameLevelMap: ReadonlyMap<string, number> = new Map([
+	['Glowing Emblem of the Forge', 125],
+	['Greater Emblem of the Forge', 124],
+	['Median Emblem of the Forge', 123],
+	['Lesser Emblem of the Forge', 122],
+	['Minor Emblem of the Forge', 121],
+	['Glowing Symbol of Shar Vahl', 120],
+	['Greater Symbol of Shar Vahl', 119],
+	['Median Symbol of Shar Vahl', 118],
+	['Lesser Symbol of Shar Vahl', 117],
+	['Minor Symbol of Shar Vahl', 116],
+]);
 export default function Loots(props: IContext) {
 
 	const [loading, setLoading] = useState(false);
@@ -53,15 +65,7 @@ export default function Loots(props: IContext) {
 			req.currentItem,
 		].join(' | ');
 
-	const getSpellLevel = (name: string) => {
-		const level = name.startsWith('Glowing') ? 125
-			: name.startsWith('Greater') ? 124
-			: name.startsWith('Median') ? 123
-			: name.startsWith('Lesser') ? 122
-			: name.startsWith('Minor') ? 121
-			: 255;
-		return level + ' | ';
-	};
+	const getSpellLevel = (name: string) => (spellNameLevelMap.get(name) || 255) + ' | ';
 
 	return (
 		<>

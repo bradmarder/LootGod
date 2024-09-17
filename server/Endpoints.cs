@@ -308,19 +308,36 @@ public class Endpoints(string _adminKey)
 				.ToArray();
 		});
 
-		app.MapPost("LinkAlt", (LootGodContext db, LootService lootService, string altName) =>
+		app.MapPost("LinkAlt", Results<Ok, BadRequest<string>> (LootGodContext db, LootService lootService, string altName) =>
 		{
 			var playerId = lootService.GetPlayerId();
 			var guildId = lootService.GetGuildId();
 			var validAltName = char.ToUpperInvariant(altName[0]) + altName.Substring(1).ToLowerInvariant();
+			var alt = db.Players
+				.Include(x => x.Main)
+				.SingleOrDefault(x => x.GuildId == guildId && x.Name == validAltName);
 
-			var rows = db.Players
-				.Where(x => x.GuildId == guildId)
-				.Where(x => x.Alt == true)
-				.Where(x => x.MainId == null)
-				.Where(x => x.Name == validAltName)
-				.ExecuteUpdate(x => x.SetProperty(y => y.MainId, playerId));
-			EnsureSingle(rows);
+			if (alt is null)
+			{
+				return TypedResults.BadRequest($"Unable to find guild member with name '{validAltName}'.");
+			}
+			if (alt.Alt is not true)
+			{
+				return TypedResults.BadRequest("Guild member is not defined as an alt in guild window.");
+			}
+			if (alt.MainId == playerId)
+			{
+				return TypedResults.BadRequest("Alt is already linked to you.");
+			}
+			if (alt.MainId is not null)
+			{
+				return TypedResults.BadRequest($"Alt is already linked to guild member '{alt.Main!.Name}'.");
+			}
+
+			alt.MainId = playerId;
+			db.SaveChanges();
+
+			return TypedResults.Ok();
 		});
 
 		app.MapGet("GetLootLock", (LootService x) => x.GetRaidLootLock());
