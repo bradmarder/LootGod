@@ -13,6 +13,8 @@ public class Endpoints(string _adminKey)
 		}
 	}
 
+	static string NormalizeName(string name) => char.ToUpperInvariant(name[0]) + name.Substring(1).ToLowerInvariant();
+
 	void EnsureOwner(string key)
 	{
 		if (key != _adminKey)
@@ -109,11 +111,12 @@ public class Endpoints(string _adminKey)
 			lootService.EnsureAdminStatus();
 
 			var guildId = lootService.GetGuildId();
+			var normalizedName = name is null ? "" : NormalizeName(name);
 
 			return db.LootRequests
 				.Where(x => x.Player.GuildId == EF.Constant(guildId))
 				.Where(x => x.Archived)
-				.Where(x => name == null || x.AltName!.StartsWith(name) || x.Player.Name.StartsWith(name))
+				.Where(x => x.AltName!.StartsWith(normalizedName) || x.Player.Name.StartsWith(normalizedName))
 				.Where(x => itemId == null || x.ItemId == itemId)
 				.OrderByDescending(x => x.CreatedDate)
 				.Select(x => new LootRequestDto
@@ -276,7 +279,7 @@ public class Endpoints(string _adminKey)
 
 		app.MapPost("CreateGuild", (LootGodContext db, CreateGuild dto) =>
 		{
-			var player = new Player(dto.LeaderName, dto.GuildName, dto.Server);
+			var player = new Player(NormalizeName(dto.LeaderName), dto.GuildName, dto.Server);
 			db.Players.Add(player);
 			db.SaveChanges();
 
@@ -312,26 +315,26 @@ public class Endpoints(string _adminKey)
 		{
 			var playerId = lootService.GetPlayerId();
 			var guildId = lootService.GetGuildId();
-			var validAltName = char.ToUpperInvariant(altName[0]) + altName.Substring(1).ToLowerInvariant();
+			var normalizedAltName = NormalizeName(altName);
 			var alt = db.Players
 				.Include(x => x.Main)
-				.SingleOrDefault(x => x.GuildId == guildId && x.Name == validAltName);
+				.SingleOrDefault(x => x.GuildId == guildId && x.Name == normalizedAltName);
 
 			if (alt is null)
 			{
-				return TypedResults.BadRequest($"Unable to find guild member with name '{validAltName}'.");
+				return TypedResults.BadRequest($"Unable to find guild member with name '{normalizedAltName}'.");
 			}
 			if (alt.Alt is not true)
 			{
-				return TypedResults.BadRequest("Guild member is not defined as an alt in guild window.");
+				return TypedResults.BadRequest($"'{normalizedAltName}' is not defined as an alt in guild window.");
 			}
 			if (alt.MainId == playerId)
 			{
-				return TypedResults.BadRequest("Alt is already linked to you.");
+				return TypedResults.BadRequest($"'{normalizedAltName}' is already linked to you.");
 			}
 			if (alt.MainId is not null)
 			{
-				return TypedResults.BadRequest($"Alt is already linked to guild member '{alt.Main!.Name}'.");
+				return TypedResults.BadRequest($"'{normalizedAltName}' is already linked to guild member '{alt.Main!.Name}'.");
 			}
 
 			alt.MainId = playerId;
@@ -446,11 +449,12 @@ public class Endpoints(string _adminKey)
 			var guildId = lootService.GetGuildId();
 			var leaderId = lootService.GetPlayerId();
 			var oldLeader = db.Players.Single(x => x.Id == leaderId);
-			var newLeader = db.Players.SingleOrDefault(x => x.GuildId == guildId && x.Name == dto.Name);
+			var normalizedName = NormalizeName(dto.Name);
+			var newLeader = db.Players.SingleOrDefault(x => x.GuildId == guildId && x.Name == normalizedName);
 
 			if (newLeader is null)
 			{
-				return TypedResults.BadRequest($"No guild member with name '{dto.Name}' found.");
+				return TypedResults.BadRequest($"No guild member with name '{normalizedName}' found.");
 			}
 			if (oldLeader.Id == newLeader.Id)
 			{

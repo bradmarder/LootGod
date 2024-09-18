@@ -24,6 +24,9 @@ export default function Upload(props: { refreshCache: () => void }) {
 				setLoading(false);
 			});
 	};
+	const passwordHref = '/api/GetPasswords?' + new URLSearchParams({
+		playerKey: localStorage.getItem('key')!,
+	}).toString();
 
 	return (
 		<Alert variant='primary'>
@@ -47,7 +50,7 @@ export default function Upload(props: { refreshCache: () => void }) {
 				  </ToastContainer>
 				}
 				<hr />
-				<a target="_blank" rel="noreferrer" href={'/api/GetPasswords?playerKey=' + localStorage.getItem('key')}>Download Master Password Links (Leader Only)</a>
+				<a target="_blank" rel="noreferrer" href={passwordHref}>Download Master Password Links (Leader Only)</a>
 			</Form>
 		</Alert>
 	);

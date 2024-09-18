@@ -12,10 +12,10 @@ import RaidAttendance from './raidAttendance';
 import Upload from './upload';
 import LinkAlt from './linkAlt';
 import LeaderModule from './leaderModule';
-import 'bootstrap/dist/css/bootstrap.min.css'
 import CreateGuild from './createGuild';
 import NewLoot from './newLoot';
 import { setAxiosInterceptors } from './utils';
+import 'bootstrap/dist/css/bootstrap.min.css'
 import 'sweetalert2/dist/sweetalert2.css'
 
 const params = new URLSearchParams(window.location.search);
@@ -83,16 +83,10 @@ export default function App() {
 			.get<string>('/GetMessageOfTheDay', { signal })
 			.then(x => setMessageOfTheDay(x.data));
 	};
-	const enableLootLock = () => {
+	const lockLoot = (enable: boolean) => {
 		setLoading(true);
 		axios
-			.post('/ToggleLootLock', { enable: true })
-			.finally(() => setLoading(false));
-	};
-	const disableLootLock = () => {
-		setLoading(true);
-		axios
-			.post('/ToggleLootLock', { enable: false })
+			.post('/ToggleLootLock', { enable })
 			.finally(() => setLoading(false));
 	};
 	const transitionRaidNight = (raid: boolean) => {
@@ -219,10 +213,10 @@ export default function App() {
 								<NewLoot></NewLoot>
 								<CreateLoot items={items} raidNight={raidNight}></CreateLoot>
 								{lootLock &&
-									<Button variant={'success'} onClick={disableLootLock} disabled={loading}>Unlock/Enable Loot Requests</Button>
+									<Button variant={'success'} onClick={() => lockLoot(false)} disabled={loading}>Unlock/Enable Loot Requests</Button>
 								}
 								{!lootLock &&
-									<Button variant={'danger'} onClick={enableLootLock} disabled={loading}>Lock/Disable Loot Requests</Button>
+									<Button variant={'danger'} onClick={() => lockLoot(true)} disabled={loading}>Lock/Disable Loot Requests</Button>
 								}
 								<br /><br />
 								{isLeader &&
