@@ -23,5 +23,9 @@
 		"noEmit": true,
 		"jsx": "react-jsx",
 		"lib": ["es2022", "dom", "dom.iterable"]
-	}
+	},
+
+	// required for types for explicit "sweetalert2/dist/sweetalert2.js"
+	"files": ["node_modules/sweetalert2/sweetalert2.d.ts"],
+	"include": ["**/*"]
 }

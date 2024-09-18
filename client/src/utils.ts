@@ -1,5 +1,7 @@
 import axios, { AxiosError } from "axios";
-import Swal from "sweetalert2";
+
+// use explicit ".js" version because it does not contain inline-svgs that conflict with CSP policy
+import Swal from "sweetalert2/dist/sweetalert2.js";
 
 export const setAxiosInterceptors = () => {
 	axios.interceptors.response.use(

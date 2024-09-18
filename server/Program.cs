@@ -94,9 +94,11 @@ app.UseStaticFiles(new StaticFileOptions
 	OnPrepareResponse = x =>
 	{
 		var headers = x.Context.Response.Headers;
-		headers.ContentSecurityPolicy = "default-src 'self'; child-src 'none';";
 		headers.XFrameOptions = "DENY";
 		headers["Referrer-Policy"] = "no-referrer";
+
+		// include "img-src 'self' data:;" for bootstrap svgs
+		headers.ContentSecurityPolicy = "default-src 'self'; child-src 'none'; img-src 'self' data:;";
 	}
 });
 app.UsePathBase("/api");
