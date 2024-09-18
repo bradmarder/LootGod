@@ -152,8 +152,9 @@ public class Endpoints(string _adminKey)
 		app.MapGet("FreeTrade", (LootGodContext db, LootService lootService) =>
 		{
 			var guildId = lootService.GetGuildId();
+			var guild = db.Guilds.Single(x => x.Id == EF.Constant(guildId));
 
-			return db.Guilds.Any(x => x.Id == EF.Constant(guildId) && x.Server == Server.FirionaVie);
+			return guild.Server is Server.FirionaVie;
 		});
 
 		app.MapGet("GetDiscordWebhooks", (LootGodContext db, LootService lootService) =>
@@ -163,7 +164,7 @@ public class Endpoints(string _adminKey)
 			var guildId = lootService.GetGuildId();
 			var guild =  db.Guilds.Single(x => x.Id == EF.Constant(guildId));
 
-			return new Hooks(guild.RaidDiscordWebhookUrl ?? "", guild.RotDiscordWebhookUrl ?? "");
+			return new DiscordWebhooks(guild.RaidDiscordWebhookUrl ?? "", guild.RotDiscordWebhookUrl ?? "");
 		});
 
 		app.MapGet("GetItems", (LootService lootService) =>

@@ -97,7 +97,7 @@ public class LootTest
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
 
-		var emptyHooks = await app.Client.EnsureGetJsonAsync<Hooks>("/GetDiscordWebhooks");
+		var emptyHooks = await app.Client.EnsureGetJsonAsync<DiscordWebhooks>("/GetDiscordWebhooks");
 		Assert.Empty(emptyHooks.Raid);
 		Assert.Empty(emptyHooks.Rot);
 
@@ -105,7 +105,7 @@ public class LootTest
 
 		await app.Client.EnsurePostAsJsonAsync($"/GuildDiscord", new UpdateGuildDiscord(raidNight, webhook));
 
-		var hooks = await app.Client.EnsureGetJsonAsync<Hooks>("/GetDiscordWebhooks");
+		var hooks = await app.Client.EnsureGetJsonAsync<DiscordWebhooks>("/GetDiscordWebhooks");
 		var value = raidNight ? hooks.Raid : hooks.Rot;
 		var other = raidNight ? hooks.Rot : hooks.Raid;
 		Assert.Equal(webhook, value);

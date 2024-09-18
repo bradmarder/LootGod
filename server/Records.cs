@@ -1,6 +1,6 @@
 ﻿public record CreateLoot(byte Quantity, int ItemId, bool RaidNight);
 public record CreateGuild(string LeaderName, string GuildName, Server Server);
-public record Hooks(string Raid, string Rot);
+public record DiscordWebhooks(string Raid, string Rot);
 public record LootOutput(string Loot, string Name, int Quantity);
 public record LootLock(bool Enable);
 public record FinishLoots(bool RaidNight);
