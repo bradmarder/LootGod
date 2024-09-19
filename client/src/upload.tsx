@@ -32,6 +32,8 @@ export default function Upload(props: { refreshCache: () => void }) {
 		<Alert variant='primary'>
 			<h4>Upload Guild/Raid Dumps (Admin only)</h4>
 			<hr />
+			<Alert variant='info'>NOTE! It is safe to upload duplicate raid dumps - the system automatically deduplicates</Alert>
+			<hr />
 			<Form>
 				<input type='file' key={key} accept='.txt,.zip' disabled={loading} onChange={e => uploadDump(e.target.files![0]!)} />
 				<hr />
@@ -40,9 +42,7 @@ export default function Upload(props: { refreshCache: () => void }) {
 						{uploaded.map(x =>
 							<Toast key={x} bg={'success'} onClose={() => setUploaded(uploaded.filter(u => u !== x))}>
 								<Toast.Header>
-									<img src="/logo192.png" className="rounded me-2" alt="" width={20} height={20} />
 									<strong className='me-auto'>Upload Success</strong>
-									<small className="text-muted">just now</small>
 								</Toast.Header>
 								<Toast.Body>{x}</Toast.Body>
 							</Toast>

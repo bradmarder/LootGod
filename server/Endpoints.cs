@@ -162,7 +162,7 @@ public class Endpoints(string _adminKey)
 			lootService.EnsureGuildLeader();
 
 			var guildId = lootService.GetGuildId();
-			var guild =  db.Guilds.Single(x => x.Id == EF.Constant(guildId));
+			var guild = db.Guilds.Single(x => x.Id == EF.Constant(guildId));
 
 			return new DiscordWebhooks(guild.RaidDiscordWebhookUrl ?? "", guild.RotDiscordWebhookUrl ?? "");
 		});
@@ -653,7 +653,7 @@ public class Endpoints(string _adminKey)
 				.Where(x => x.Alt != true)
 				.Where(x => x.Active != false)
 				.OrderBy(x => x.Name)
-				.Select(x => x.Name + "\t" + "https://raidloot.fly.dev?key=" + x.Key) // TODO:
+				.Select(x => x.Name.PadRight(15) + "https://raidloot.fly.dev?key=" + x.Key) // TODO:
 				.ToArray();
 			var data = string.Join(Environment.NewLine, namePasswordsMap);
 			var bytes = Encoding.UTF8.GetBytes(data);

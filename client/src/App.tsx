@@ -14,6 +14,7 @@ import LinkAlt from './linkAlt';
 import LeaderModule from './leaderModule';
 import CreateGuild from './createGuild';
 import NewLoot from './newLoot';
+import ThemeSwitch from './themeSwitch';
 import { setAxiosInterceptors } from './utils';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'sweetalert2/dist/sweetalert2.css'
@@ -136,6 +137,7 @@ export default function App() {
 
 	return (
 		<Container fluid>
+			<ThemeSwitch></ThemeSwitch>
 			{error &&
 				<Row>
 				<Col xs={12} xl={6}>

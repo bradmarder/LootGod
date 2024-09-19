@@ -128,7 +128,7 @@ public class LootService(
 			.Select(x => new LootOutput(x.Name, "ROT", x.Quantity))
 			.ToArray();
 
-		LootOutput[] lootAndRot = [..grantedLoot, ..rotLoot];
+		LootOutput[] lootAndRot = [.. grantedLoot, .. rotLoot];
 		if (!lootAndRot.Any()) { return ""; }
 		var maxLootLength = lootAndRot.Max(x => x.Loot.Length);
 		var maxNameLength = lootAndRot.Max(x => x.Name.Length);

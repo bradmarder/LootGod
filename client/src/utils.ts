@@ -15,7 +15,7 @@ export const setAxiosInterceptors = () => {
 
 			console.error(error);
 
-			if (error instanceof AxiosError && error.config?.method === 'post') {
+			if (error instanceof AxiosError && ['post', 'delete'].includes(error.config?.method ?? '')) {
 				await Swal.fire({
 					icon: 'error',
 					title: error.code,
