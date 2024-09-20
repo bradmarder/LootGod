@@ -17,9 +17,10 @@ Console.CancelKeyPress += (o, e) =>
 	cts.Cancel();
 };
 
+var ephemeral = Path.Combine(Path.GetTempPath(), "ephemeral.db");
 var connString = useSqliteMemory
 	? new SqliteConnectionStringBuilder { Mode = SqliteOpenMode.Memory }
-	: new SqliteConnectionStringBuilder { DataSource = source ?? Path.GetTempFileName() };
+	: new SqliteConnectionStringBuilder { DataSource = source ?? ephemeral };
 
 var healthCheck = builder.Services.AddHealthChecks();
 if (useSqliteMemory)

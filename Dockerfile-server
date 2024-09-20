@@ -4,4 +4,4 @@ COPY /server/LootGod.csproj ./
 RUN dotnet restore
 COPY /server/*.cs .
 EXPOSE 8080
-CMD dotnet watch --non-interactive
+CMD dotnet watch --non-interactive --no-hot-reload
