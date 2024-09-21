@@ -3,18 +3,6 @@ import { Alert, Button, Accordion } from 'react-bootstrap';
 import axios from 'axios';
 import classes from './eqClasses';
 
-const spellNameLevelMap: ReadonlyMap<string, number> = new Map([
-	['Glowing Emblem of the Forge', 125],
-	['Greater Emblem of the Forge', 124],
-	['Median Emblem of the Forge', 123],
-	['Lesser Emblem of the Forge', 122],
-	['Minor Emblem of the Forge', 121],
-	['Glowing Symbol of Shar Vahl', 120],
-	['Greater Symbol of Shar Vahl', 119],
-	['Median Symbol of Shar Vahl', 118],
-	['Lesser Symbol of Shar Vahl', 117],
-	['Minor Symbol of Shar Vahl', 116],
-]);
 export default function Loots(props: IContext) {
 
 	const [loading, setLoading] = useState(false);
@@ -65,8 +53,6 @@ export default function Loots(props: IContext) {
 			req.currentItem,
 		].join(' | ');
 
-	const getSpellLevel = (name: string) => (spellNameLevelMap.get(name) || 255) + ' | ';
-
 	return (
 		<>
 			<h3>Available {(props.spell ? 'Spells/Nuggets' : 'Loots')}</h3>
@@ -83,7 +69,6 @@ export default function Loots(props: IContext) {
 								{!props.spell &&
 									<a href={'https://www.raidloot.com/items?view=List&name=' + loot.name} target='_blank' rel='noreferrer'>{loot.name}</a>
 								}
-								{props.spell && getSpellLevel(loot.name)}
 								{props.spell && loot.name}
 								&nbsp;| {props.raidNight ? loot.raidQuantity : loot.rotQuantity} available | {lootRequests.filter(x => x.itemId === loot.itemId && x.granted).length} granted | {lootRequests.filter(x => x.itemId === loot.itemId).length} request(s)
 							</Accordion.Header>

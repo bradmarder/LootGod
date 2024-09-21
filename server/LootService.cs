@@ -171,7 +171,6 @@ public class LootService(
 		return _db.Loots
 			.Where(x => x.GuildId == EF.Constant(guildId))
 			.Where(x => EF.Constant(CurrentExpansions).Contains(x.Item.Expansion))
-			.OrderBy(x => x.Item.Name)
 			.Select(x => new LootDto
 			{
 				ItemId = x.ItemId,
@@ -179,6 +178,8 @@ public class LootService(
 				RaidQuantity = x.RaidQuantity,
 				RotQuantity = x.RotQuantity,
 			})
+			.ToArray()
+			.OrderBy(x => x.Name)
 			.ToArray();
 	}
 

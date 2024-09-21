@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 import axios from 'axios';
+import Swal from 'sweetalert2/dist/sweetalert2.js';
 
 export default function leaderModule() {
 
@@ -8,31 +9,29 @@ export default function leaderModule() {
 	const [raidDiscord, setRaidDiscord] = useState('');
 	const [rotDiscord, setRotDiscord] = useState('');
 	const [transferName, setTransferName] = useState('');
-	const [discordSuccess, setDiscordSuccess] = useState(false);
-	const [transferSuccess, setTransferSuccess] = useState(false);
 	const [messageOfTheDay, setMessageOfTheDay] = useState('');
 
 	const transferLeadership = () => {
 		setLoading(true);
 		axios
 			.post('/TransferGuildLeadership', { name: transferName })
-			.then(() => setTransferSuccess(true))
+			.then(() => Swal.fire('Transferred', `Successfully transfered guild leadership to "${transferName}"`, 'success'))
 			.finally(() => setLoading(false));
 	};
 	const updateDiscord = () => {
 		setLoading(true);
-		setDiscordSuccess(false);
 		const a = axios.post('/GuildDiscord', { raidNight: true, webhook: raidDiscord });
 		const b = axios.post('/GuildDiscord', { raidNight: false, webhook: rotDiscord });
 		Promise
 			.all([a, b])
-			.then(() => setDiscordSuccess(true))
+			.then(() => Swal.fire('Discord Webhooks Updated', 'Successfully updated Discord webhooks', 'success'))
 			.finally(() => setLoading(false));
 	};
 	const uploadMessageOfTheDay = () => {
 		setLoading(true);
 		axios
 			.post('/UploadMessageOfTheDay', { message: messageOfTheDay })
+			.then(() => Swal.fire('MOTD Updated', 'Successfully updated the MOTD', 'success'))
 			.finally(() => setLoading(false));
 	};
 	useEffect(() => {
@@ -58,7 +57,7 @@ export default function leaderModule() {
 			<Form onSubmit={e => e.preventDefault()}>
 				<Form.Group>
 					<Form.Label>Guild Message of the Day</Form.Label>
-					<Form.Control as="textarea" rows={3} placeholder='Enter guild MOTD' value={messageOfTheDay} onChange={e => setMessageOfTheDay(e.target.value)} />
+					<Form.Control as='textarea' rows={3} placeholder='Enter guild MOTD' value={messageOfTheDay} onChange={e => setMessageOfTheDay(e.target.value)} />
 				</Form.Group>
 				<br />
 				<Button variant='primary' disabled={loading} onClick={uploadMessageOfTheDay}>Update</Button>
@@ -67,30 +66,24 @@ export default function leaderModule() {
 			<Form onSubmit={e => e.preventDefault()}>
 				<Form.Group>
 					<Form.Label>Transfer Guild Leadership</Form.Label>
-					<Form.Control type="text" placeholder='Enter new guild leader name' value={transferName} onChange={e => setTransferName(e.target.value)} />
+					<Form.Control type='text' placeholder='Enter new guild leader name' value={transferName} onChange={e => setTransferName(e.target.value)} />
 				</Form.Group>
 				<br />
 				<Button variant='warning' disabled={loading || transferName.length < 4} onClick={transferLeadership}>Transfer</Button>
-				{transferSuccess &&
-					<Alert variant='success'>Successfully transferred leadership</Alert>
-				}
 			</Form>
 			<hr />
 			<Form onSubmit={e => e.preventDefault()}>
 				<Form.Group>
 					<Form.Label>Raid Discord Webhook URL</Form.Label>
-					<Form.Control type="text" placeholder='Enter Raid Discord webhook URL' value={raidDiscord} onChange={e => setRaidDiscord(e.target.value)} />
+					<Form.Control type='text' placeholder='Enter Raid Discord webhook URL' value={raidDiscord} onChange={e => setRaidDiscord(e.target.value)} />
 				</Form.Group>
 				<hr />
 				<Form.Group>
 					<Form.Label>Rot Discord Webhook URL</Form.Label>
-					<Form.Control type="text" placeholder='Enter Rot Discord webhook URL' value={rotDiscord} onChange={e => setRotDiscord(e.target.value)} />
+					<Form.Control type='text' placeholder='Enter Rot Discord webhook URL' value={rotDiscord} onChange={e => setRotDiscord(e.target.value)} />
 				</Form.Group>
 				<br />
 				<Button variant='warning' disabled={loading} onClick={updateDiscord}>Update</Button>
-				{discordSuccess &&
-					<Alert variant='success'>Successfully updated Discord webhook URL</Alert>
-				}
 			</Form>
 		</Alert>
 	);

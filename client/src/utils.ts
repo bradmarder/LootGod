@@ -27,3 +27,17 @@ export const setAxiosInterceptors = () => {
 		}
 	);
 };
+
+export const toast = (title: string) => Swal.fire({
+	title: title,
+	icon: 'success',
+	toast: true,
+	position: 'top-end',
+	showConfirmButton: false,
+	timer: 3000,
+	timerProgressBar: true,
+	didOpen: (toast) => {
+		toast.onmouseenter = Swal.stopTimer;
+		toast.onmouseleave = Swal.resumeTimer;
+	},
+});

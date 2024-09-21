@@ -2,6 +2,19 @@
 
 public record LootDto
 {
+	private static readonly FrozenDictionary<string, int> _spellNameLevelMap = new Dictionary<string, int>
+	{
+		["Glowing Emblem of the Forge"] = 125,
+		["Greater Emblem of the Forge"] = 124,
+		["Median Emblem of the Forge"] = 123,
+		["Lesser Emblem of the Forge"] = 122,
+		["Minor Emblem of the Forge"] = 121,
+		["Glowing Symbol of Shar Vahl"] = 120,
+		["Greater Symbol of Shar Vahl"] = 119,
+		["Median Symbol of Shar Vahl"] = 118,
+		["Lesser Symbol of Shar Vahl"] = 117,
+		["Minor Symbol of Shar Vahl"] = 116,
+	}.ToFrozenDictionary();
 	private static readonly FrozenSet<string> _spellPrefixes = FrozenSet.ToFrozenSet(
 	[
 		"Minor",
@@ -11,7 +24,6 @@ public record LootDto
 		"Glowing",
 		"Captured",
 	]);
-
 	private static readonly FrozenSet<string> _spellSuffixes = FrozenSet.ToFrozenSet(
 	[
 		"Rune",
@@ -20,7 +32,6 @@ public record LootDto
 		"Shar Vahl",
 		"Emblem of the Forge",
 	]);
-
 	private static readonly FrozenSet<string> _nuggets = FrozenSet.ToFrozenSet(
 	[
 		"Diamondized Restless Ore",
@@ -30,10 +41,18 @@ public record LootDto
 	public required int ItemId { get; init; }
 	public required byte RaidQuantity { get; init; }
 	public required byte RotQuantity { get; init; }
-	public required string Name { get; init; }
+
+	private readonly string _name = "";
+	public required string Name
+	{
+		get => _spellNameLevelMap.TryGetValue(_name, out var level)
+			? level + " | " + _name
+			: _name;
+		init => _name = value;
+	}
 
 	public virtual bool IsSpell =>
-		_nuggets.Contains(Name)
-		|| (_spellPrefixes.Any(x => Name.StartsWith(x, StringComparison.OrdinalIgnoreCase))
-		&& _spellSuffixes.Any(x => Name.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
+		_nuggets.Contains(_name)
+		|| (_spellPrefixes.Any(x => _name.StartsWith(x, StringComparison.OrdinalIgnoreCase))
+		&& _spellSuffixes.Any(x => _name.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
 }
