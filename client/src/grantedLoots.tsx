@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Alert, Button, Table } from 'react-bootstrap';
 import axios from 'axios';
 import classes from './eqClasses';
+import Swal from "sweetalert2/dist/sweetalert2.js";
 
 export default function GrantedLoots(props: IContext) {
 
@@ -13,14 +14,23 @@ export default function GrantedLoots(props: IContext) {
 			.post('/GrantLootRequest', { id, grant: false })
 			.then(() => setLoading(false));
 	};
-	const finishLootGranting =  () => {
+	const grantedLootRequests = props.requests.filter(x => x.granted);
+	const finishLootGranting = () => {
 		setLoading(true);
-		axios
-			.post('/FinishLootRequests', { raidNight: props.raidNight })
-			.then(() => setLoading(false));
+		return Swal.fire({
+			title: 'Confirmation',
+			text: `Are you ready to finish granting ${grantedLootRequests.length} loot requests?`,
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonText: "Yes, Finish"
+		})
+		.then(x => x.isConfirmed
+			? axios.post('/FinishLootRequests', { raidNight: props.raidNight })
+			: Promise.reject())
+		.then(() => Swal.fire('Finished!', 'Successfully finished granting loot requests.', 'success'))
+		.finally(() => setLoading(false));
 	};
 
-	const grantedLootRequests = props.requests.filter(x => x.granted);
 	const lootOutputHref = '/api/GetGrantedLootOutput?' + new URLSearchParams({
 		playerKey: localStorage.getItem('key')!,
 		raidNight: props.raidNight + '',
@@ -34,7 +44,7 @@ export default function GrantedLoots(props: IContext) {
 			}
 			{grantedLootRequests.length > 0 &&
 				<>
-				<a target="_blank" rel="noreferrer" href={lootOutputHref}>Download Granted Loot Output Text File (for discord)</a>
+				<a target="_blank" rel="noreferrer" href={lootOutputHref}>Download Granted Loot Output Text File (for Discord)</a>
 				<Alert variant={'warning'}>
 					<strong>WARNING!</strong> This archives all active loot requests and resets quantities. If you have a Discord webhook set, this will also
 					post the granted loot output to that channel.
