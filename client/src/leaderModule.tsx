@@ -13,10 +13,18 @@ export default function leaderModule() {
 
 	const transferLeadership = () => {
 		setLoading(true);
-		axios
-			.post('/TransferGuildLeadership', { name: transferName })
-			.then(() => Swal.fire('Transferred', `Successfully transfered guild leadership to "${transferName}"`, 'success'))
-			.finally(() => setLoading(false));
+		return Swal.fire({
+			title: 'Confirmation',
+			text: `Are you sure you wish to transfer guild leadership to "${transferName}"? You will still retain admin privileges.`,
+			icon: 'warning',
+			showCancelButton: true,
+			confirmButtonText: 'Yes, Transfer',
+		})
+		.then(x => x.isConfirmed
+			? axios.post('/TransferGuildLeadership', { name: transferName })
+			: Promise.reject())
+		.then(() => Swal.fire('Transferred', `Successfully transfered guild leadership to "${transferName}"`, 'success'))
+		.finally(() => setLoading(false));
 	};
 	const updateDiscord = () => {
 		setLoading(true);
