@@ -20,9 +20,9 @@ export default function GrantedLoots(props: IContext) {
 		return Swal.fire({
 			title: 'Confirmation',
 			text: `Are you ready to finish granting ${grantedLootRequests.length} loot requests?`,
-			icon: "warning",
+			icon: 'warning',
 			showCancelButton: true,
-			confirmButtonText: "Yes, Finish"
+			confirmButtonText: 'Yes, Finish',
 		})
 		.then(x => x.isConfirmed
 			? axios.post('/FinishLootRequests', { raidNight: props.raidNight })

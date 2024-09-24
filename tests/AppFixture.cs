@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 public class AppFixture : IAsyncDisposable
 {
@@ -39,6 +40,7 @@ public class LootGodApplicationFactory(DateTimeOffset now) : WebApplicationFacto
 		builder.ConfigureServices(x =>
 		{
 			x.AddSingleton<TimeProvider>(new FixedTimeProvider(now));
+			x.AddLogging(y => y.ClearProviders());
 		});
 	}
 }

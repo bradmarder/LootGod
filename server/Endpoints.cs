@@ -189,7 +189,7 @@ public class Endpoints(string _adminKey)
 
 			var rows = db.Players
 				.Where(x => x.GuildId == guildId)
-				.Where(x => x.Name == dto.Name)
+				.Where(x => x.Id == dto.Id)
 				.ExecuteUpdate(x => x.SetProperty(y => y.Hidden, y => !y.Hidden));
 			EnsureSingle(rows);
 		});
@@ -202,7 +202,7 @@ public class Endpoints(string _adminKey)
 
 			var rows = db.Players
 				.Where(x => x.GuildId == guildId)
-				.Where(x => x.Name == dto.Name)
+				.Where(x => x.Id == dto.Id)
 				.ExecuteUpdate(x => x.SetProperty(y => y.Admin, y => !y.Admin));
 			EnsureSingle(rows);
 		});
@@ -555,16 +555,22 @@ public class Endpoints(string _adminKey)
 						.Select(y => DateTimeOffset.FromUnixTimeSeconds(y.Timestamp))
 						.Select(y => DateOnly.FromDateTime(y.DateTime))
 						.ToHashSet())
-				.Select(x => new RaidAttendanceDto
+				.Select(kvp => new RaidAttendanceDto
 				{
-					Name = x.Key.Name,
-					Hidden = x.Key.Hidden,
-					Admin = x.Key.Admin,
-					Rank = x.Key.RankId is null ? "unknown" : rankIdToNameMap[x.Key.RankId.Value],
+					Id = kvp.Key.Id,
+					Name = kvp.Key.Name,
+					Hidden = kvp.Key.Hidden,
+					Admin = kvp.Key.Admin,
+					Rank = kvp.Key.RankId is null ? "unknown" : rankIdToNameMap[kvp.Key.RankId.Value],
+					Class = kvp.Key.Class,
+					LastOnDate = kvp.Key.LastOnDate,
+					Level = kvp.Key.Level,
+					Notes = kvp.Key.Notes,
+					Alts = playerMap.Values.Where(x => x.MainId == kvp.Key.Id).Select(x => x.Name).ToArray(),
 
-					_30 = GetPercent(x.Value, thirtyDaysAgo, thirtyDayMaxCount),
-					_90 = GetPercent(x.Value, ninetyDaysAgo, ninetyDayMaxCount),
-					_180 = GetPercent(x.Value, oneHundredEightyDaysAgo, oneHundredEightDayMaxCount),
+					_30 = GetPercent(kvp.Value, thirtyDaysAgo, thirtyDayMaxCount),
+					_90 = GetPercent(kvp.Value, ninetyDaysAgo, ninetyDayMaxCount),
+					_180 = GetPercent(kvp.Value, oneHundredEightyDaysAgo, oneHundredEightDayMaxCount),
 				})
 				.OrderBy(x => x.Name)
 				.ToArray();
@@ -615,16 +621,22 @@ public class Endpoints(string _adminKey)
 				.ToDictionary(
 					x => playerMap[x.Key],
 					x => x.Select(y => y.Timestamp).ToHashSet())
-				.Select(x => new RaidAttendanceDto
+				.Select(kvp => new RaidAttendanceDto
 				{
-					Name = x.Key.Name,
-					Hidden = x.Key.Hidden,
-					Admin = x.Key.Admin,
-					Rank = x.Key.RankId is null ? "unknown" : rankIdToNameMap[x.Key.RankId.Value],
+					Id = kvp.Key.Id,
+					Name = kvp.Key.Name,
+					Hidden = kvp.Key.Hidden,
+					Admin = kvp.Key.Admin,
+					Rank = kvp.Key.RankId is null ? "unknown" : rankIdToNameMap[kvp.Key.RankId.Value],
+					Class = kvp.Key.Class,
+					LastOnDate = kvp.Key.LastOnDate,
+					Level = kvp.Key.Level,
+					Notes = kvp.Key.Notes,
+					Alts = playerMap.Values.Where(x => x.MainId == kvp.Key.Id).Select(x => x.Name).ToArray(),
 
-					_30 = GetPercent(x.Value, thirtyDaysAgo, thirtyDayMaxCount),
-					_90 = GetPercent(x.Value, ninetyDaysAgo, ninetyDayMaxCount),
-					_180 = GetPercent(x.Value, oneHundredEightyDaysAgo, oneHundredEightDayMaxCount),
+					_30 = GetPercent(kvp.Value, thirtyDaysAgo, thirtyDayMaxCount),
+					_90 = GetPercent(kvp.Value, ninetyDaysAgo, ninetyDayMaxCount),
+					_180 = GetPercent(kvp.Value, oneHundredEightyDaysAgo, oneHundredEightDayMaxCount),
 				})
 				.OrderBy(x => x.Name)
 				.ToArray();

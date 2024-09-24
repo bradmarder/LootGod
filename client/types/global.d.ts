@@ -36,6 +36,7 @@ declare interface IContext {
 	readonly linkedAltsCacheKey?: number;
 }
 declare interface IRaidAttendance {
+	readonly id: number;
 	readonly name: string;
 	readonly rank: string;
 	readonly hidden: boolean;
@@ -43,6 +44,11 @@ declare interface IRaidAttendance {
 	readonly _30: number;
 	readonly _90: number;
 	readonly _180: number;
+	readonly lastOnDate: string;
+	readonly notes: string;
+	readonly class: EQClass;
+	readonly level: number;
+	readonly alts: readonly string[];
 }
 declare interface IDiscordWebhooks {
 	readonly raid: string;

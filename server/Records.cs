@@ -8,7 +8,8 @@ public record GrantLootRequest(int Id, bool Grant);
 public record UpdateGuildDiscord(bool RaidNight, string Webhook);
 public record MessageOfTheDay(string Message);
 public record TransferGuildName(string Name);
-public record ToggleHiddenAdminPlayer(string Name);
+public record ToggleHiddenAdminPlayer(int Id);
+public record ChangePlayerName(int Id, string Name);
 
 /// <summary>
 /// null GuildId implies the payload is sent to every client (items)

@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Table, Button, FormCheck } from 'react-bootstrap';
+import { useState, useEffect, useRef } from 'react';
+import { Table, Button, FormCheck, OverlayTrigger } from 'react-bootstrap';
 import axios from 'axios';
+import PlayerData from './playerData';
 
 export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: number }) {
 
+	const ref = useRef(null);
 	const [loading, setLoading] = useState(true);
 	const [filter75, setFilter75] = useState(false);
 	const [ra, setRa] = useState<IRaidAttendance[]>([]);
@@ -14,18 +16,16 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 			: ra >= 50 ? 'text-warning'
 			: 'text-danger';
 	};
-
-	const toggleHidden = (name: string) => {
+	const toggleHidden = (id: number) => {
 		setLoading(true);
 		axios
-			.post('/ToggleHiddenPlayer', { name })
+			.post('/ToggleHiddenPlayer', { id })
 			.then(() => setCache(x => x + 1));
 	};
-
-	const toggleAdmin = (name: string) => {
+	const toggleAdmin = (id: number) => {
 		setLoading(true);
 		axios
-			.post('/TogglePlayerAdmin', { name })
+			.post('/TogglePlayerAdmin', { id })
 			.then(() => setCache(x => x + 1));
 	};
 
@@ -42,6 +42,7 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 	return (
 		<>
 			<h3>Raid Attendance</h3>
+			<div className='position-fixed top-50 start-0 translate-middle-y' ref={ref}></div>
 			<FormCheck>
 				<FormCheck.Input checked={true} disabled={true} />
 				<FormCheck.Label>Show only players with *ANY* RA for past 180 days</FormCheck.Label>
@@ -68,33 +69,35 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 				</thead>
 				<tbody>
 					{ra.filter(x => props.isAdmin || !x.hidden).filter(x => !filter75 || x._30 >= 75).map(item =>
-						<tr key={item.name}>
-							<td>{item.name}</td>
-							<td>{item.rank}</td>
-							<td className={getTextColor(item._30)}>{item._30}%</td>
-							<td className={getTextColor(item._90)}>{item._90}%</td>
-							<td className={getTextColor(item._180)}>{item._180}%</td>
-							{props.isAdmin &&
-								<td>
-									{item.hidden &&
-										<Button variant='warning' disabled={loading} onClick={() => toggleHidden(item.name)}>Show</Button>
-									}
-									{item.hidden === false &&
-										<Button variant='success' disabled={loading} onClick={() => toggleHidden(item.name)}>Hide</Button>
-									}
-								</td>
-							}
-							{props.isAdmin &&
-								<td>
-									{!item.admin &&
-										<Button variant='success' disabled={loading} onClick={() => toggleAdmin(item.name)}>Enable</Button>
-									}
-									{item.admin &&
-										<Button variant='danger' disabled={loading} onClick={() => toggleAdmin(item.name)}>Disable</Button>
-									}
-								</td>
-							}
-						</tr>
+						<OverlayTrigger key={item.name} container={ref} overlay={() => PlayerData(item)}>
+							<tr key={item.name}>
+								<td>{item.name}</td>
+								<td>{item.rank}</td>
+								<td className={getTextColor(item._30)}>{item._30}%</td>
+								<td className={getTextColor(item._90)}>{item._90}%</td>
+								<td className={getTextColor(item._180)}>{item._180}%</td>
+								{props.isAdmin &&
+									<td>
+										{item.hidden &&
+											<Button variant='warning' disabled={loading} onClick={() => toggleHidden(item.id)}>Show</Button>
+										}
+										{item.hidden === false &&
+											<Button variant='success' disabled={loading} onClick={() => toggleHidden(item.id)}>Hide</Button>
+										}
+									</td>
+								}
+								{props.isAdmin &&
+									<td>
+										{!item.admin &&
+											<Button variant='success' disabled={loading} onClick={() => toggleAdmin(item.id)}>Enable</Button>
+										}
+										{item.admin &&
+											<Button variant='danger' disabled={loading} onClick={() => toggleAdmin(item.id)}>Disable</Button>
+										}
+									</td>
+								}
+							</tr>
+						</OverlayTrigger>
 					)}
 				</tbody>
 			</Table>

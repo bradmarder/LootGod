@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Http;
-
 public class LootTest
 {
 	[Fact]
@@ -264,7 +262,7 @@ public class LootTest
 		var passwords = txt.Split(Environment.NewLine);
 		Assert.Single(passwords);
 		var password = passwords[0];
-		Assert.StartsWith(TestData.GuildLeader + "\t", password);
+		Assert.StartsWith(TestData.GuildLeader, password);
 		var success = Guid.TryParse(password[^36..], out var val);
 		Assert.True(success);
 		Assert.NotEqual(Guid.Empty, val);
@@ -333,39 +331,39 @@ public class LootTest
 	}
 
 	[Theory]
-	[InlineData(TestData.Commander)]
-	public async Task ToggleHiddenPlayer(string hiddenName)
+	[InlineData(TestData.CommanderId)]
+	public async Task ToggleHiddenPlayer(int playerId)
 	{
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
 		await app.Client.CreateGuildDump();
 		await app.Client.CreateZipRaidDumps();
 
-		await app.Client.EnsurePostAsJsonAsync("/ToggleHiddenPlayer", new ToggleHiddenAdminPlayer(hiddenName));
+		await app.Client.EnsurePostAsJsonAsync("/ToggleHiddenPlayer", new ToggleHiddenAdminPlayer(playerId));
 
 		var players = await app.Client.EnsureGetJsonAsync<RaidAttendanceDto[]>("/GetPlayerAttendance");
 		Assert.Equal(2, players.Length);
-		var tormax = players.SingleOrDefault(x => x.Name == hiddenName);
+		var tormax = players.SingleOrDefault(x => x.Id == playerId);
 		Assert.NotNull(tormax);
 		Assert.True(tormax.Hidden);
 	}
 
 	[Theory]
-	[InlineData(TestData.Commander)]
-	public async Task TogglePlayerAdmin(string hiddenName)
+	[InlineData(TestData.CommanderId)]
+	public async Task TogglePlayerAdmin(int playerId)
 	{
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
 		await app.Client.CreateGuildDump();
 		await app.Client.CreateZipRaidDumps();
 
-		await app.Client.EnsurePostAsJsonAsync("/TogglePlayerAdmin", new ToggleHiddenAdminPlayer(hiddenName));
+		await app.Client.EnsurePostAsJsonAsync("/TogglePlayerAdmin", new ToggleHiddenAdminPlayer(playerId));
 
 		var players = await app.Client.EnsureGetJsonAsync<RaidAttendanceDto[]>("/GetPlayerAttendance");
 		Assert.Equal(2, players.Length);
-		var tormax = players.Where(x => x.Name == hiddenName).ToArray();
-		Assert.Single(tormax);
-		Assert.True(tormax[0].Admin);
+		var tormax = players.SingleOrDefault(x => x.Id == playerId);
+		Assert.NotNull(tormax);
+		Assert.True(tormax.Admin);
 	}
 
 	[Theory]
@@ -394,10 +392,16 @@ public class LootTest
 
 		Assert.Single(dtos);
 		var ra = dtos[0];
+		Assert.Equal(1, ra.Id);
 		Assert.Equal(TestData.GuildLeader, ra.Name);
 		Assert.True(ra.Admin);
 		Assert.False(ra.Hidden);
 		Assert.Equal(Rank.Leader, ra.Rank);
+		Assert.Null(ra.LastOnDate);
+		Assert.Equal(EQClass.Bard, ra.Class);
+		Assert.Null(ra.Notes);
+		Assert.Empty(ra.Alts);
+		Assert.Null(ra.Level);
 		Assert.Equal(expected30, ra._30);
 		Assert.Equal(expected90, ra._90);
 		Assert.Equal(expected180, ra._180);
