@@ -58,7 +58,7 @@ export default function Loots(props: IContext) {
 			<h3>Available {(props.spell ? 'Spells/Nuggets' : 'Loots')}</h3>
 			{loots.length === 0 &&
 				<Alert variant='warning'>
-					Looks like there aren't any {(props.spell ? 'spells/nuggets' : 'loots')} available right now
+					There are zero {(props.spell ? 'spells/nuggets' : 'loots')} available right now
 				</Alert>
 			}
 			{loots.length > 0 &&

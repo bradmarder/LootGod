@@ -207,6 +207,21 @@ public class Endpoints(string _adminKey)
 			EnsureSingle(rows);
 		});
 
+		// todo: test
+		app.MapPost("ChangePlayerName", (ChangePlayerName dto, LootGodContext db, LootService lootService) =>
+		{
+			lootService.EnsureAdminStatus();
+
+			var guildId = lootService.GetGuildId();
+			var normalizedName = NormalizeName(dto.Name);
+
+			// if the "new" player hasn't yet been imported into the system, the logic is simple
+			var rows = db.Players
+				.Where(x => x.Id == dto.Id && x.GuildId == guildId)
+				.ExecuteUpdate(x => x.SetProperty(y => y.Name, y => normalizedName));
+			EnsureSingle(rows);
+		});
+
 		app.MapPost("CreateLootRequest", async (CreateLootRequest dto, LootGodContext db, LootService lootService) =>
 		{
 			lootService.EnsureRaidLootUnlocked();
@@ -498,92 +513,22 @@ public class Endpoints(string _adminKey)
 		{
 			var guildId = lootService.GetGuildId();
 			var now = time.GetUtcNow();
-			var oneHundredEighty = now.AddDays(-180);
-			var ninety = now.AddDays(-90);
-			var thirty = now.AddDays(-30);
-			var ninetyDaysAgo = DateOnly.FromDateTime(ninety.DateTime);
-			var thirtyDaysAgo = DateOnly.FromDateTime(thirty.DateTime);
-			var oneHundredEightyDaysAgo = DateOnly.FromDateTime(oneHundredEighty.DateTime);
-			var threshold = oneHundredEighty.ToUnixTimeSeconds();
-
-			var playerMap = db.Players
-				.AsNoTracking()
-				.Where(x => x.GuildId == EF.Constant(guildId))
-				.Where(x => x.Active == true)
-				.ToDictionary(x => x.Id);
-			var altMainMap = playerMap
-				.Where(x => x.Value.MainId is not null)
-				.ToDictionary(x => x.Key, x => x.Value.MainId!.Value);
-			var rankIdToNameMap = db.Ranks
-				.Where(x => x.GuildId == EF.Constant(guildId))
-				.ToDictionary(x => x.Id, x => x.Name);
-			var dumps = db.RaidDumps
-				.AsNoTracking()
-				.Where(x => x.Timestamp > threshold)
-				.Where(x => x.Player.GuildId == EF.Constant(guildId))
-				.Where(x => x.Player.Active == true)
-				.ToList();
-			var uniqueDates = dumps
-				.Select(x => DateTimeOffset.FromUnixTimeSeconds(x.Timestamp))
-				.Select(x => DateOnly.FromDateTime(x.DateTime))
-				.ToHashSet();
-			var oneHundredEightDayMaxCount = uniqueDates.Count;
-			var ninetyDayMaxCount = uniqueDates.Count(x => x >= ninetyDaysAgo);
-			var thirtyDayMaxCount = uniqueDates.Count(x => x >= thirtyDaysAgo);
-
-			// if there are zero raid dumps for mains, include them in RA
-			//playerMap
-			//	.Select(x => x.Value)
-			//	.Where(x => x.MainId is null)
-			//	.Where(x => x.Alt != true)
-			//	.ToList()
-			//	.ForEach(x => raidPlayers.TryAdd(x, new()));
-
-			static byte GetPercent(IEnumerable<DateOnly> values, DateOnly daysAgo, int max)
-			{
-				return (byte)(max is 0 ? 0 : Math.Round(100d * values.Count(y => y >= daysAgo) / max, 0, MidpointRounding.AwayFromZero));
-			}
-
-			return dumps
-				.Select(x => altMainMap.TryGetValue(x.PlayerId, out var mainId)
-					? new RaidDump(x.Timestamp, mainId)
-					: x)
-				.GroupBy(x => x.PlayerId)
-				.ToDictionary(
-					x => playerMap[x.Key],
-					x => x
-						.Select(y => DateTimeOffset.FromUnixTimeSeconds(y.Timestamp))
-						.Select(y => DateOnly.FromDateTime(y.DateTime))
-						.ToHashSet())
-				.Select(kvp => new RaidAttendanceDto
-				{
-					Id = kvp.Key.Id,
-					Name = kvp.Key.Name,
-					Hidden = kvp.Key.Hidden,
-					Admin = kvp.Key.Admin,
-					Rank = kvp.Key.RankId is null ? "unknown" : rankIdToNameMap[kvp.Key.RankId.Value],
-					Class = kvp.Key.Class,
-					LastOnDate = kvp.Key.LastOnDate,
-					Level = kvp.Key.Level,
-					Notes = kvp.Key.Notes,
-					Alts = playerMap.Values.Where(x => x.MainId == kvp.Key.Id).Select(x => x.Name).ToArray(),
-
-					_30 = GetPercent(kvp.Value, thirtyDaysAgo, thirtyDayMaxCount),
-					_90 = GetPercent(kvp.Value, ninetyDaysAgo, ninetyDayMaxCount),
-					_180 = GetPercent(kvp.Value, oneHundredEightyDaysAgo, oneHundredEightDayMaxCount),
-				})
-				.OrderBy(x => x.Name)
-				.ToArray();
-		});
-
-		app.MapGet("GetPlayerAttendance_V2", (LootGodContext db, LootService lootService, TimeProvider time) =>
-		{
-			var guildId = lootService.GetGuildId();
-			var now = time.GetUtcNow();
 			var oneHundredEightyDaysAgo = now.AddDays(-180).ToUnixTimeSeconds();
 			var ninetyDaysAgo = now.AddDays(-90).ToUnixTimeSeconds();
 			var thirtyDaysAgo = now.AddDays(-30).ToUnixTimeSeconds();
 
+			var playerIdToGrantedLootCountMap = db.LootRequests
+				.Where(x => x.Player.GuildId == EF.Constant(guildId))
+				.Where(x => x.Player.Active == true)
+				.Where(x => x.Archived && x.Granted && x.RaidNight)
+				.Where(x => x.Item.Expansion == Expansion.LS)
+				.Where(x => !x.Item.Name.EndsWith("Emblem of the Forge"))
+				.GroupBy(x => new
+				{
+					Id = x.Player.MainId ?? x.PlayerId,
+					T2 = x.Item.Name.StartsWith("Valiant"),
+				})
+				.ToDictionary(x => x.Key, x => x.Count());
 			var playerMap = db.Players
 				.AsNoTracking()
 				.Where(x => x.GuildId == EF.Constant(guildId))
@@ -633,6 +578,8 @@ public class Endpoints(string _adminKey)
 					Level = kvp.Key.Level,
 					Notes = kvp.Key.Notes,
 					Alts = playerMap.Values.Where(x => x.MainId == kvp.Key.Id).Select(x => x.Name).ToArray(),
+					T1GrantedLootCount = playerIdToGrantedLootCountMap.TryGetValue(new { kvp.Key.Id, T2 = false }, out var t1) ? t1 : 0,
+					T2GrantedLootCount = playerIdToGrantedLootCountMap.TryGetValue(new { kvp.Key.Id, T2 = true }, out var t2) ? t2 : 0,
 
 					_30 = GetPercent(kvp.Value, thirtyDaysAgo, thirtyDayMaxCount),
 					_90 = GetPercent(kvp.Value, ninetyDaysAgo, ninetyDayMaxCount),

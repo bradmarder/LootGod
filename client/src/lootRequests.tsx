@@ -5,13 +5,14 @@ import classes from './eqClasses';
 
 export default function LootRequests(props: IContext) {
 
-	const [loading, setLoading] = useState(false);
+	const [loading, setLoading] = useState(true);
 	const [playerId, setPlayerId] = useState(0);
 
 	useEffect(() => {
 		axios
 			.get<number>('/GetPlayerId')
-			.then(x => setPlayerId(x.data));
+			.then(x => setPlayerId(x.data))
+			.finally(() => setLoading(false));
 	}, []);
 
 	const deleteLootRequest = (id: number) => {
@@ -27,7 +28,7 @@ export default function LootRequests(props: IContext) {
 		<>
 			<h3>My Loot Requests</h3>
 			{myLootRequests.length === 0 &&
-				<Alert variant='warning'>You currently have zero requests</Alert>
+				<Alert variant='warning'>You have zero loot requests</Alert>
 			}
 			{myLootRequests.length > 0 &&
 				<Table striped bordered hover size="sm">

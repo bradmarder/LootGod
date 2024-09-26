@@ -157,16 +157,6 @@ export default function App() {
 			{!error && !intro && raidNight != null &&
 				<h1>{raidNight ? 'Raid' : 'Rot'} Loot</h1>
 			}
-			{!error && !intro && messageOfTheDay &&
-				<Row>
-				<Col xs={12} xl={6}>
-				<Alert variant='warning'>
-					<h5>MOTD</h5>
-					{messageOfTheDay}
-				</Alert>
-				</Col>
-				</Row>
-			}
 			{!error && !intro && raidNight == null &&
 				<>
 					<Row>
@@ -195,6 +185,12 @@ export default function App() {
 			{!error && raidNight != null &&
 				<Row>
 					<Col xs={12} xl={6}>
+						{messageOfTheDay &&
+							<Alert variant='warning'>
+								<h5>MOTD</h5>
+								{messageOfTheDay}
+							</Alert>
+						}
 						<CreateLootRequest requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight} linkedAltsCacheKey={linkedAltsCacheKey} items={items}></CreateLootRequest>
 						<br />
 						<LootRequests requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight} items={items}></LootRequests>

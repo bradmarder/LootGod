@@ -49,6 +49,8 @@ declare interface IRaidAttendance {
 	readonly class: EQClass;
 	readonly level: number;
 	readonly alts: readonly string[];
+	readonly t1GrantedLootCount: number;
+	readonly t2GrantedLootCount: number;
 }
 declare interface IDiscordWebhooks {
 	readonly raid: string;

@@ -13,4 +13,6 @@
 	public required EQClass? Class { get; init; }
 	public required byte? Level { get; init; }
 	public required string[] Alts { get; init; }
+	public required int T1GrantedLootCount { get; init; }
+	public required int T2GrantedLootCount { get; init; }
 }

@@ -371,10 +371,6 @@ public class LootTest
 	[InlineData("/GetPlayerAttendance", 30, 0, 100, 100)]
 	[InlineData("/GetPlayerAttendance", 90, 0, 0, 100)]
 	[InlineData("/GetPlayerAttendance", 180, 0, 0, 0)]
-	[InlineData("/GetPlayerAttendance_V2", 0, 100, 100, 100)]
-	[InlineData("/GetPlayerAttendance_V2", 30, 0, 100, 100)]
-	[InlineData("/GetPlayerAttendance_V2", 90, 0, 0, 100)]
-	[InlineData("/GetPlayerAttendance_V2", 180, 0, 0, 0)]
 	public async Task GetRaidAttendance(string endpoint, double futureDays, byte expected30, byte expected90, byte expected180)
 	{
 		await using var app = new AppFixture(futureDays);
@@ -402,6 +398,8 @@ public class LootTest
 		Assert.Null(ra.Notes);
 		Assert.Empty(ra.Alts);
 		Assert.Null(ra.Level);
+		Assert.Equal(0, ra.T1GrantedLootCount);
+		Assert.Equal(0, ra.T2GrantedLootCount);
 		Assert.Equal(expected30, ra._30);
 		Assert.Equal(expected90, ra._90);
 		Assert.Equal(expected180, ra._180);
