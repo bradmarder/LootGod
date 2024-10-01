@@ -367,17 +367,17 @@ public class LootTest
 	}
 
 	[Theory]
-	[InlineData("/GetPlayerAttendance", 0, 100, 100, 100)]
-	[InlineData("/GetPlayerAttendance", 30, 0, 100, 100)]
-	[InlineData("/GetPlayerAttendance", 90, 0, 0, 100)]
-	[InlineData("/GetPlayerAttendance", 180, 0, 0, 0)]
-	public async Task GetRaidAttendance(string endpoint, double futureDays, byte expected30, byte expected90, byte expected180)
+	[InlineData(0, 100, 100, 100)]
+	[InlineData(30, 0, 100, 100)]
+	[InlineData(90, 0, 0, 100)]
+	[InlineData(180, 0, 0, 0)]
+	public async Task GetRaidAttendance(double futureDays, byte expected30, byte expected90, byte expected180)
 	{
 		await using var app = new AppFixture(futureDays);
 		await app.Client.CreateGuildAndLeader();
 		await app.Client.CreateZipRaidDumps();
 
-		var dtos = await app.Client.EnsureGetJsonAsync<RaidAttendanceDto[]>(endpoint);
+		var dtos = await app.Client.EnsureGetJsonAsync<RaidAttendanceDto[]>("/GetPlayerAttendance");
 
 		// if there is zero RA for past 180 days, the player/leader will not even appear
 		if (expected180 is 0)
