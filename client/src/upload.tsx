@@ -29,7 +29,12 @@ export default function Upload(props: { refreshCache: () => void }) {
 		<Alert variant='primary'>
 			<h4>Upload Guild/Raid Dumps (Admin only)</h4>
 			<hr />
-			<Alert variant='info'>NOTE! It is safe to upload duplicate raid dumps - the system automatically deduplicates</Alert>
+			<Alert variant='info'>
+				<ul>
+					<li>It is safe to upload duplicate raid dumps - the system automatically deduplicates</li>
+					<li>Before creating a guild dump, ensure you check 'Show Offline', uncheck 'Hide Alts', and select 'All' from the '# Per Page' dropdown from the bottom of the Guild Management window.</li>
+				</ul>
+			</Alert>
 			<hr />
 			<Form>
 				<input type='file' key={key} accept='.txt,.zip' disabled={loading} onChange={e => uploadDump(e.target.files![0]!)} />

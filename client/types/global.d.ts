@@ -44,8 +44,9 @@ declare interface IRaidAttendance {
 	readonly _30: number;
 	readonly _90: number;
 	readonly _180: number;
-	readonly lastOnDate: string;
-	readonly notes: string;
+	readonly lastOnDate: string | null;
+	readonly notes: string | null;
+	readonly zone: string | null;
 	readonly class: EQClass;
 	readonly level: number;
 	readonly alts: readonly string[];

@@ -10,6 +10,7 @@
 	public required byte _180 { get; init; }
 	public required DateOnly? LastOnDate { get; init; }
 	public required string? Notes { get; init; }
+	public required string? Zone { get; init; }
 	public required EQClass? Class { get; init; }
 	public required byte? Level { get; init; }
 	public required string[] Alts { get; init; }

@@ -366,7 +366,7 @@ public class LootService(
 		// ensure not partial guild dump by checking a leader exists
 		if (!dumps.Any(x => StringComparer.OrdinalIgnoreCase.Equals(Rank.Leader, x.Rank)))
 		{
-			throw new ImportException("Missing Leader Rank?! Ensure you 'Show All Players' before creating a guild dump.");
+			throw new ImportException("Missing Leader Rank?! Ensure you select 'All' from the '# Per Page' dropdown from the bottom of the Guild Management window before creating a guild dump.");
 		}
 
 		// ensure guild leader does not change (must use TransferGuildLeadership endpoint instead)
@@ -419,6 +419,7 @@ public class LootService(
 			player.Level = dump.Level;
 			player.Alt = dump.Alt;
 			player.Notes = dump.Notes;
+			player.Zone = dump.Zone;
 
 			// TODO: shouldn't be necessary, bug with Kyoto class defaulting to Bard
 			player.Class = Player._classNameToEnumMap[dump.Class];

@@ -20,7 +20,11 @@ export default function PlayerData(data: IRaidAttendance) {
 				</ListGroup>
 				<ListGroup horizontal>
 					<ListGroup.Item className='text-info'>Last On Date</ListGroup.Item>
-					<ListGroup.Item>{data.lastOnDate}</ListGroup.Item>
+					<ListGroup.Item>{data.lastOnDate || '-'}</ListGroup.Item>
+				</ListGroup>
+				<ListGroup horizontal>
+					<ListGroup.Item className='text-info'>Zone</ListGroup.Item>
+					<ListGroup.Item>{data.zone || '-'}</ListGroup.Item>
 				</ListGroup>
 				<ListGroup horizontal>
 					<ListGroup.Item className='text-info'>Granted T1 LS Raid Loots</ListGroup.Item>

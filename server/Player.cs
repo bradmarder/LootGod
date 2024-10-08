@@ -75,6 +75,7 @@ public class Player
 		Level = dump.Level;
 		LastOnDate = dump.LastOnDate;
 		Notes = dump.Notes;
+		Zone = dump.Zone;
 		Key = GetRandomGuid();
 	}
 
@@ -107,6 +108,8 @@ public class Player
 	public string Name { get; set; } = null!;
 
 	public string? Notes { get; set; }
+
+	public string? Zone { get; set; }
 
 	public EQClass Class { get; set; }
 
