@@ -578,7 +578,7 @@ public class Endpoints(string _adminKey)
 					Level = kvp.Key.Level,
 					Notes = kvp.Key.Notes,
 					Zone = kvp.Key.Zone,
-					Alts = playerMap.Values.Where(x => x.MainId == kvp.Key.Id).Select(x => x.Name).ToArray(),
+					Alts = playerMap.Values.Where(x => x.MainId == kvp.Key.Id).Select(x => x.Name).ToHashSet(),
 					T1GrantedLootCount = playerIdToGrantedLootCountMap.TryGetValue(new { kvp.Key.Id, T2 = false }, out var t1) ? t1 : 0,
 					T2GrantedLootCount = playerIdToGrantedLootCountMap.TryGetValue(new { kvp.Key.Id, T2 = true }, out var t2) ? t2 : 0,
 
