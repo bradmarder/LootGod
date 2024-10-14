@@ -4,6 +4,9 @@ declare interface ILoot {
 	readonly raidQuantity: number;
 	readonly rotQuantity: number;
 	readonly isSpell: boolean;
+
+	/** value computed on the client */
+	readonly availableQuantity: number;
 }
 declare interface IItem {
 	readonly id: number;
