@@ -1,7 +1,12 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Instrumentation.AspNetCore;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Threading.Channels;
 
 var builder = WebApplication.CreateSlimBuilder(args);
@@ -34,6 +39,32 @@ else
 {
 	builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite(connString.ConnectionString));
 	healthCheck.AddDbContextCheck<LootGodContext>();
+}
+
+if (builder.Environment.IsProduction())
+{
+	builder.Services
+		.AddOpenTelemetry()
+		.WithTracing(config => config
+			.AddAspNetCoreInstrumentation(options =>
+			{
+				options.Filter = ctx => ctx.Request.Method is "POST" or "DELETE";
+			})
+			.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("LootGod"))
+			.AddSource(nameof(LootService), nameof(Endpoints))
+			.AddOtlpExporter());
+
+	builder.Services
+		.AddOptions<AspNetCoreTraceInstrumentationOptions>()
+		.Configure<LootService>((options, lootService) =>
+		{
+			options.EnrichWithHttpRequest = (action, req) =>
+			{
+				action.SetTag("IP", lootService.GetIPAddress());
+				action.SetTag("PlayerId", lootService.GetPlayerId());
+				action.SetTag("GuildId", lootService.GetGuildId());
+			};
+		});
 }
 
 builder.Services.AddHttpContextAccessor();

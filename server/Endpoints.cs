@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Text;
 
 public class Endpoints(string _adminKey)
 {
+	private static readonly ActivitySource source = new ActivitySource(nameof(Endpoints));
+
 	static void EnsureSingle(int rows)
 	{
 		if (rows is not 1)
@@ -439,7 +442,7 @@ public class Endpoints(string _adminKey)
 				}
 
 				// if quantities are zero, then remove the loot record
-				if (loot.RaidQuantity is 0 && loot.RotQuantity is 0)
+				if (loot is { RaidQuantity: 0, RotQuantity: 0 })
 				{
 					db.Loots.Remove(loot);
 				}
@@ -490,6 +493,11 @@ public class Endpoints(string _adminKey)
 		{
 			lootService.EnsureAdminStatus();
 
+			using var activity = source.StartActivity("ImportDump");
+			activity?.SetTag("FileName", file.FileName);
+			activity?.SetTag("FileLength", file.Length);
+			activity?.SetTag("Offset", offset);
+
 			var ext = Path.GetExtension(file.FileName);
 			var import = (ext, file.FileName) switch
 			{
@@ -501,10 +509,12 @@ public class Endpoints(string _adminKey)
 			try
 			{
 				await import;
+				activity?.SetStatus(ActivityStatusCode.Ok);
 				return TypedResults.Ok();
 			}
 			catch (ImportException ex)
 			{
+				activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
 				return TypedResults.BadRequest(ex.Message);
 			}
 		}).DisableAntiforgery();

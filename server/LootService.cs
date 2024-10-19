@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -16,6 +17,7 @@ public class LootService(
 {
 	private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 	private static readonly Expansion[] CurrentExpansions = [Expansion.NoS, Expansion.LS];
+	private static readonly ActivitySource source = new ActivitySource(nameof(LootService));
 
 	private HttpRequest Request => _httpContextAccessor.HttpContext!.Request;
 
@@ -303,7 +305,10 @@ public class LootService(
 
 	public async Task ImportRaidDump(Stream stream, string fileName, int offset)
 	{
+		using var activity = source.StartActivity(nameof(ImportRaidDump));
+
 		var guildId = GetGuildId();
+		var timestamp = ParseTimestamp(fileName, offset);
 		using var sr = new StreamReader(stream);
 		var output = await sr.ReadToEndAsync();
 		var nameToClassMap = output
@@ -311,6 +316,11 @@ public class LootService(
 			.Select(x => x.Split('\t'))
 			.Where(x => x.Length > 4) // filter out "missing" rows that start with a number, but have nothing after
 			.ToDictionary(x => x[1], x => x[3]);
+
+		activity?.AddEvent(new ActivityEvent("File Read"));
+		activity?.SetTag("RaidPlayerCount", nameToClassMap.Count);
+		activity?.SetTag("FileName", fileName);
+		activity?.SetTag("FileNameTimestamp", timestamp);
 
 		// create new players by comparing names with preexisting ones
 		var existingNames = _db.Players
@@ -322,10 +332,12 @@ public class LootService(
 			.Select(x => new Player(x, nameToClassMap[x], guildId))
 			.ToList();
 		_db.Players.AddRange(players);
-		_db.SaveChanges();
+		var playerCreatedCount = _db.SaveChanges();
+
+		activity?.AddEvent(new ActivityEvent("Players Saved"));
+		activity?.SetTag("PlayerCreatedCount", playerCreatedCount);
 
 		// save raid dumps for all players
-		var timestamp = ParseTimestamp(fileName, offset);
 		var values = _db.Players
 			.Where(x => x.GuildId == guildId)
 			.Where(x => nameToClassMap.Keys.Contains(x.Name)) // ContainsKey cannot be translated by EFCore
@@ -336,13 +348,19 @@ public class LootService(
 			.AppendLine(string.Join(',', values))
 			.AppendLine("ON CONFLICT DO NOTHING") // UPSERT - Ignore unique constraint on the primary composite key for RaidDump (Timestamp/Player)
 			.ToString();
-		_db.Database.ExecuteSqlRaw(sql);
+		var raidDumpCreatedCount = _db.Database.ExecuteSqlRaw(sql);
+
+		activity?.AddEvent(new ActivityEvent("Raid Dumps Saved"));
+		activity?.SetTag("RaidDumpCreatedCount", raidDumpCreatedCount);
 	}
 
 	public async Task BulkImportRaidDump(IFormFile file, int offset)
 	{
+		using var activity = source.StartActivity(nameof(BulkImportRaidDump));
 		await using var stream = file.OpenReadStream();
 		using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
+
+		activity?.SetTag("EntryCount", zip.Entries.Count);
 
 		foreach (var entry in zip.Entries.OrderBy(x => x.LastWriteTime))
 		{
@@ -359,9 +377,12 @@ public class LootService(
 
 	public async Task ImportGuildDump(IFormFile file)
 	{
+		using var activity = source.StartActivity(nameof(ImportGuildDump));
 		var guildId = GetGuildId();
 
 		var dumps = await ParseGuildDump(file);
+		activity?.AddEvent(new ActivityEvent("Guild Dump Parsed"));
+		activity?.SetTag("DumpCount", dumps.Length);
 
 		// ensure not partial guild dump by checking a leader exists
 		if (!dumps.Any(x => StringComparer.OrdinalIgnoreCase.Equals(Rank.Leader, x.Rank)))
@@ -390,7 +411,10 @@ public class LootService(
 			.Select(x => new Rank(x, guildId))
 			.ToArray();
 		_db.Ranks.AddRange(ranks);
-		_db.SaveChanges();
+		var rankCreatedCount = _db.SaveChanges();
+
+		activity?.AddEvent(new ActivityEvent("Ranks Created"));
+		activity?.SetTag("RankCreatedCount", rankCreatedCount);
 
 		// load all ranks
 		var rankNameToIdMap = _db.Ranks
@@ -427,7 +451,10 @@ public class LootService(
 			// if a player switches their main to a previously linked alt, reset the MainId to null
 			if (!dump.Alt) { player.MainId = null; }
 		}
-		_db.SaveChanges();
+		var playerUpdatedCount = _db.SaveChanges();
+
+		activity?.AddEvent(new ActivityEvent("Preexisting Players Updated"));
+		activity?.SetTag("PlayerUpdatedCount", playerUpdatedCount);
 
 		// create players who do not exist
 		var existingNames = players
@@ -438,7 +465,10 @@ public class LootService(
 			.Select(x => new Player(x, guildId))
 			.ToList();
 		_db.Players.AddRange(dumpPlayers);
-		_db.SaveChanges();
+		var playerCreatedCount = _db.SaveChanges();
+
+		activity?.AddEvent(new ActivityEvent("Players Created"));
+		activity?.SetTag("PlayerCreatedCount", playerCreatedCount);
 	}
 
 	// parse the guild dump player output

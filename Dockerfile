@@ -10,7 +10,7 @@ WORKDIR /app
 COPY server/LootGod.csproj ./
 ARG RUNTIME=linux-musl-x64
 RUN dotnet restore --runtime $RUNTIME
-COPY server/*.cs ./
+COPY server/*.cs server/entities/*.cs .
 RUN dotnet publish -c Release -o out \
 	--no-restore \
 	--runtime $RUNTIME \
@@ -24,6 +24,9 @@ COPY --from=client /app/dist wwwroot
 EXPOSE 8080
 USER app
 ENV DOTNET_EnableDiagnostics=0
+ENV OTEL_SERVICE_NAME=LootGod
+ENV OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+ENV OTEL_EXPORTER_OTLP_ENDPOINT="https://api.honeycomb.io"
 HEALTHCHECK --interval=1s --timeout=1s --retries=1 \
 	CMD wget -nv -t1 --spider 'http://localhost:8080/healthz' || exit 1
 ENTRYPOINT ["./LootGod"]

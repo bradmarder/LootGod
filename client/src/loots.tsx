@@ -28,7 +28,7 @@ export default function Loots(props: IContext) {
 
 	const loots = props.loots
 		.filter(x => (props.raidNight ? x.raidQuantity : x.rotQuantity) > 0)
-		.filter(x => props.spell ? x.isSpell : !x.isSpell)
+		.filter(x => x.isSpell === props.spell)
 
 		// subtract the granted loot quantity from the total loot quantity
 		.map(item => {

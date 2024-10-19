@@ -7,7 +7,7 @@ public class LogMiddleware(
 {
 	public async Task InvokeAsync(HttpContext context, RequestDelegate next)
 	{
-		if (context.Request.Method is not "POST" || _service.GetPlayerKey() is null)
+		if (context.Request.Method is not "POST" or "DELETE" || _service.GetPlayerKey() is null)
 		{
 			await next(context);
 			return;
