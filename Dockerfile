@@ -21,6 +21,7 @@ FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-alpine
 WORKDIR /app
 COPY --from=server /app/out .
 COPY --from=client /app/dist wwwroot
+COPY server/appsettings.json /app
 EXPOSE 8080
 USER app
 ENV DOTNET_EnableDiagnostics=0

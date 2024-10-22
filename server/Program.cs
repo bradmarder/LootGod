@@ -46,6 +46,11 @@ if (builder.Environment.IsProduction())
 	builder.Services
 		.AddOpenTelemetry()
 		.WithTracing(config => config
+			.AddEntityFrameworkCoreInstrumentation(options =>
+			{
+				options.SetDbStatementForText = true;
+			})
+			.AddHttpClientInstrumentation()
 			.AddAspNetCoreInstrumentation(options =>
 			{
 				options.Filter = ctx => ctx.Request.Method is "POST" or "DELETE";
@@ -84,7 +89,6 @@ builder.Services.AddLogging(x => x
 		x.SingleLine = true;
 		x.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
 	})
-	.SetMinimumLevel(LogLevel.Warning)
 	.Configure(y => y.ActivityTrackingOptions = ActivityTrackingOptions.None)
 );
 
