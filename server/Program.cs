@@ -49,6 +49,14 @@ if (builder.Environment.IsProduction())
 			.AddEntityFrameworkCoreInstrumentation(options =>
 			{
 				options.SetDbStatementForText = true;
+				options.EnrichWithIDbCommand = (activity, db) =>
+				{
+					foreach (System.Data.IDataParameter x in db.Parameters)
+					{
+						activity.SetTag("Parameter.Value." + x.ParameterName, x.Value);
+						activity.SetTag("Parameter.DbType." + x.ParameterName, x.DbType);
+					}
+				};
 			})
 			.AddHttpClientInstrumentation()
 			.AddAspNetCoreInstrumentation(options =>

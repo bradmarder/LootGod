@@ -362,6 +362,16 @@ public class Endpoints(string _adminKey)
 			return TypedResults.Ok();
 		});
 
+		app.MapPost("UnlinkAlt", (LootGodContext db, LootService lootService, string altName) =>
+		{
+			var playerId = lootService.GetPlayerId();
+			var normalizedAltName = NormalizeName(altName);
+
+			db.Players
+				.Where(x => x.MainId == playerId && x.Name == normalizedAltName)
+				.ExecuteUpdate(x => x.SetProperty(y => y.MainId, (int?)null));
+		});
+
 		app.MapGet("GetLootLock", (LootService x) => x.GetRaidLootLock());
 		app.MapGet("GetPlayerId", (LootService x) => x.GetPlayerId());
 		app.MapGet("GetAdminStatus", (LootService x) => x.GetAdminStatus());

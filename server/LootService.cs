@@ -318,6 +318,7 @@ public class LootService(
 			.ToDictionary(x => x[1], x => x[3]);
 
 		activity?.AddEvent(new ActivityEvent("File Read"));
+		activity?.SetTag("StreamLength", stream.Length);
 		activity?.SetTag("RaidPlayerCount", nameToClassMap.Count);
 		activity?.SetTag("FileName", fileName);
 		activity?.SetTag("FileNameTimestamp", timestamp);

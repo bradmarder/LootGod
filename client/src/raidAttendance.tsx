@@ -36,7 +36,7 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 			.get<IRaidAttendance[]>('/GetPlayerAttendance', { signal: ac.signal })
 			.then(x => setRa(x.data))
 			.finally(() => setLoading(false));
-		return () => ac.abort();	
+		return () => ac.abort();
 	}, [props.cacheKey, cache]);
 
 	return (
