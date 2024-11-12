@@ -8,10 +8,18 @@ public class PayloadDeliveryService(
 	Channel<Payload> _payloadChannel,
 	ConcurrentDictionary<string, DataSink> _dataSinks) : BackgroundService
 {
+	private static readonly ActivitySource source = new(nameof(PayloadDeliveryService));
+
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 	{
 		await foreach (var payload in _payloadChannel.Reader.ReadAllAsync(stoppingToken))
 		{
+			using var activity = source.StartActivity(nameof(ExecuteAsync))?
+				.SetTag("GuildId", payload.GuildId)
+				.SetTag("Event", payload.Event)
+				.SetTag("JsonLength", payload.JsonData.Length)
+				.SetTag("DataSinkCount", _dataSinks.Count);
+
 			var watch = Stopwatch.StartNew();
 
 			foreach (var sink in _dataSinks)
@@ -43,7 +51,7 @@ public class PayloadDeliveryService(
 				}
 			}
 
-			_logger.LogInformation("Payload loop for '{Event}' completed in {Duration}ms", payload.Event, watch.ElapsedMilliseconds);
+			_logger.LogInformation("Payload loop for '{Event}' for {DataSinkCount} sinks completed in {Duration}ms", payload.Event, _dataSinks.Count, watch.ElapsedMilliseconds);
 		}
 	}
 }

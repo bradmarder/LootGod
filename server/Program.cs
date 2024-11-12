@@ -53,29 +53,42 @@ if (builder.Environment.IsProduction())
 				{
 					foreach (System.Data.IDataParameter x in db.Parameters)
 					{
+						//if (x.Value is System.Collections.IEnumerable) { continue; }
 						activity.SetTag("Parameter.Value." + x.ParameterName, x.Value);
 						activity.SetTag("Parameter.DbType." + x.ParameterName, x.DbType);
 					}
 				};
 			})
 			.AddHttpClientInstrumentation()
-			.AddAspNetCoreInstrumentation(options =>
-			{
-				options.Filter = ctx => ctx.Request.Method is "POST" or "DELETE";
-			})
+			.AddAspNetCoreInstrumentation()
 			.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("LootGod"))
 			.AddSource(nameof(LootService), nameof(Endpoints))
 			.AddOtlpExporter());
 
 	builder.Services
 		.AddOptions<AspNetCoreTraceInstrumentationOptions>()
-		.Configure<LootService>((options, lootService) =>
+		.Configure<IServiceScopeFactory>((options, factory) =>
 		{
-			options.EnrichWithHttpRequest = (action, req) =>
+			options.EnrichWithHttpRequest = (activity, req) =>
 			{
-				action.SetTag("IP", lootService.GetIPAddress());
-				action.SetTag("PlayerId", lootService.GetPlayerId());
-				action.SetTag("GuildId", lootService.GetGuildId());
+				using var scope = factory.CreateScope();
+				var service = scope.ServiceProvider.GetRequiredService<LootService>();
+				var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+				activity.SetTag("IP", service.GetIPAddress());
+				if (service.GetPlayerKey() is not null)
+				{
+					try
+					{
+						activity.SetTag("PlayerId", service.GetPlayerId());
+						activity.SetTag("GuildId", service.GetGuildId());
+					}
+					catch (Exception ex)
+					{
+						activity.RecordException(ex);
+						logger.LogError(ex, "");
+					}
+				}
 			};
 		});
 }
