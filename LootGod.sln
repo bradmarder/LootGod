@@ -38,7 +38,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B35EB5A2-4963-4D0A-8FB1-E746B4EE9648}"
 	ProjectSection(SolutionItems) = preProject
 		client\src\App.css = client\src\App.css
-		client\src\App.test.tsx = client\src\App.test.tsx
 		client\src\App.tsx = client\src\App.tsx
 		client\src\archivedLoot.tsx = client\src\archivedLoot.tsx
 		client\src\createLoot.tsx = client\src\createLoot.tsx

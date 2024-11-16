@@ -17,18 +17,12 @@ public class LootGodContext : DbContext
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
-		// https://github.com/dotnet/efcore/issues/10228
-		//modelBuilder
-		//	.Entity<Item>()
-		//	.Property(x => x.Id)
-		//	.UseAutoincrement(false);
-
 		modelBuilder.Entity<Loot>().ToTable(x =>
 		{
 			x.HasCheckConstraint("CK_Loot_Quantity", $"{nameof(Loot.RaidQuantity)} > {0} OR {nameof(Loot.RotQuantity)} > {0}");
 		});
 
-		const string unixEpoch = "1000 * unixepoch()";
+		const string unixEpoch = "1000 * unixepoch('subsec')";
 
 		modelBuilder
 			.Entity<Item>()

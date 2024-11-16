@@ -3,6 +3,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Instrumentation.AspNetCore;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using System.Collections.Concurrent;
@@ -59,10 +60,13 @@ if (builder.Environment.IsProduction())
 					}
 				};
 			})
-			.AddHttpClientInstrumentation()
+			.AddHttpClientInstrumentation(options =>
+			{
+				options.FilterHttpRequestMessage = req => req.RequestUri?.Host is not "api.honeycomb.io"; // TODO:
+			})
 			.AddAspNetCoreInstrumentation()
 			.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("LootGod"))
-			.AddSource(nameof(LootService), nameof(Endpoints))
+			.AddSource(nameof(LootService), nameof(Endpoints), nameof(PayloadDeliveryService))
 			.AddOtlpExporter());
 
 	builder.Services
@@ -85,8 +89,8 @@ if (builder.Environment.IsProduction())
 					}
 					catch (Exception ex)
 					{
-						activity.RecordException(ex);
-						logger.LogError(ex, "");
+						activity.AddException(ex);
+						logger.LogError(ex, null);
 					}
 				}
 			};
@@ -109,6 +113,14 @@ builder.Services.AddLogging(x => x
 		x.IncludeScopes = true;
 		x.SingleLine = true;
 		x.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
+	})
+	.AddOpenTelemetry(config =>
+	{
+		if (builder.Environment.IsProduction())
+		{
+			config.AddOtlpExporter();
+			config.IncludeScopes = true;
+		}
 	})
 	.Configure(y => y.ActivityTrackingOptions = ActivityTrackingOptions.None)
 );
@@ -143,24 +155,22 @@ else
 }
 
 app.UseResponseCompression();
-app.UseDefaultFiles();
-
-// waiting on .net9 to support serving pre-compressed files (gzip/br)
-app.UseStaticFiles(new StaticFileOptions
+app.Use(async (context, next) =>
 {
-	OnPrepareResponse = x =>
-	{
-		var headers = x.Context.Response.Headers;
-		headers.XFrameOptions = "DENY";
-		headers["Referrer-Policy"] = "no-referrer";
+	var headers = context.Response.Headers;
+	headers.XFrameOptions = "DENY";
+	headers["Referrer-Policy"] = "no-referrer";
 
-		// include "img-src 'self' data:;" for bootstrap svgs
-		headers.ContentSecurityPolicy = "default-src 'self'; child-src 'none'; img-src 'self' data:;";
-	}
+	// include "img-src 'self' data:;" for bootstrap svgs
+	headers.ContentSecurityPolicy = "default-src 'self'; child-src 'none'; img-src 'self' data:;";
+
+	await next();
 });
+app.UseDefaultFiles();
+app.MapStaticAssets();
 app.UsePathBase("/api");
 app.UseMiddleware<LogMiddleware>();
-app.MapHealthChecks("/healthz");
+app.MapHealthChecks("/healthz").DisableHttpMetrics();
 
 new Endpoints(adminKey).Map(app);
 
