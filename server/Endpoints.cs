@@ -542,13 +542,13 @@ public class Endpoints(string _adminKey)
 				.Where(x => x.Player.Active == true)
 				.Where(x => x.Archived && x.Granted && x.RaidNight)
 				.Where(x => x.Item.Expansion == Expansion.LS)
-				.Where(x => !x.Item.Name.EndsWith("Emblem of the Forge"))
+				.Where(x => !x.Item.Name.EndsWith(" Emblem of the Forge"))
 				.GroupBy(x => new
 				{
 					Id = x.Player.MainId ?? x.PlayerId,
-					T2 = x.Item.Name.StartsWith("Valiant"),
-				})
-				.ToDictionary(x => x.Key, x => x.Count());
+					T2 = x.Item.Name.StartsWith("Valiant "),
+				}, (x, y) => KeyValuePair.Create(x, y.Count()))
+				.ToDictionary();
 			var playerMap = db.Players
 				.AsNoTracking()
 				.Where(x => x.GuildId == EF.Constant(guildId))
