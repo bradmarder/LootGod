@@ -15,7 +15,7 @@ public record LootDto
 		["Lesser Symbol of Shar Vahl"] = 117,
 		["Minor Symbol of Shar Vahl"] = 116,
 	}.ToFrozenDictionary();
-	private static readonly FrozenSet<string> _spellPrefixes = FrozenSet.ToFrozenSet(
+	private static readonly FrozenSet<string> _spellPrefixes =
 	[
 		"Minor",
 		"Lesser",
@@ -23,20 +23,20 @@ public record LootDto
 		"Greater",
 		"Glowing",
 		"Captured",
-	]);
-	private static readonly FrozenSet<string> _spellSuffixes = FrozenSet.ToFrozenSet(
+	];
+	private static readonly FrozenSet<string> _spellSuffixes =
 	[
 		"Rune",
 		"Ethernere",
 		"Shadowscribed Parchment",
 		"Shar Vahl",
 		"Emblem of the Forge",
-	]);
-	private static readonly FrozenSet<string> _nuggets = FrozenSet.ToFrozenSet(
+	];
+	private static readonly FrozenSet<string> _nuggets =
 	[
 		"Diamondized Restless Ore",
 		"Calcified Bloodied Ore",
-	]);
+	];
 
 	public required int ItemId { get; init; }
 	public required byte RaidQuantity { get; init; }

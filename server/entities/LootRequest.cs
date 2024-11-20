@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 [Index(nameof(CreatedDate))]
-[Index(nameof(Archived), nameof(Granted))]
+[Index(nameof(PlayerId), nameof(Archived), nameof(Granted))]
 public class LootRequest
 {
 	// TODO: make private
