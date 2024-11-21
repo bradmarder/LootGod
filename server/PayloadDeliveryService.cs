@@ -50,8 +50,6 @@ public class PayloadDeliveryService(
 					_dataSinks.Remove(sink.Key, out _);
 				}
 			}
-
-			_logger.LogInformation("Payload loop for '{Event}' for {DataSinkCount} sinks completed in {Duration}ms", payload.Event, _dataSinks.Count, watch.ElapsedMilliseconds);
 		}
 	}
 }

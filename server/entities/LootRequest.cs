@@ -6,8 +6,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 [Index(nameof(PlayerId), nameof(Archived), nameof(Granted))]
 public class LootRequest
 {
-	// TODO: make private
-	public LootRequest() { }
+	private LootRequest() { }
 	public LootRequest(CreateLootRequest dto, string? ip, int playerId)
 	{
 		IP = ip;

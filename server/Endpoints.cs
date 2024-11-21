@@ -503,10 +503,10 @@ public class Endpoints(string _adminKey)
 		{
 			lootService.EnsureAdminStatus();
 
-			using var activity = source.StartActivity("ImportDump");
-			activity?.SetTag("FileName", file.FileName);
-			activity?.SetTag("FileLength", file.Length);
-			activity?.SetTag("Offset", offset);
+			using var activity = source.StartActivity("ImportDump")?
+				.SetTag("FileName", file.FileName)
+				.SetTag("FileLength", file.Length)
+				.SetTag("Offset", offset);
 
 			var ext = Path.GetExtension(file.FileName);
 			var import = (ext, file.FileName) switch
