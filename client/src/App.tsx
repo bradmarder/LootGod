@@ -91,10 +91,10 @@ export default function App() {
 			.finally(() => setLoading(false));
 	};
 	const transitionRaidNight = (raid: boolean) => {
-		if (!(document as any).startViewTransition) {
+		if (!document.startViewTransition) {
 			return setRaidNight(raid);
 		}
-		(document as any).startViewTransition(() => {
+		document.startViewTransition(() => {
 			flushSync(() => setRaidNight(raid));
 			return new Promise(resolve => setTimeout(resolve, 50));
 		});
