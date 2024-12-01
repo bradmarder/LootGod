@@ -95,7 +95,7 @@ public class LootService(
 	{
 		if (GetRaidLootLock())
 		{
-			throw new Exception(GetPlayerKey().ToString());
+			throw new Exception(nameof(EnsureRaidLootUnlocked));
 		}
 	}
 

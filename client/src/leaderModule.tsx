@@ -56,7 +56,7 @@ export default function leaderModule() {
 			});
 		Promise
 			.all([a, b])
-			.then(() => setLoading(false));
+			.finally(() => setLoading(false));
 		return () => ac.abort();
 	}, []);
 
