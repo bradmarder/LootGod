@@ -30,10 +30,10 @@ public class PayloadDeliveryService(
 				}
 
 				var text = new StringBuilder()
-					.Append($"event: {payload.Event}\n")
-					.Append($"data: {payload.JsonData}\n")
-					.Append($"id: {sink.Value.IncrementEventId()}\n")
-					.Append("\n\n")
+					.AppendLine("event: " + payload.Event)
+					.AppendLine("data: " + payload.JsonData)
+					.AppendLine("id: " + sink.Value.IncrementEventId())
+					.AppendLine().AppendLine()
 					.ToString();
 				try
 				{
