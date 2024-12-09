@@ -33,7 +33,8 @@ public class PayloadDeliveryService(
 					.AppendLine("event: " + payload.Event)
 					.AppendLine("data: " + payload.JsonData)
 					.AppendLine("id: " + sink.Value.IncrementEventId())
-					.AppendLine().AppendLine()
+					.AppendLine()
+					.AppendLine()
 					.ToString();
 				try
 				{
