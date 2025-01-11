@@ -147,7 +147,7 @@ else
 			var ex = context.Features.Get<IExceptionHandlerFeature>();
 			if (ex is not null)
 			{
-				app.Logger.LogError(ex.Error, context.Request.Path);
+				app.Logger.LogError(ex.Error, "UseExceptionHandler - {RequestPath}", context.Request.Path);
 			}
 			return Task.CompletedTask;
 		});

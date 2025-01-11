@@ -396,6 +396,7 @@ public class LootTest
 		Assert.Null(ra.LastOnDate);
 		Assert.Equal(EQClass.Bard, ra.Class);
 		Assert.Null(ra.Notes);
+		//Assert.Equal(TestData.Zone, ra.Zone);
 		Assert.Empty(ra.Alts);
 		Assert.Null(ra.Level);
 		Assert.Equal(0, ra.T1GrantedLootCount);

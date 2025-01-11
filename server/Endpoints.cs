@@ -4,9 +4,20 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
 
+public static class Extensions
+{
+	public static void EnsureSingle(this int rows)
+	{
+		if (rows is not 1)
+		{
+			throw new Exception("Expected 1 row updated, actual = " + rows);
+		}
+	}
+}
+
 public class Endpoints(string _adminKey)
 {
-	private static readonly ActivitySource source = new ActivitySource(nameof(Endpoints));
+	private static readonly ActivitySource source = new(nameof(Endpoints));
 
 	static void EnsureSingle(int rows)
 	{
@@ -77,10 +88,10 @@ public class Endpoints(string _adminKey)
 			}
 
 			var guildId = lootService.GetGuildId();
-			var rows = db.Guilds
+			db.Guilds
 				.Where(x => x.Id == guildId)
-				.ExecuteUpdate(x => x.SetProperty(y => dto.RaidNight ? y.RaidDiscordWebhookUrl : y.RotDiscordWebhookUrl, dto.Webhook));
-			EnsureSingle(rows);
+				.ExecuteUpdate(x => x.SetProperty(y => dto.RaidNight ? y.RaidDiscordWebhookUrl : y.RotDiscordWebhookUrl, dto.Webhook))
+				.EnsureSingle();
 
 			return TypedResults.Ok();
 		});
@@ -631,7 +642,7 @@ public class Endpoints(string _adminKey)
 			var namePasswordsMap = db.Players
 				.Where(x => x.GuildId == guildId)
 				.Where(x => x.Alt != true)
-				.Where(x => x.Active != false)
+				//.Where(x => x.Active != false) // TODO: temp for guest raiders
 				.OrderBy(x => x.Name)
 				.Select(x => x.Name.PadRight(15) + "https://raidloot.fly.dev?key=" + x.Key) // TODO:
 				.ToArray();

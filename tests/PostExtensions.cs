@@ -46,7 +46,7 @@ public static class PostExtensions
 
 	public static async Task CreateGuildDump(this HttpClient client)
 	{
-		const string vulak = $"{TestData.GuildLeader}\t120\tDruid\t{Rank.Leader}\t\t01/10/23\tHall\tMain -  Leader\t\ton\ton\t7344198\t01/06/23\tMain - Leader\t";
+		const string vulak = $"{TestData.GuildLeader}\t120\tDruid\t{Rank.Leader}\t\t01/10/23\t{TestData.Zone}\tMain -  Leader\t\ton\ton\t7344198\t01/06/23\tMain - Leader\t";
 		var seru = vulak
 			.Replace(TestData.GuildLeader, "Seru")
 			.Replace(Rank.Leader, "Knight")

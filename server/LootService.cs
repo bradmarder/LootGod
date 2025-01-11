@@ -36,7 +36,7 @@ public class LootService(
 		var key = GetPlayerKey();
 
 		return _db.Players
-			.Single(x => x.Key == key && x.Active != false)
+			.Single(x => x.Key == key)//TODO: temp && x.Active != false)
 			.Id;
 	}
 
@@ -45,7 +45,7 @@ public class LootService(
 		var key = GetPlayerKey();
 
 		return _db.Players
-			.Single(x => x.Key == key && x.Active != false)
+			.Single(x => x.Key == key)//TODO: temp && x.Active != false)
 			.GuildId;
 	}
 
@@ -54,7 +54,7 @@ public class LootService(
 		var key = GetPlayerKey();
 
 		return _db.Players
-			.Single(x => x.Key == key && x.Active == true)
+			.Single(x => x.Key == key)//TODO: temp && x.Active == true)
 			.Admin;
 	}
 
@@ -279,7 +279,7 @@ public class LootService(
 			catch (Exception ex)
 			{
 				var content = await TryReadContentAsync(response);
-				_logger.LogError(ex, content);
+				_logger.LogError(ex, "Discord Webhook Failure - {Url} - {ResponseContent}", discordWebhookUrl, content);
 			}
 			finally
 			{
