@@ -19,14 +19,6 @@ public class Endpoints(string _adminKey)
 {
 	private static readonly ActivitySource source = new(nameof(Endpoints));
 
-	static void EnsureSingle(int rows)
-	{
-		if (rows is not 1)
-		{
-			throw new Exception("Expected 1 row updated, actual = " + rows);
-		}
-	}
-
 	static string NormalizeName(string name) => char.ToUpperInvariant(name[0]) + name.Substring(1).ToLowerInvariant();
 
 	void EnsureOwner(string key)
@@ -59,7 +51,7 @@ public class Endpoints(string _adminKey)
 			var token = ctx.RequestAborted;
 			var connectionId = ctx.Connection.Id ?? "";
 
-			// avoid keeping a persistant reference to LootService -> DbContext
+			// avoid keeping a persistent reference to LootService -> DbContext
 			await using (var scope = factory.CreateAsyncScope())
 			{
 				scope.ServiceProvider
@@ -201,11 +193,11 @@ public class Endpoints(string _adminKey)
 
 			var guildId = lootService.GetGuildId();
 
-			var rows = db.Players
+			db.Players
 				.Where(x => x.GuildId == guildId)
 				.Where(x => x.Id == dto.Id)
-				.ExecuteUpdate(x => x.SetProperty(y => y.Hidden, y => !y.Hidden));
-			EnsureSingle(rows);
+				.ExecuteUpdate(x => x.SetProperty(y => y.Hidden, y => !y.Hidden))
+				.EnsureSingle();
 		});
 
 		app.MapPost("TogglePlayerAdmin", (ToggleHiddenAdminPlayer dto, LootGodContext db, LootService lootService) =>
@@ -214,11 +206,11 @@ public class Endpoints(string _adminKey)
 
 			var guildId = lootService.GetGuildId();
 
-			var rows = db.Players
+			db.Players
 				.Where(x => x.GuildId == guildId)
 				.Where(x => x.Id == dto.Id)
-				.ExecuteUpdate(x => x.SetProperty(y => y.Admin, y => !y.Admin));
-			EnsureSingle(rows);
+				.ExecuteUpdate(x => x.SetProperty(y => y.Admin, y => !y.Admin))
+				.EnsureSingle();
 		});
 
 		// todo: test
@@ -230,10 +222,10 @@ public class Endpoints(string _adminKey)
 			var normalizedName = NormalizeName(dto.Name);
 
 			// if the "new" player hasn't yet been imported into the system, the logic is simple
-			var rows = db.Players
+			db.Players
 				.Where(x => x.Id == dto.Id && x.GuildId == guildId)
-				.ExecuteUpdate(x => x.SetProperty(y => y.Name, y => normalizedName));
-			EnsureSingle(rows);
+				.ExecuteUpdate(x => x.SetProperty(y => y.Name, y => normalizedName))
+				.EnsureSingle();
 		});
 
 		app.MapPost("CreateLootRequest", async (CreateLootRequest dto, LootGodContext db, LootService lootService) =>
@@ -321,10 +313,10 @@ public class Endpoints(string _adminKey)
 			lootService.EnsureAdminStatus();
 
 			var guildId = lootService.GetGuildId();
-			var rows = db.Guilds
+			db.Guilds
 				.Where(x => x.Id == guildId)
-				.ExecuteUpdate(x => x.SetProperty(y => y.LootLocked, lootLock.Enable));
-			EnsureSingle(rows);
+				.ExecuteUpdate(x => x.SetProperty(y => y.LootLocked, lootLock.Enable))
+				.EnsureSingle();
 
 			await lootService.RefreshLock(guildId, lootLock.Enable);
 		});
@@ -401,10 +393,10 @@ public class Endpoints(string _adminKey)
 			lootService.EnsureGuildLeader();
 
 			var guildId = lootService.GetGuildId();
-			var rows = db.Guilds
+			db.Guilds
 				.Where(x => x.Id == guildId)
-				.ExecuteUpdate(x => x.SetProperty(y => y.MessageOfTheDay, dto.Message));
-			EnsureSingle(rows);
+				.ExecuteUpdate(x => x.SetProperty(y => y.MessageOfTheDay, dto.Message))
+				.EnsureSingle();
 
 			await lootService.RefreshMessageOfTheDay(guildId, dto.Message);
 		});
@@ -414,11 +406,11 @@ public class Endpoints(string _adminKey)
 			lootService.EnsureAdminStatus();
 
 			var guildId = lootService.GetGuildId();
-			var rows = db.LootRequests
+			db.LootRequests
 				.Where(x => x.Id == dto.Id)
 				.Where(x => x.Player.GuildId == guildId)
-				.ExecuteUpdate(x => x.SetProperty(y => y.Granted, dto.Grant));
-			EnsureSingle(rows);
+				.ExecuteUpdate(x => x.SetProperty(y => y.Granted, dto.Grant))
+				.EnsureSingle();
 
 			await lootService.RefreshRequests(guildId);
 		});
