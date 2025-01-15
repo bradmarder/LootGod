@@ -8,6 +8,7 @@ public enum Expansion : byte
 	ToL = 1,
 	NoS = 3,
 	LS = 4,
+	ToB = 5,
 }
 
 [Index(nameof(Expansion))]

@@ -4,11 +4,18 @@ public record LootDto
 {
 	private static readonly FrozenDictionary<string, int> _spellNameLevelMap = new Dictionary<string, int>
 	{
+		["Energized Glowing Engram"] = 125,
+		["Energized Greater Engram"] = 124,
+		["Energized Median Engram"] = 123,
+		["Energized Lesser Engram"] = 122,
+		["Energized Minor Engram"] = 121,
+
 		["Glowing Emblem of the Forge"] = 125,
 		["Greater Emblem of the Forge"] = 124,
 		["Median Emblem of the Forge"] = 123,
 		["Lesser Emblem of the Forge"] = 122,
 		["Minor Emblem of the Forge"] = 121,
+
 		["Glowing Symbol of Shar Vahl"] = 120,
 		["Greater Symbol of Shar Vahl"] = 119,
 		["Median Symbol of Shar Vahl"] = 118,
@@ -17,6 +24,7 @@ public record LootDto
 	}.ToFrozenDictionary();
 	private static readonly FrozenSet<string> _spellPrefixes =
 	[
+		"Energized",
 		"Minor",
 		"Lesser",
 		"Median",
@@ -26,6 +34,7 @@ public record LootDto
 	];
 	private static readonly FrozenSet<string> _spellSuffixes =
 	[
+		"Engram",
 		"Rune",
 		"Ethernere",
 		"Shadowscribed Parchment",

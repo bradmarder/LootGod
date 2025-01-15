@@ -148,7 +148,7 @@ public class Endpoints(string _adminKey)
 		// TODO: remove? lockdown somehow
 		app.MapPost("CreateItem", async (LootGodContext db, string name, LootService lootService) =>
 		{
-			var item = new Item(name, Expansion.LS);
+			var item = new Item(name, Expansion.ToB);
 			db.Items.Add(item);
 			db.SaveChanges();
 
@@ -544,12 +544,16 @@ public class Endpoints(string _adminKey)
 				.Where(x => x.Player.GuildId == EF.Constant(guildId))
 				.Where(x => x.Player.Active == true)
 				.Where(x => x.Archived && x.Granted && x.RaidNight)
-				.Where(x => x.Item.Expansion == Expansion.LS)
-				.Where(x => !x.Item.Name.EndsWith(" Emblem of the Forge"))
+				.Where(x => x.Item.Expansion == Expansion.ToB)
+
+				// exclude spells from granted count
+				.Where(x => !x.Item.Name.EndsWith("Emblem of the Forge"))
+				.Where(x => !x.Item.Name.EndsWith(" Engram"))
+
 				.GroupBy(x => new
 				{
 					Id = x.Player.MainId ?? x.PlayerId,
-					T2 = x.Item.Name.StartsWith("Valiant "),
+					T2 = x.Item.Name.EndsWith("Armor of the Shackled"),
 				}, (x, y) => KeyValuePair.Create(x, y.Count()))
 				.ToDictionary();
 			var playerMap = db.Players
@@ -595,7 +599,7 @@ public class Endpoints(string _adminKey)
 					Name = kvp.Key.Name,
 					Hidden = kvp.Key.Hidden,
 					Admin = kvp.Key.Admin,
-					Rank = kvp.Key.RankId is null ? "unknown" : rankIdToNameMap[kvp.Key.RankId.Value],
+					Rank = kvp.Key.RankId is null ? "Guest" : rankIdToNameMap[kvp.Key.RankId.Value],
 					Class = kvp.Key.Class,
 					LastOnDate = kvp.Key.LastOnDate,
 					Level = kvp.Key.Level,
