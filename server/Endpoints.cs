@@ -542,12 +542,11 @@ public class Endpoints(string _adminKey)
 
 			var playerIdToGrantedLootCountMap = db.LootRequests
 				.Where(x => x.Player.GuildId == EF.Constant(guildId))
-				.Where(x => x.Player.Active == true)
+				//.Where(x => x.Player.Active == true) // TODO: guest
 				.Where(x => x.Archived && x.Granted && x.RaidNight)
 				.Where(x => x.Item.Expansion == Expansion.ToB)
 
 				// exclude spells from granted count
-				.Where(x => !x.Item.Name.EndsWith("Emblem of the Forge"))
 				.Where(x => !x.Item.Name.EndsWith(" Engram"))
 
 				.GroupBy(x => new
@@ -559,7 +558,7 @@ public class Endpoints(string _adminKey)
 			var playerMap = db.Players
 				.AsNoTracking()
 				.Where(x => x.GuildId == EF.Constant(guildId))
-				.Where(x => x.Active == true)
+				//.Where(x => x.Active == true)  // TODO: guest
 				.ToDictionary(x => x.Id);
 			var altMainMap = playerMap
 				.Where(x => x.Value.MainId is not null)
@@ -571,7 +570,7 @@ public class Endpoints(string _adminKey)
 				.AsNoTracking()
 				.Where(x => x.Timestamp > oneHundredEightyDaysAgo)
 				.Where(x => x.Player.GuildId == EF.Constant(guildId))
-				.Where(x => x.Player.Active == true)
+				//.Where(x => x.Player.Active == true) // TODO: guest
 				.ToList();
 			var uniqueDates = dumps
 				.Select(x => x.Timestamp)

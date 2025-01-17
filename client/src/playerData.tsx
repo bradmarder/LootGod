@@ -27,11 +27,11 @@ export default function PlayerData(data: IRaidAttendance) {
 					<ListGroup.Item>{data.zone || '-'}</ListGroup.Item>
 				</ListGroup>
 				<ListGroup horizontal>
-					<ListGroup.Item className='text-info'>Granted T1 LS Raid Loots</ListGroup.Item>
+					<ListGroup.Item className='text-info'>Granted T1 ToB Raid Loots</ListGroup.Item>
 					<ListGroup.Item>{data.t1GrantedLootCount}</ListGroup.Item>
 				</ListGroup>
 				<ListGroup horizontal>
-					<ListGroup.Item className='text-info'>Granted T2 LS Raid Loots</ListGroup.Item>
+					<ListGroup.Item className='text-info'>Granted T2 ToB Raid Loots</ListGroup.Item>
 					<ListGroup.Item>{data.t2GrantedLootCount}</ListGroup.Item>
 				</ListGroup>
 				<hr />
