@@ -6,3 +6,5 @@ Dockerfile*
 .parcel-cache
 build/
 dist/
+**/launchSettings.json
+**/appsettings*.json
