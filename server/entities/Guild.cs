@@ -33,13 +33,13 @@ public class Guild
 	public string? MessageOfTheDay { get; set; }
 
 	[InverseProperty(nameof(Player.Guild))]
-	public virtual List<Player> Players { get; } = new();
+	public virtual List<Player> Players { get; } = [];
 
 	[InverseProperty(nameof(Loot.Guild))]
-	public virtual List<Loot> Loots { get; } = new();
+	public virtual List<Loot> Loots { get; } = [];
 
 	[InverseProperty(nameof(Rank.Guild))]
-	public virtual List<Rank> Ranks { get; } = new();
+	public virtual List<Rank> Ranks { get; } = [];
 }
 
 public enum Server : byte

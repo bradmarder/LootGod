@@ -34,8 +34,8 @@ public class Item
 	public string Name { get; set; } = null!;
 
 	[InverseProperty(nameof(LootRequest.Item))]
-	public virtual List<LootRequest> LootRequests { get; } = new();
+	public virtual List<LootRequest> LootRequests { get; } = [];
 
 	[InverseProperty(nameof(Loot.Item))]
-	public virtual List<Loot> Loots { get; } = new();
+	public virtual List<Loot> Loots { get; } = [];
 }

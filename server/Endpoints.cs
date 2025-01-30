@@ -29,7 +29,7 @@ public class Endpoints(string _adminKey)
 		}
 	}
 
-	public static bool IsValidDiscordWebhook(string webhook)
+	private static bool IsValidDiscordWebhook(string webhook)
 	{
 		return Uri.TryCreate(webhook, UriKind.Absolute, out var uri) && uri is
 		{

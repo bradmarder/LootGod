@@ -34,5 +34,5 @@ public class Rank
 	public virtual Guild Guild { get; set; } = null!;
 
 	[InverseProperty(nameof(Player.Rank))]
-	public virtual List<Player> Players { get; } = new();
+	public virtual List<Player> Players { get; } = [];
 }

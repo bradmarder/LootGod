@@ -135,11 +135,11 @@ public class Player
 	public virtual Guild Guild { get; set; } = null!;
 
 	[InverseProperty(nameof(RaidDump.Player))]
-	public virtual List<RaidDump> RaidDumps { get; } = new();
+	public virtual List<RaidDump> RaidDumps { get; } = [];
 
 	[InverseProperty(nameof(LootRequest.Player))]
-	public virtual List<LootRequest> LootRequests { get; } = new();
+	public virtual List<LootRequest> LootRequests { get; } = [];
 
 	[InverseProperty(nameof(Main))]
-	public virtual List<Player> Alts { get; } = new();
+	public virtual List<Player> Alts { get; } = [];
 }
