@@ -55,9 +55,10 @@ if (builder.Environment.IsProduction())
 					foreach (System.Data.IDataParameter x in db.Parameters)
 					{
 						//if (x.Value is System.Collections.IEnumerable) { continue; }
-						activity.SetTag("Parameter.Value." + x.ParameterName, x.Value);
-						activity.SetTag("Parameter.DbType." + x.ParameterName, x.DbType);
+						//activity.SetTag("Parameter.Value." + x.ParameterName, x.Value);
+						//activity.SetTag("Parameter.DbType." + x.ParameterName, x.DbType);
 					}
+					//activity.SetTag("Parameters", parameters);
 				};
 			})
 			.AddHttpClientInstrumentation(options =>
@@ -132,6 +133,12 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 	var db = scope.ServiceProvider.GetRequiredService<LootGodContext>();
 
 	db.Database.EnsureCreated();
+
+	// update all loot xpac, set to new xpac if created in last 2 weeks
+	//var twoWeeksAgo = DateTimeOffset.UtcNow.AddDays(-14).ToUnixTimeMilliseconds();
+	//db.Items
+	//	.Where(x => x.CreatedDate > twoWeeksAgo)
+	//	.ExecuteUpdate(x => x.SetProperty(y => y.Expansion, Expansion.ToB));
 }
 
 if (app.Environment.IsDevelopment())
@@ -166,8 +173,11 @@ app.Use(async (context, next) =>
 
 	await next();
 });
-app.UseDefaultFiles();
-app.MapStaticAssets();
+if (app.Environment.IsProduction())
+{
+	app.UseDefaultFiles();
+	app.MapStaticAssets();
+}
 app.UsePathBase("/api");
 app.UseMiddleware<LogMiddleware>();
 app.MapHealthChecks("/healthz").DisableHttpMetrics();

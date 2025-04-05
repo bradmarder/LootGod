@@ -20,8 +20,6 @@ public class PayloadDeliveryService(
 				.SetTag("JsonLength", payload.JsonData.Length)
 				.SetTag("DataSinkCount", _dataSinks.Count);
 
-			var watch = Stopwatch.StartNew();
-
 			foreach (var sink in _dataSinks)
 			{
 				if (payload.GuildId is not null && payload.GuildId != sink.Value.GuildId)

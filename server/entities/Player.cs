@@ -30,9 +30,8 @@ public class Player
 
 	static Guid GetRandomGuid()
 	{
-		Span<byte> span = stackalloc byte[16];
-		RandomNumberGenerator.Fill(span);
-		return new Guid(span);
+		var bytes = RandomNumberGenerator.GetBytes(16);
+		return new Guid(bytes);
 	}
 
 	private Player() { }

@@ -542,7 +542,7 @@ public class Endpoints(string _adminKey)
 
 			var playerIdToGrantedLootCountMap = db.LootRequests
 				.Where(x => x.Player.GuildId == EF.Constant(guildId))
-				//.Where(x => x.Player.Active == true) // TODO: guest
+				.Where(x => x.Player.Active != false)
 				.Where(x => x.Archived && x.Granted && x.RaidNight)
 				.Where(x => x.Item.Expansion == Expansion.ToB)
 
@@ -558,7 +558,7 @@ public class Endpoints(string _adminKey)
 			var playerMap = db.Players
 				.AsNoTracking()
 				.Where(x => x.GuildId == EF.Constant(guildId))
-				//.Where(x => x.Active == true)  // TODO: guest
+				.Where(x => x.Active != false)
 				.ToDictionary(x => x.Id);
 			var altMainMap = playerMap
 				.Where(x => x.Value.MainId is not null)
@@ -570,7 +570,7 @@ public class Endpoints(string _adminKey)
 				.AsNoTracking()
 				.Where(x => x.Timestamp > oneHundredEightyDaysAgo)
 				.Where(x => x.Player.GuildId == EF.Constant(guildId))
-				//.Where(x => x.Player.Active == true) // TODO: guest
+				.Where(x => x.Player.Active != false)
 				.ToList();
 			var uniqueDates = dumps
 				.Select(x => x.Timestamp)
@@ -637,7 +637,7 @@ public class Endpoints(string _adminKey)
 			var namePasswordsMap = db.Players
 				.Where(x => x.GuildId == guildId)
 				.Where(x => x.Alt != true)
-				//.Where(x => x.Active != false) // TODO: temp for guest raiders
+				.Where(x => x.Active != false)
 				.OrderBy(x => x.Name)
 				.Select(x => x.Name.PadRight(15) + "https://raidloot.fly.dev?key=" + x.Key) // TODO:
 				.ToArray();
