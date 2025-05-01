@@ -7,4 +7,3 @@ Dockerfile*
 build/
 dist/
 **/launchSettings.json
-**/appsettings*.json

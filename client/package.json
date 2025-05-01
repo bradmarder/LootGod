@@ -3,15 +3,15 @@
 	"version": "1.0.0",
 	"private": true,
 	"dependencies": {
-		"@types/react": "19.1.0",
-		"@types/react-dom": "19.1.1",
-		"axios": "1.8.4",
-		"bootstrap": "5.3.3",
+		"@types/react": "19.1.2",
+		"@types/react-dom": "19.1.2",
+		"axios": "1.9.0",
+		"bootstrap": "5.3.5",
 		"react": "19.1.0",
 		"react-bootstrap": "2.10.9",
 		"react-dom": "19.1.0",
-		"sweetalert2": "11.17.2",
-		"typescript": "5.8.2"
+		"sweetalert2": "11.19.1",
+		"typescript": "5.8.3"
 	},
 	"source": "public/index.html",
 	"browserslist": "> 0.5%, last 2 versions, not dead",

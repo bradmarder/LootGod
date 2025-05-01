@@ -67,7 +67,7 @@ if (builder.Environment.IsProduction())
 			})
 			.AddAspNetCoreInstrumentation()
 			.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("LootGod"))
-			.AddSource(nameof(LootService), nameof(Endpoints), nameof(PayloadDeliveryService))
+			.AddSource(nameof(LootService), nameof(Endpoints))
 			.AddOtlpExporter());
 
 	builder.Services
