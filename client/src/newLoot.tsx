@@ -23,7 +23,7 @@ export default function NewLoot() {
 					<Col>
 						<Form.Group>
 							<Form.Label>Name</Form.Label>
-                            <Form.Control type="text" placeholder='Enter new LS Loot Name (NO TYPOS PLEASE)' value={createLootName} onChange={e => setCreateLootName(e.target.value)} />
+							<Form.Control type="text" placeholder='Enter new LS Loot Name (NO TYPOS PLEASE)' value={createLootName} onChange={e => setCreateLootName(e.target.value)} />
 						</Form.Group>
 					</Col>
 				</Row>

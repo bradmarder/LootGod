@@ -3,14 +3,14 @@
 	"version": "1.0.0",
 	"private": true,
 	"dependencies": {
-		"@types/react": "19.1.2",
-		"@types/react-dom": "19.1.2",
+		"@types/react": "19.1.6",
+		"@types/react-dom": "19.1.5",
 		"axios": "1.9.0",
-		"bootstrap": "5.3.5",
+		"bootstrap": "5.3.6",
 		"react": "19.1.0",
-		"react-bootstrap": "2.10.9",
+		"react-bootstrap": "2.10.10",
 		"react-dom": "19.1.0",
-		"sweetalert2": "11.19.1",
+		"sweetalert2": "11.22.0",
 		"typescript": "5.8.3"
 	},
 	"source": "public/index.html",
@@ -27,7 +27,7 @@
 	},
 	"devDependencies": {
 		"buffer": "6.0.3",
-		"parcel": "2.14.4",
+		"parcel": "2.15.2",
 		"process": "0.11.10"
 	}
 }
