@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text;
 
 public static class Extensions
@@ -18,12 +19,15 @@ public static class Extensions
 public class Endpoints(string _adminKey)
 {
 	private static readonly ActivitySource source = new(nameof(Endpoints));
+	private readonly byte[] _adminKeyHash = MD5.HashData(Encoding.UTF8.GetBytes(_adminKey));
 
 	static string NormalizeName(string name) => char.ToUpperInvariant(name[0]) + name.Substring(1).ToLowerInvariant();
 
 	void EnsureOwner(string key)
 	{
-		if (key != _adminKey)
+		var hashKey = MD5.HashData(Encoding.UTF8.GetBytes(key));
+
+		if (!Enumerable.SequenceEqual(hashKey, _adminKeyHash))
 		{
 			throw new UnauthorizedAccessException(key);
 		}
@@ -552,7 +556,7 @@ public class Endpoints(string _adminKey)
 				.GroupBy(x => new
 				{
 					Id = x.Player.MainId ?? x.PlayerId,
-					T2 = x.Item.Name.EndsWith("Armor of the Shackled"),
+					T2 = x.Item.Name.EndsWith(" of Rebellion"),
 				}, (x, y) => KeyValuePair.Create(x, y.Count()))
 				.ToDictionary();
 			var playerMap = db.Players
