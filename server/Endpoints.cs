@@ -159,6 +159,18 @@ public class Endpoints(string _adminKey)
 			await lootService.RefreshItems();
 		});
 
+		app.MapPost("Guest", (LootGodContext db, LootService lootService, MakeGuest dto) =>
+		{
+			lootService.EnsureAdminStatus();
+
+			var guildId = lootService.GetGuildId();
+
+			db.Players
+				.Where(x => x.GuildId == guildId && x.Name == dto.Name)
+				.ExecuteUpdate(x => x.SetProperty(y => y.Guest, true))
+				.EnsureSingle();
+		});
+
 		app.MapGet("FreeTrade", (LootGodContext db, LootService lootService) =>
 		{
 			var guildId = lootService.GetGuildId();
@@ -546,7 +558,7 @@ public class Endpoints(string _adminKey)
 
 			var playerIdToGrantedLootCountMap = db.LootRequests
 				.Where(x => x.Player.GuildId == EF.Constant(guildId))
-				.Where(x => x.Player.Active != false)
+				.Where(x => x.Player.Active != false || x.Player.Guest)
 				.Where(x => x.Archived && x.Granted && x.RaidNight)
 				.Where(x => x.Item.Expansion == Expansion.ToB)
 
@@ -562,7 +574,7 @@ public class Endpoints(string _adminKey)
 			var playerMap = db.Players
 				.AsNoTracking()
 				.Where(x => x.GuildId == EF.Constant(guildId))
-				.Where(x => x.Active != false)
+				.Where(x => x.Active != false || x.Guest)
 				.ToDictionary(x => x.Id);
 			var altMainMap = playerMap
 				.Where(x => x.Value.MainId is not null)
@@ -574,7 +586,7 @@ public class Endpoints(string _adminKey)
 				.AsNoTracking()
 				.Where(x => x.Timestamp > oneHundredEightyDaysAgo)
 				.Where(x => x.Player.GuildId == EF.Constant(guildId))
-				.Where(x => x.Player.Active != false)
+				.Where(x => x.Player.Active != false || x.Player.Guest)
 				.ToList();
 			var uniqueDates = dumps
 				.Select(x => x.Timestamp)
@@ -641,7 +653,7 @@ public class Endpoints(string _adminKey)
 			var namePasswordsMap = db.Players
 				.Where(x => x.GuildId == guildId)
 				.Where(x => x.Alt != true)
-				.Where(x => x.Active != false)
+				.Where(x => x.Active != false || x.Guest)
 				.OrderBy(x => x.Name)
 				.Select(x => x.Name.PadRight(15) + "https://raidloot.fly.dev?key=" + x.Key) // TODO:
 				.ToArray();

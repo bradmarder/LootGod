@@ -59,6 +59,7 @@ public class Player
 		Class = _classNameToEnumMap[eqClass];
 		GuildId = guildId;
 		Key = GetRandomGuid();
+		Guest = true;
 	}
 
 	/// <summary>
@@ -82,6 +83,11 @@ public class Player
 	public int Id { get; set; }
 
 	public bool Admin { get; set; }
+
+	/// <summary>
+	/// A bolt-on feature, where non-guild members (guests) may be added to the system for loot tracking/requesting purposes
+	/// </summary>
+	public bool Guest { get; set; }
 
 	/// <summary>
 	/// Alts are never given keys

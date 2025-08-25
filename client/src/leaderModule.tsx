@@ -9,6 +9,7 @@ export default function leaderModule() {
 	const [raidDiscord, setRaidDiscord] = useState('');
 	const [rotDiscord, setRotDiscord] = useState('');
 	const [transferName, setTransferName] = useState('');
+	const [guestName, setGuestName] = useState('');
 	const [messageOfTheDay, setMessageOfTheDay] = useState('');
 
 	const transferLeadership = () => {
@@ -24,6 +25,21 @@ export default function leaderModule() {
 			? axios.post('/TransferGuildLeadership', { name: transferName })
 			: Promise.reject())
 		.then(() => Swal.fire('Transferred', `Successfully transfered guild leadership to "${transferName}"`, 'success'))
+		.finally(() => setLoading(false));
+	};
+	const createGuest = () => {
+		setLoading(true);
+		return Swal.fire({
+			title: 'Confirmation',
+			text: `Are you sure you wish to make "${transferName}" a guest? They *must* first be imported in a raid dump.`,
+			icon: 'warning',
+			showCancelButton: true,
+			confirmButtonText: 'Yes, Guest',
+		})
+		.then(x => x.isConfirmed
+			? axios.post('/Guest', { name: guestName })
+			: Promise.reject())
+		.then(() => Swal.fire('Guested', `Successfully created the guest "${guestName}"`, 'success'))
 		.finally(() => setLoading(false));
 	};
 	const updateDiscord = () => {
@@ -78,6 +94,15 @@ export default function leaderModule() {
 				</Form.Group>
 				<br />
 				<Button variant='warning' disabled={loading || transferName.length < 4} onClick={transferLeadership}>Transfer</Button>
+			</Form>
+			<hr />
+			<Form onSubmit={e => e.preventDefault()}>
+				<Form.Group>
+					<Form.Label>Guest Feature (must first be imported by raid dump)</Form.Label>
+					<Form.Control type='text' placeholder='Enter guest name' value={guestName} onChange={e => setGuestName(e.target.value)} />
+				</Form.Group>
+				<br />
+				<Button variant='warning' disabled={loading || guestName.length < 4} onClick={createGuest}>Create Guest</Button>
 			</Form>
 			<hr />
 			<Form onSubmit={e => e.preventDefault()}>

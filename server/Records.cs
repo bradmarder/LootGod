@@ -8,6 +8,7 @@ public record GrantLootRequest(int Id, bool Grant);
 public record UpdateGuildDiscord(bool RaidNight, string Webhook);
 public record MessageOfTheDay(string Message);
 public record TransferGuildName(string Name);
+public record MakeGuest(string Name);
 public record ToggleHiddenAdminPlayer(int Id);
 public record ChangePlayerName(int Id, string Name);
 

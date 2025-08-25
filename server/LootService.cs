@@ -438,6 +438,7 @@ public class LootService(
 				continue;
 			}
 
+			player.Guest = false;
 			player.Active = true;
 			player.RankId = rankNameToIdMap[dump.Rank];
 			player.LastOnDate = dump.LastOnDate;
