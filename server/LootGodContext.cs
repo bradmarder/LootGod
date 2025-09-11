@@ -22,7 +22,7 @@ public class LootGodContext : DbContext
 			x.HasCheckConstraint("CK_Loot_Quantity", $"{nameof(Loot.RaidQuantity)} > {0} OR {nameof(Loot.RotQuantity)} > {0}");
 		});
 
-		const string unixEpoch = "1000 * unixepoch('subsec')";
+		const string unixEpoch = "cast(1000 * unixepoch('subsec') AS INTEGER)";
 
 		modelBuilder
 			.Entity<Item>()

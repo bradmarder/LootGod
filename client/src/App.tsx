@@ -29,9 +29,6 @@ if (hasKey) {
 axios.defaults.baseURL = 'api/';
 setAxiosInterceptors();
 
-// aborted requests are caught and throw null rejections, catch and ignore them
-window.onunhandledrejection = e => e.reason == null && e.preventDefault();
-
 export default function App() {
 	const [raidNight, setRaidNight] = useState<boolean | null>(null);
 	const [loading, setLoading] = useState(false);

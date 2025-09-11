@@ -640,9 +640,7 @@ public class Endpoints(string _adminKey)
 			var bytes = Encoding.UTF8.GetBytes(output);
 			var now = time.GetUtcNow().ToUnixTimeSeconds();
 
-			return Results.File(bytes,
-				contentType: "text/plain",
-				fileDownloadName: $"RaidLootOutput-{now}.txt");
+			return Results.File(bytes, "text/plain", $"RaidLootOutput-{now}.txt");
 		});
 
 		app.MapGet("GetPasswords", (LootGodContext db, LootService lootService, TimeProvider time) =>
@@ -661,9 +659,7 @@ public class Endpoints(string _adminKey)
 			var bytes = Encoding.UTF8.GetBytes(data);
 			var now = time.GetUtcNow().ToUnixTimeSeconds();
 
-			return Results.File(bytes,
-				contentType: "text/plain",
-				fileDownloadName: $"GuildPasswords-{now}.txt");
+			return Results.File(bytes, "text/plain", $"GuildPasswords-{now}.txt");
 		});
 	}
 }

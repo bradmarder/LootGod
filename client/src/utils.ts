@@ -8,9 +8,10 @@ export const setAxiosInterceptors = () => {
 		x => x,
 		async error => {
 
-			// catch abort errors and throw null rejection to avoid unhandledrejection error page
+			// catch abort errors and return a pending promise to avoid unhandledrejection error page or console errors
+			// would this cause a memory leak?!
 			if (axios.isCancel(error)) {
-				return Promise.reject();
+				return new Promise(() => { });
 			}
 
 			console.error(error);

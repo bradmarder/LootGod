@@ -1,8 +1,8 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine
-ENV ASPNETCORE_ENVIRONMENT=development
+ENV ASPNETCORE_ENVIRONMENT=Development
 WORKDIR /app
 COPY /server/LootGod.csproj ./
 RUN dotnet restore
 COPY /server/ .
 EXPOSE 8080
-CMD dotnet watch --non-interactive --no-hot-reload
+CMD ["dotnet", "watch", "--non-interactive", "--no-hot-reload"]
