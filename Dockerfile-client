@@ -5,4 +5,8 @@ COPY /client/package.json /client/package-lock.json ./
 RUN npm ci
 COPY ./client/ .
 EXPOSE 1234
+
+# required otherwise hot reloads fail after 3 syncs
+ENV CHOKIDAR_USEPOLLING=1
+
 CMD ["npm", "run", "start"]
