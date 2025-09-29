@@ -51,6 +51,70 @@ public record LootDto
 	public required byte RaidQuantity { get; init; }
 	public required byte RotQuantity { get; init; }
 
+	#region Item Stats
+	public required long Sync { get; init; }
+	public required byte[] Hash { get; init; } = [];
+	public required Expansion Expansion { get; init; }
+	public required ItemClass Classes { get; init; }
+	public required long Prestige { get; init; }
+	public required Slots Slots { get; init; }
+	public required byte Regen { get; set; }
+	public required byte ManaRegen { get; set; }
+	public required byte EnduranceRegen { get; set; }
+	public required int HealAmt { get; set; }
+	public required int SpellDmg { get; set; }
+	public required int Clairvoyance { get; set; }
+	public required int Attack { get; set; }
+	public required byte Itemtype { get; init; }
+	public required byte Augslot1type { get; init; }
+	public required byte Augslot3type { get; init; }
+	public required byte Augslot4type { get; init; }
+	public required int Stacksize { get; init; }
+	public required int HP { get; init; }
+	public required int Mana { get; init; }
+	public required int Endurance { get; init; }
+	public required int AC { get; init; }
+	public required int Icon { get; init; }
+	public required int Damage { get; init; }
+	public required byte Delay { get; init; }
+	public required byte ReqLevel { get; init; }
+	public required byte RecLevel { get; init; }
+	public required int HSTR { get; init; }
+	public required int HINT { get; init; }
+	public required int HWIS { get; init; }
+	public required int HAGI { get; init; }
+	public required int HDEX { get; init; }
+	public required int HSTA { get; init; }
+	public required int HCHA { get; init; }
+	public required byte MinLuck { get; init; }
+	public required byte MaxLuck { get; init; }
+	public required bool Lore { get; init; }
+	public required byte ProcLevel { get; init; }
+	public required byte FocusLevel { get; init; }
+	public required int ProcEffect { get; init; }
+	public required int FocusEffect { get; init; }
+	public required int ClickEffect { get; init; }
+	public required int ClickLevel { get; init; }
+	public required int WornEffect { get; init; }
+
+	public string? WornName { get; init; }
+
+	public string? ProcName { get; init; }
+	public string? ProcDescription { get; init; }
+	public string? ProcDescription2 {get; init; }
+
+	public string? ClickName { get; init; }
+	public string? ClickDescription { get; init; }
+	public string? ClickDescription2 { get; init; }
+
+	public string? FocusName { get; init; }
+	public string? FocusDescription { get; init; }
+	public string? FocusDescription2 { get; init; }
+
+
+
+	#endregion
+
 	private readonly string _name = "";
 	public required string Name
 	{

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
@@ -16,7 +17,7 @@ public class LootService(
 	ConcurrentDictionary<string, DataSink> _dataSinks)
 {
 	private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-	private static readonly Expansion[] CurrentExpansions = [Expansion.ToB, Expansion.LS];
+	private static readonly Expansion[] CurrentExpansions = [Expansion.ToB];
 	private static readonly ActivitySource source = new(nameof(LootService));
 
 	private HttpRequest Request => _httpContextAccessor.HttpContext!.Request;
@@ -170,7 +171,10 @@ public class LootService(
 
 	public LootDto[] LoadLoots(int guildId)
 	{
+		var spells = _db.Spells.ToDictionary(x => x.Id);
+
 		return _db.Loots
+			.Include(x => x.Item)
 			.Where(x => x.GuildId == EF.Constant(guildId))
 			.Where(x => EF.Constant(CurrentExpansions).Contains(x.Item.Expansion))
 			.Select(x => new LootDto
@@ -179,9 +183,69 @@ public class LootService(
 				Name = x.Item.Name,
 				RaidQuantity = x.RaidQuantity,
 				RotQuantity = x.RotQuantity,
+				Sync = x.Item.Sync,
+				Hash = x.Item.Hash,
+				Expansion = x.Item.Expansion,
+				Classes = x.Item.Classes,
+				Prestige = x.Item.Prestige,
+				Slots = x.Item.Slots,
+				Regen = x.Item.Regen,
+				ManaRegen = x.Item.ManaRegen,
+				EnduranceRegen = x.Item.EnduranceRegen,
+				HealAmt = x.Item.HealAmt,
+				SpellDmg = x.Item.SpellDmg,
+				Clairvoyance = x.Item.Clairvoyance,
+				Attack = x.Item.Attack,
+				Itemtype = x.Item.Itemtype,
+				Augslot1type = x.Item.Augslot1type,
+				Augslot3type = x.Item.Augslot3type,
+				Augslot4type = x.Item.Augslot4type,
+				Stacksize = x.Item.Stacksize,
+				HP = x.Item.HP,
+				Mana = x.Item.Mana,
+				Endurance = x.Item.Endurance,
+				AC = x.Item.AC,
+				Icon = x.Item.Icon,
+				Damage = x.Item.Damage,
+				Delay = x.Item.Delay,
+				ReqLevel = x.Item.ReqLevel,
+				RecLevel = x.Item.RecLevel,
+				HSTR = x.Item.HSTR,
+				HINT = x.Item.HINT,
+				HWIS = x.Item.HWIS,
+				HAGI = x.Item.HAGI,
+				HDEX = x.Item.HDEX,
+				HSTA = x.Item.HSTA,
+				HCHA = x.Item.HCHA,
+				MinLuck = x.Item.MinLuck,
+				MaxLuck = x.Item.MaxLuck,
+				Lore = x.Item.Lore,
+				ProcLevel = x.Item.ProcLevel,
+				FocusLevel = x.Item.FocusLevel,
+				ProcEffect = x.Item.ProcEffect,
+				FocusEffect = x.Item.FocusEffect,
+				ClickEffect = x.Item.ClickEffect,
+				ClickLevel = x.Item.ClickLevel,
+				WornEffect = x.Item.WornEffect,
 			})
 			.ToArray()
 			.OrderBy(x => x.Name)
+			.Select(x => x with
+			{
+				WornName = spells.GetValueOrDefault(x.WornEffect)?.Name,
+
+				ClickName = spells.GetValueOrDefault(x.ClickEffect)?.Name,
+				ClickDescription = spells.GetValueOrDefault(x.ClickEffect)?.Description,
+				ClickDescription2 = spells.GetValueOrDefault(x.ClickEffect)?.Description2,
+
+				ProcName = spells.GetValueOrDefault(x.ProcEffect)?.Name,
+				ProcDescription = spells.GetValueOrDefault(x.ProcEffect)?.Description,
+				ProcDescription2 = spells.GetValueOrDefault(x.ProcEffect)?.Description2,
+
+				FocusName = spells.GetValueOrDefault(x.FocusEffect)?.Name,
+				FocusDescription = spells.GetValueOrDefault(x.FocusEffect)?.Description,
+				FocusDescription2 = spells.GetValueOrDefault(x.FocusEffect)?.Description2,
+			})
 			.ToArray();
 	}
 
@@ -473,8 +537,42 @@ public class LootService(
 		activity?.SetTag("PlayerCreatedCount", playerCreatedCount);
 	}
 
+	public async IAsyncEnumerable<SpellParseOutput> FetchSpells([EnumeratorCancellation] CancellationToken cancellationToken)
+	{
+		using var response = await _httpClient.GetAsync("https://lucy.allakhazam.com/static/spelldata/spelldata_Live_2025-08-27_01:59:10.txt.gz", HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+		response.EnsureSuccessStatusCode();
+		await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+		await using var gzip = new GZipStream(stream, CompressionMode.Decompress);
+		using var reader = new StreamReader(gzip);
+
+		// skip header
+		await reader.ReadLineAsync(cancellationToken);
+
+		while (await reader.ReadLineAsync(cancellationToken) is string line)
+		{
+			yield return new(line);
+		}
+	}
+
+	public async IAsyncEnumerable<ItemParseOutput> FetchItems([EnumeratorCancellation] CancellationToken cancellationToken)
+	{
+		using var response = await _httpClient.GetAsync("https://items.sodeq.org/downloads/items.txt.gz", HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+		response.EnsureSuccessStatusCode();
+		await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+		await using var gzip = new GZipStream(stream, CompressionMode.Decompress);
+		using var reader = new StreamReader(gzip);
+
+		// skip header
+		await reader.ReadLineAsync(cancellationToken);
+
+		while (await reader.ReadLineAsync(cancellationToken) is string line)
+		{
+			yield return new(line);
+		}
+	}
+
 	// parse the guild dump player output
-	static async Task<GuildDumpPlayerOutput[]> ParseGuildDump(IFormFile file)
+	private static async Task<GuildDumpPlayerOutput[]> ParseGuildDump(IFormFile file)
 	{
 		await using var stream = file.OpenReadStream();
 		using var sr = new StreamReader(stream);

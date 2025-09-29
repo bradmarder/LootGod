@@ -1,4 +1,4 @@
-declare interface ILoot {
+declare interface ILoot extends IItemStats {
 	readonly itemId: number
 	readonly name: string;
 	readonly raidQuantity: number;
@@ -7,6 +7,63 @@ declare interface ILoot {
 
 	/** value computed on the client */
 	readonly availableQuantity: number;
+}
+declare interface IItemStats
+{
+	readonly sync: number;
+	readonly hash: any;
+	readonly expansion: number;
+	readonly classes: number;
+	readonly prestige: number;
+	readonly slots: number;
+	readonly regen: number;
+	readonly manaRegen: number;
+	readonly enduranceRegen: number;
+	readonly healAmt: number;
+	readonly spellDmg: number;
+	readonly clairvoyance: number;
+	readonly attack: number;
+	readonly itemtype: number;
+	readonly augslot1type: number;
+	readonly augslot3type: number;
+	readonly augslot4type: number;
+	readonly stacksize: number;
+	readonly hp: number;
+	readonly mana: number;
+	readonly endurance: number;
+	readonly ac: number;
+	readonly icon: number;
+	readonly damage: number;
+	readonly delay: number;
+	readonly reqLevel: number;
+	readonly recLevel: number;
+	readonly hstr: number;
+	readonly hint: number;
+	readonly hwis: number;
+	readonly hagi: number;
+	readonly hdex: number;
+	readonly hsta: number;
+	readonly hcha: number;
+	readonly minLuck: number;
+	readonly maxLuck: number;
+	readonly lore: number;
+	readonly procLevel: number;
+	readonly focusLevel: number;
+	readonly procEffect: number;
+	readonly focusEffect: number;
+	readonly clickEffect: number;
+	readonly wornEffect: number;
+	readonly clickLevel: number;
+	readonly wornName: string | null;
+	readonly procName: string | null;
+	readonly procDescription: string | null;
+	readonly procDescription2: string | null;
+	readonly clickName: string | null;
+	readonly clickDescription: string | null;
+	readonly clickDescription2: string | null;
+	readonly focusName: string | null;
+	readonly focusDescription: string | null;
+	readonly focusDescription2: string | null;
 }
 declare interface IItem {
 	readonly id: number;

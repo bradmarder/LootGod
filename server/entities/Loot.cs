@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 [PrimaryKey(nameof(GuildId), nameof(ItemId))]
 public class Loot
 {
-	private Loot() { }
+	public Loot() { }
 	public Loot(int guildId, int itemId)
 	{
 		GuildId = guildId;

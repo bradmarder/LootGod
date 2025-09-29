@@ -14,6 +14,7 @@ public class LootGodContext : DbContext
 	public DbSet<Player> Players => Set<Player>();
 	public DbSet<RaidDump> RaidDumps => Set<RaidDump>();
 	public DbSet<Rank> Ranks => Set<Rank>();
+	public DbSet<Spell> Spells => Set<Spell>();
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
@@ -24,10 +25,10 @@ public class LootGodContext : DbContext
 
 		const string unixEpoch = "cast(1000 * unixepoch('subsec') AS INTEGER)";
 
-		modelBuilder
-			.Entity<Item>()
-			.Property(x => x.CreatedDate)
-			.HasDefaultValueSql(unixEpoch);
+		//modelBuilder
+		//	.Entity<Item>()
+		//	.Property(x => x.CreatedDate)
+		//	.HasDefaultValueSql(unixEpoch);
 
 		modelBuilder
 			.Entity<Guild>()

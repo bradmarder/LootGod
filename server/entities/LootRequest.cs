@@ -41,6 +41,9 @@ public class LootRequest
 	[StringLength(255)]
 	public string? Spell { get; set; }
 
+	/// <summary>
+	/// Why have this property here and not just use Player.Class? Because the player may be requesting loot for a persona
+	/// </summary>
 	public EQClass? Class { get; set; }
 
 	public int ItemId { get; set; }

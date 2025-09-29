@@ -51,7 +51,7 @@ export default function LinkAlt(props: { refreshLinkedAltsCacheKey: () => void }
 				{linkedAlts.map(x =>
 					<ListGroup.Item key={x}>
 						{x}
-						<Button variant='danger' size='sm' disabled={loading} onClick={() => unlinkAlt(x)}>Unlink</Button>
+						<Button variant='danger' size='sm' className='float-end' disabled={loading} onClick={() => unlinkAlt(x)}>Unlink</Button>
 					</ListGroup.Item>
 				)}
 			</ListGroup>

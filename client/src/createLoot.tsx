@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Row, Col, Alert, Button, Form } from 'react-bootstrap';
+import { Row, Col, Alert, Button, Form, Spinner } from 'react-bootstrap';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 export default function CreateLoot(props: { items: IItem[], raidNight: boolean }) {
 
@@ -20,6 +21,24 @@ export default function CreateLoot(props: { items: IItem[], raidNight: boolean }
 			.then(() => {
 				setCreateItemId(0);
 				setCreateLootQuantity(1);
+			})
+			.finally(() => setLoading(false));
+	};
+	const syncItems = () => {
+		setLoading(true);
+		axios
+			.post('/ItemSync')
+			.then(() => {
+				Swal.fire('Item Sync Success', `Successfully synced items`, 'success');
+			})
+			.finally(() => setLoading(false));
+	};
+	const syncSpells = () => {
+		setLoading(true);
+		axios
+			.post('/SpellSync')
+			.then(() => {
+				Swal.fire('Spell Sync Success', `Successfully synced spells`, 'success');
 			})
 			.finally(() => setLoading(false));
 	};
@@ -49,6 +68,22 @@ export default function CreateLoot(props: { items: IItem[], raidNight: boolean }
 				</Row>
 				<br />
 				<Button variant='success' disabled={loading || createItemId === 0} onClick={createLoot}>Create</Button>
+				<Button variant='warning' disabled={loading} onClick={syncItems} className='float-end'>
+					Sync Items
+					{loading &&
+						<Spinner animation="border" role="status">
+							<span className="visually-hidden">Loading...</span>
+						</Spinner>
+					}
+				</Button>
+				<Button variant='warning' disabled={loading} onClick={syncSpells} className='float-end'>
+					Sync Spells
+					{loading &&
+						<Spinner animation="border" role="status">
+							<span className="visually-hidden">Loading...</span>
+						</Spinner>
+					}
+				</Button>
 			</Form>
 		</Alert>
 	);

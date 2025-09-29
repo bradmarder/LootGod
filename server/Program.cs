@@ -63,6 +63,7 @@ if (builder.Environment.IsProduction())
 			})
 			.AddHttpClientInstrumentation(options =>
 			{
+				options.FilterHttpWebRequest = req => req.RequestUri?.Host is not "api.honeycomb.io"; // TODO:
 				options.FilterHttpRequestMessage = req => req.RequestUri?.Host is not "api.honeycomb.io"; // TODO:
 			})
 			.AddAspNetCoreInstrumentation()
@@ -134,11 +135,17 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 
 	db.Database.EnsureCreated();
 
-	// update all loot xpac, set to new xpac if created in last 2 weeks
-	//var twoWeeksAgo = DateTimeOffset.UtcNow.AddDays(-14).ToUnixTimeMilliseconds();
-	//db.Items
-	//	.Where(x => x.CreatedDate > twoWeeksAgo)
-	//	.ExecuteUpdate(x => x.SetProperty(y => y.Expansion, Expansion.ToB));
+	//try
+	//{
+	//	db.Database.ExecuteSqlRaw("""
+	//		ALTER TABLE Items ADD COLUMN WornEffect INTEGER NOT NULL DEFAULT 0;
+	//		""");
+	//	app.Logger.LogInformation("add item WornEffect success");
+	//}
+	//catch (Exception ex)
+	//{
+	//	app.Logger.LogError(ex, "add item WornEffect");
+	//}
 }
 
 if (app.Environment.IsDevelopment())
@@ -169,7 +176,7 @@ app.Use(async (context, next) =>
 	headers["Referrer-Policy"] = "no-referrer";
 
 	// include "img-src 'self' data:;" for bootstrap svgs
-	headers.ContentSecurityPolicy = "default-src 'self'; child-src 'none'; img-src 'self' data:;";
+	headers.ContentSecurityPolicy = "default-src 'self'; child-src 'none'; img-src 'self' https://items.sodeq.org data:;";
 
 	await next();
 });

@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { Alert, Button, Accordion } from 'react-bootstrap';
+import { useRef, useState } from 'react';
+import { Alert, Button, Accordion, OverlayTrigger } from 'react-bootstrap';
 import axios from 'axios';
 import classes from './eqClasses';
+import ItemView from './item';
 
 export default function Loots(props: IContext) {
 
+	const ref = useRef(null);
 	const [loading, setLoading] = useState(false);
 
 	const grantLootRequest = (id: number, grant: boolean) => {
@@ -44,16 +46,16 @@ export default function Loots(props: IContext) {
 
 	const getText = (req: ILootRequest) =>
 		[
-			req.mainName,
 			req.altName,
 			req.isAlt ? 'alt' : 'main',
 			classes[req.class],
 			req.spell || req.quantity,
 			req.currentItem,
-		].join(' | ');
+		].filter(x => x).join(' | ');
 
 	return (
 		<>
+			<div className='position-fixed top-50 start-0 translate-middle-y' style={{border: '3px solid orange', borderRadius: '5px'}} ref={ref}></div>
 			<h3>Available {(props.spell ? 'Spells/Nuggets' : 'Loots')}</h3>
 			{loots.length === 0 &&
 				<Alert variant='warning'>
@@ -66,10 +68,16 @@ export default function Loots(props: IContext) {
 						<Accordion.Item key={loot.itemId} eventKey={i.toString()}>
 							<Accordion.Header>
 								{!props.spell &&
-									<a href={'https://www.raidloot.com/items?view=List&name=' + loot.name} target='_blank' rel='noreferrer'>{loot.name}</a>
+									<OverlayTrigger key={loot.itemId} container={ref} overlay={() => ItemView(loot)}>
+										<span className='text-warning' style={{ whiteSpace: 'pre', fontFamily: 'monospace' }}>{loot.name.padEnd(35)}</span>
+									</OverlayTrigger>
 								}
-								{props.spell && loot.name}
-								&nbsp;| {loot.availableQuantity} available | {lootRequests.filter(x => x.itemId === loot.itemId && x.granted).length} granted | {lootRequests.filter(x => x.itemId === loot.itemId).length} request(s)
+								{props.spell &&
+									<span className='text-warning' style={{ whiteSpace: 'pre', fontFamily: 'monospace' }}>{loot.name.padEnd(35)}</span>
+								}
+								{loot.availableQuantity} available
+								| {lootRequests.filter(x => x.itemId === loot.itemId && x.granted).length} granted
+								| {lootRequests.filter(x => x.itemId === loot.itemId).length} request(s)
 							</Accordion.Header>
 							<Accordion.Body>
 								{props.isAdmin &&
@@ -78,17 +86,18 @@ export default function Loots(props: IContext) {
 											<Alert variant={'warning'}><strong>Grant Disabled</strong> - Already Allotted Maximum Quantity</Alert>
 										}
 										<Button variant={'warning'} size={'sm'} disabled={loading} onClick={() => updateLootQuantity(loot.itemId, 1)}>Increment Quantity</Button>
-										<Button variant={'danger'} size={'sm'} disabled={loading || loot.availableQuantity === 0} onClick={() => updateLootQuantity(loot.itemId, -1)}>Decrement Quantity</Button>
+										<Button variant={'danger'} size={'sm'} disabled={loading || loot.availableQuantity === 0} className='float-end' onClick={() => updateLootQuantity(loot.itemId, -1)}>Decrement Quantity</Button>
 										<br /><br />
 										{lootRequests.filter(x => x.itemId === loot.itemId).map(req =>
 											<span key={req.id}>
+												<span className='text-warning' style={{ whiteSpace: 'pre' }}>{req.mainName.padEnd(20)}</span>
 												{getText(req)}
 												&nbsp;
 												{props.isAdmin && req.granted &&
-													<Button variant={'danger'} disabled={loading} onClick={() => grantLootRequest(req.id, false)}>Un-Grant</Button>
+													<Button variant={'danger'} size={'sm'} disabled={loading} onClick={() => grantLootRequest(req.id, false)}>Un-Grant</Button>
 												}
 												{props.isAdmin && !req.granted && loot.availableQuantity > 0 &&
-													<Button variant={'success'} disabled={loading} onClick={() => grantLootRequest(req.id, true)}>Grant</Button>
+													<Button variant={'success'} size={'sm'} disabled={loading} onClick={() => grantLootRequest(req.id, true)}>Grant</Button>
 												}
 												<br />
 											</span>
