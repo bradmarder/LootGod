@@ -31,7 +31,7 @@ public class LootTest
 		Assert.NotEqual(default, disposition);
 		var values = disposition.Value.ToArray();
 		Assert.Single(values);
-		Assert.Equal("attachment; filename=backup-1721678244.db; filename*=UTF-8''backup-1721678244.db", values[0]);
+		Assert.Equal("attachment; filename=lootgod-backup-1721678244.db; filename*=UTF-8''lootgod-backup-1721678244.db", values[0]);
 	}
 
 	[Fact]
@@ -302,14 +302,15 @@ public class LootTest
 		await app.Client.CreateZipRaidDumps();
 	}
 
-	[Fact]
-	public async Task TransferGuildLeadership()
+	[Theory]
+	[InlineData("Seru")]
+	public async Task TransferGuildLeadership(string name)
 	{
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
 		await app.Client.CreateGuildDump();
 
-		await app.Client.EnsurePostAsJsonAsync("/TransferGuildLeadership", new TransferGuildName("Seru"));
+		await app.Client.EnsurePostAsJsonAsync("/TransferGuildLeadership", new TransferGuildName(name));
 
 		var leader = await app.Client.EnsureGetJsonAsync<bool>("/GetLeaderStatus");
 		Assert.False(leader);
@@ -328,6 +329,22 @@ public class LootTest
 		var linkedAlts = await app.Client.EnsureGetJsonAsync<string[]>("/GetLinkedAlts");
 		Assert.Single(linkedAlts);
 		Assert.Equal(altName, linkedAlts[0]);
+	}
+
+	[Theory]
+	[InlineData(TestData.Commander)]
+	public async Task Guest(string guestName)
+	{
+		await using var app = new AppFixture();
+		await app.Client.CreateGuildAndLeader();
+		await app.Client.CreateZipRaidDumps();
+
+		//await app.Client.EnsurePostAsJsonAsync("/Guest", new MakeGuest(guestName));
+
+		var players = await app.Client.EnsureGetJsonAsync<RaidAttendanceDto[]>("/GetPlayerAttendance");
+		Assert.Equal(2, players.Length);
+		var tormax = players.SingleOrDefault(x => x.Name == guestName);
+		Assert.NotNull(tormax); // guest should appear in attendance
 	}
 
 	[Theory]

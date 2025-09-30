@@ -91,7 +91,7 @@ export default function Loots(props: IContext) {
 										{lootRequests.filter(x => x.itemId === loot.itemId).map(req =>
 											<span key={req.id}>
 												<span className='text-warning' style={{ whiteSpace: 'pre' }}>{req.mainName.padEnd(20)}</span>
-												{getText(req)}
+												<span className={req.granted ? 'text-success' : ''}>{getText(req)}</span>
 												&nbsp;
 												{props.isAdmin && req.granted &&
 													<Button variant={'danger'} size={'sm'} disabled={loading} onClick={() => grantLootRequest(req.id, false)}>Un-Grant</Button>

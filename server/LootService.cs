@@ -37,7 +37,8 @@ public class LootService(
 		var key = GetPlayerKey();
 
 		return _db.Players
-			.Single(x => x.Key == key)//TODO: temp && x.Active != false)
+			.Where(x => x.Guest || x.Active != false)
+			.Single(x => x.Key == key)
 			.Id;
 	}
 
@@ -46,7 +47,8 @@ public class LootService(
 		var key = GetPlayerKey();
 
 		return _db.Players
-			.Single(x => x.Key == key)//TODO: temp && x.Active != false)
+			.Where(x => x.Guest || x.Active != false)
+			.Single(x => x.Key == key)
 			.GuildId;
 	}
 
@@ -55,7 +57,7 @@ public class LootService(
 		var key = GetPlayerKey();
 
 		return _db.Players
-			.Single(x => x.Key == key)//TODO: temp && x.Active == true)
+			.Single(x => x.Key == key && x.Active == true)
 			.Admin;
 	}
 

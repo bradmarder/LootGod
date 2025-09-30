@@ -283,10 +283,10 @@ public class Endpoints(string _adminKey)
 		});
 
 		// TODO: remove? lockdown somehow
-		app.MapPost("CreateItem", async (LootGodContext db, string name, LootService lootService) =>
+		app.MapPost("CreateItem", async (LootGodContext db, string name, LootService lootService, int id = 1) =>
 		{
-			//var item = new ItemNEW(name, Expansion.ToB);
-			//db.Items.Add(item);
+			var item = new Item { Id = id, Name = name, Expansion = Expansion.ToB };
+			db.Items.Add(item);
 			db.SaveChanges();
 
 			await lootService.RefreshItems();
