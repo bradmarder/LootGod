@@ -11,6 +11,7 @@
 	public required DateOnly? LastOnDate { get; init; }
 	public required string? Notes { get; init; }
 	public required string? Zone { get; init; }
+	public required bool Guest { get; init; }
 	public required EQClass? Class { get; init; }
 	public required byte? Level { get; init; }
 	public required HashSet<string> Alts { get; init; }

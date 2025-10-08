@@ -258,7 +258,7 @@ public class Endpoints(string _adminKey)
 
 			return db.LootRequests
 				.Where(x => x.Player.GuildId == EF.Constant(guildId))
-				.Where(x => x.Archived)
+				.Where(x => x.Archived != null)
 				.Where(x => x.AltName!.StartsWith(normalizedName) || x.Player.Name.StartsWith(normalizedName))
 				.Where(x => itemId == null || x.ItemId == itemId)
 				.OrderByDescending(x => x.CreatedDate)
@@ -278,6 +278,9 @@ public class Endpoints(string _adminKey)
 					IsAlt = x.IsAlt,
 					Granted = x.Granted,
 					CurrentItem = x.CurrentItem,
+					Persona = x.Persona,
+					Archived = x.Archived,
+					Duplicate = false,
 				})
 				.ToArray();
 		});
@@ -285,7 +288,7 @@ public class Endpoints(string _adminKey)
 		// TODO: remove? lockdown somehow
 		app.MapPost("CreateItem", async (LootGodContext db, string name, LootService lootService, int id = 1) =>
 		{
-			var item = new Item { Id = id, Name = name, Expansion = Expansion.ToB };
+			var item = new Item { Id = id, Name = name, Expansion = Expansion.SoR };
 			db.Items.Add(item);
 			db.SaveChanges();
 
@@ -410,7 +413,7 @@ public class Endpoints(string _adminKey)
 			{
 				throw new UnauthorizedAccessException($"PlayerId {playerId} does not have access to loot id {id}");
 			}
-			if (request.Archived)
+			if (request.Archived is not null)
 			{
 				throw new Exception("Cannot delete archived loot requests");
 			}
@@ -564,28 +567,29 @@ public class Endpoints(string _adminKey)
 			await lootService.RefreshRequests(guildId);
 		});
 
-		app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootService, FinishLoots finish) =>
+		app.MapPost("FinishLootRequests", async (LootGodContext db, LootService lootService, FinishLoots dto, TimeProvider time, ILogger<Endpoints> logger) =>
 		{
 			lootService.EnsureAdminStatus();
 
 			var guildId = lootService.GetGuildId();
+			var now = time.GetUtcNow().ToUnixTimeSeconds();
 
 			// capture the output before we archive requests
-			var output = lootService.GetGrantedLootOutput(finish.RaidNight);
+			var output = lootService.GetGrantedLootOutput(dto.RaidNight);
 
 			var requests = db.LootRequests
 				.Where(x => x.Player.GuildId == guildId)
-				.Where(x => !x.Archived)
-				.Where(x => x.RaidNight == finish.RaidNight)
+				.Where(x => x.Archived == null)
+				.Where(x => x.RaidNight == dto.RaidNight)
 				.ToList();
 			var loots = db.Loots
 				.Where(x => x.GuildId == guildId)
-				.Where(x => (finish.RaidNight ? x.RaidQuantity : x.RotQuantity) > 0)
+				.Where(x => (dto.RaidNight ? x.RaidQuantity : x.RotQuantity) > 0)
 				.ToList();
 
 			foreach (var request in requests)
 			{
-				request.Archived = true;
+				request.Archived = now;
 			}
 			foreach (var loot in loots)
 			{
@@ -593,7 +597,7 @@ public class Endpoints(string _adminKey)
 					.Where(x => x.ItemId == loot.ItemId && x.Granted)
 					.Sum(x => x.Quantity);
 
-				if (finish.RaidNight)
+				if (dto.RaidNight)
 				{
 					loot.RotQuantity += (byte)(loot.RaidQuantity - grantedQuantity);
 					loot.RaidQuantity = 0;
@@ -610,14 +614,26 @@ public class Endpoints(string _adminKey)
 				}
 			}
 
-			db.SaveChanges();
+			var changeCount = db.SaveChanges();
 
 			var guild = db.Guilds.Single(x => x.Id == guildId);
-			var webhook = finish.RaidNight ? guild.RaidDiscordWebhookUrl : guild.RotDiscordWebhookUrl;
+			var webhook = dto.RaidNight ? guild.RaidDiscordWebhookUrl : guild.RotDiscordWebhookUrl;
 			if (webhook is not null)
 			{
 				await lootService.DiscordWebhook(output, webhook);
 			}
+
+			var props = new
+			{
+				Output = output,
+				RequestCount = requests.Count,
+				LootCount = loots.Count,
+				ChangeCount = changeCount,
+				FinishTime = now,
+				DiscordWebhook = webhook,
+			};
+			using var _ = logger.BeginScope(props);
+			logger.LogInformation("Finished loot requests");
 
 			await lootService.RefreshLoots(guildId);
 			await lootService.RefreshRequests(guildId);
@@ -692,7 +708,7 @@ public class Endpoints(string _adminKey)
 			var playerIdToGrantedLootCountMap = db.LootRequests
 				.Where(x => x.Player.GuildId == EF.Constant(guildId))
 				.Where(x => x.Player.Active != false || x.Player.Guest)
-				.Where(x => x.Archived && x.Granted && x.RaidNight)
+				.Where(x => x.Archived != null && x.Granted && x.RaidNight)
 				.Where(x => x.Item.Expansion == Expansion.ToB)
 
 				// exclude spells from granted count
@@ -753,6 +769,7 @@ public class Endpoints(string _adminKey)
 					Level = kvp.Key.Level,
 					Notes = kvp.Key.Notes,
 					Zone = kvp.Key.Zone,
+					Guest = kvp.Key.Guest,
 					Alts = playerMap.Values.Where(x => x.MainId == kvp.Key.Id).Select(x => x.Name).ToHashSet(),
 					T1GrantedLootCount = playerIdToGrantedLootCountMap.TryGetValue(new { kvp.Key.Id, T2 = false }, out var t1) ? t1 : 0,
 					T2GrantedLootCount = playerIdToGrantedLootCountMap.TryGetValue(new { kvp.Key.Id, T2 = true }, out var t2) ? t2 : 0,

@@ -97,7 +97,11 @@ export default function ItemView(item: ILoot) {
 					<div style={{ color: "green", fontWeight: "bold", fontSize: 20 }}>
 						{item.name}
 					</div>
-					<div>Lore, Prestige, Placeable</div>
+					<div>
+						{item.lore === 1 &&
+							<>Lore, </> 
+						}
+						Prestige, Placeable</div>
 					<div>Class: {getClasses(item.classes)}</div>
 					<div>Race: ALL</div>
 					<div>{getSlot(item.slots)}</div>
@@ -120,7 +124,9 @@ export default function ItemView(item: ILoot) {
 					{item.reqLevel > 0 &&
 						<StatRow label="Req Level:" value={<span style={{ color: "#cccccc" }}>{item.reqLevel}</span>} />
 					}
-					<StatRow label="Skill:" value={<span style={{ color: "#cccccc" }}>{itemTypeMap[item.itemtype]}</span>} />
+					{itemTypeMap[item.itemtype] &&
+						<StatRow label="Skill:" value={<span style={{ color: "#cccccc" }}>{itemTypeMap[item.itemtype]}</span>} />
+					}
 				</div>
 				<div style={{ minWidth: 120 }}>
 					<StatRow label="AC:" value={<span style={{ color: "#cccccc" }}>{item.ac}</span>} />
@@ -184,6 +190,9 @@ export default function ItemView(item: ILoot) {
 				}
 				{item.focusName &&
 					<div>Focus Effect: {item.focusName}</div>
+				}
+				{item.charmFile &&
+					<>Item information: {item.charmFile}</>
 				}
 			</div>
 		</div>

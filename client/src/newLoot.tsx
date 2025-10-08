@@ -17,7 +17,7 @@ export default function NewLoot() {
 
 	return (
 		<Alert variant='primary'>
-			<h4>Add New LS Loot (Admin only)</h4>
+			<h4>Add New Loot (Admin only)</h4>
 			<Form onSubmit={createItem}>
 				<Row>
 					<Col>

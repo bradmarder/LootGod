@@ -79,20 +79,20 @@ export default function RaidAttendance(props: { isAdmin: boolean, cacheKey: numb
 								{props.isAdmin &&
 									<td>
 										{item.hidden &&
-											<Button variant='warning' disabled={loading} onClick={() => toggleHidden(item.id)}>Show</Button>
+											<Button size='sm' variant='warning' disabled={loading} onClick={() => toggleHidden(item.id)}>Show</Button>
 										}
 										{item.hidden === false &&
-											<Button variant='success' disabled={loading} onClick={() => toggleHidden(item.id)}>Hide</Button>
+											<Button size='sm' variant='success' disabled={loading} onClick={() => toggleHidden(item.id)}>Hide</Button>
 										}
 									</td>
 								}
 								{props.isAdmin &&
 									<td>
 										{!item.admin &&
-											<Button variant='success' disabled={loading} onClick={() => toggleAdmin(item.id)}>Enable</Button>
+											<Button size='sm' variant='success' disabled={loading} onClick={() => toggleAdmin(item.id)}>Enable</Button>
 										}
 										{item.admin &&
-											<Button variant='danger' disabled={loading} onClick={() => toggleAdmin(item.id)}>Disable</Button>
+											<Button size='sm' variant='danger' disabled={loading} onClick={() => toggleAdmin(item.id)}>Disable</Button>
 										}
 									</td>
 								}

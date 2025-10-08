@@ -16,4 +16,6 @@ public record CreateLootRequest
 
 	[StringLength(255)]
 	public string CurrentItem { get; init; } = null!;
+
+	public bool Persona { get; init; }
 }

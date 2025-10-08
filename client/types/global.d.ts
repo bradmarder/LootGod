@@ -64,6 +64,7 @@ declare interface IItemStats
 	readonly focusName: string | null;
 	readonly focusDescription: string | null;
 	readonly focusDescription2: string | null;
+	readonly charmFile: string;
 }
 declare interface IItem {
 	readonly id: number;
@@ -84,6 +85,8 @@ declare interface ILootRequest {
 	readonly isAlt: boolean;
 	readonly granted: boolean;
 	readonly currentItem: string;
+	readonly duplicate: boolean;
+	readonly persona: boolean;
 }
 declare interface IContext {
 	readonly raidNight: boolean;
@@ -105,6 +108,7 @@ declare interface IRaidAttendance {
 	readonly _90: number;
 	readonly _180: number;
 	readonly lastOnDate: string | null;
+	readonly guest: boolean;
 	readonly notes: string | null;
 	readonly zone: string | null;
 	readonly class: EQClass;

@@ -57,7 +57,7 @@ export default function LootRequests(props: IContext) {
 										<Alert variant={'danger'}>Loot Locked</Alert>
 									}
 									{!props.lootLocked &&
-										<Button variant='danger' disabled={loading} onClick={() => deleteLootRequest(item.id)}>Delete</Button>
+										<Button variant='danger' size='sm' disabled={loading} onClick={() => deleteLootRequest(item.id)}>Delete</Button>
 									}
 								</td>
 							</tr>

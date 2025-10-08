@@ -96,6 +96,7 @@ public record LootDto
 	public required int ClickEffect { get; init; }
 	public required int ClickLevel { get; init; }
 	public required int WornEffect { get; init; }
+	public required string CharmFile { get; init; }
 
 	public string? WornName { get; init; }
 

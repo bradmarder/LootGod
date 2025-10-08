@@ -13,5 +13,12 @@
 	public required bool RaidNight { get; init; }
 	public required bool IsAlt { get; init; }
 	public required bool Granted { get; init; }
+	public required bool Persona { get; init; }
 	public required string CurrentItem { get; init; }
+	public required long? Archived { get; init; }
+
+	/// <summary>
+	/// Implies the player has already received this item in the past
+	/// </summary>
+	public required bool Duplicate { get; init; }
 }

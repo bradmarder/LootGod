@@ -61,13 +61,15 @@ public record ItemParseOutput
 
 	public ItemClass Classes => (ItemClass)long.Parse(_data[36]);
 
+	private static readonly DateTime Oct2025 = DateTime.Parse("2025-10-01");
 	private static readonly DateTime Oct2024 = DateTime.Parse("2024-10-01");
 	private static readonly DateTime Oct2023 = DateTime.Parse("2023-10-01");
 	private static readonly DateTime Oct2022 = DateTime.Parse("2022-10-01");
 	private static readonly DateTime Oct2021 = DateTime.Parse("2021-10-01");
 	private static readonly DateTime Oct2020 = DateTime.Parse("2020-10-01");
 	public Expansion Expansion =>
-		Created > Oct2024 ? Expansion.ToB
+		Created > Oct2025 ? Expansion.SoR
+		: Created > Oct2024 ? Expansion.ToB
 		: Created > Oct2023 ? Expansion.LS
 		: Created > Oct2022 ? Expansion.NoS
 		: Created > Oct2021 ? Expansion.ToL
@@ -106,7 +108,7 @@ public record ItemParseOutput
 	public int HCHA => int.Parse(_data[225]);
 	public byte MinLuck => byte.Parse(_data[299]);
 	public byte MaxLuck => byte.Parse(_data[300]);
-	public bool Lore => _data[10] is "-1";
+	public bool Lore => _data[120] is "-1";
 	public byte ProcLevel => byte.Parse(_data[152]);
 	public byte FocusLevel => byte.Parse(_data[174]);
 	public int ProcEffect => int.Parse(_data[149]);
@@ -116,6 +118,7 @@ public record ItemParseOutput
 	public int WornEffect => int.Parse(_data[160]);
 	public int UNKNOWN77 => int.Parse(_data[279]);
 	public DateTime Created => DateTime.Parse(_data[310]);
+	public string CharmFile => _data[86];
 
 	public bool IsRaid => IsRaidGear || IsRaidContainer || IsRaidSpell;
 
@@ -135,6 +138,7 @@ public record ItemParseOutput
 
 	public bool IsRaidContainer =>
 		Itemtype is 11 or 67
+		&& !CharmFile.Contains("GroupT") // exclude group loot containers (SKU31GroupT2Armor)
 		&& (_t2Prefixes.Any(Name.StartsWith) || _t2Suffixes.Any(Name.EndsWith));
 
 	public bool IsRaidSpell =>

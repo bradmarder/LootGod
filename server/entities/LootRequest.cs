@@ -17,6 +17,7 @@ public class LootRequest
 		Quantity = dto.Quantity;
 		CurrentItem = dto.CurrentItem;
 		RaidNight = dto.RaidNight;
+		Persona = dto.Persona;
 
 		// The UI should prevent entering AltName for RaidNight loot
 		if (!dto.RaidNight)
@@ -53,8 +54,15 @@ public class LootRequest
 	/// </summary>
 	public bool RaidNight { get; set; }
 
+	public bool Persona { get; set; }
 	public bool Granted { get; set; }
-	public bool Archived { get; set; }
+
+	/// <summary>
+	/// unix seconds when this request was archived
+	/// value of 0 implies this request was archived before tracking of archival timestamp
+	/// </summary>
+	public long? Archived { get; set; }
+
 	public int PlayerId { get; set; }
 
 	[Range(1, 255)]

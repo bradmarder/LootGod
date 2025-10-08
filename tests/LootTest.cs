@@ -31,7 +31,8 @@ public class LootTest
 		Assert.NotEqual(default, disposition);
 		var values = disposition.Value.ToArray();
 		Assert.Single(values);
-		Assert.Equal("attachment; filename=lootgod-backup-1721678244.db; filename*=UTF-8''lootgod-backup-1721678244.db", values[0]);
+		const string db = "lootgod-backup-1721678244.db";
+		Assert.Equal($"attachment; filename={db}; filename*=UTF-8''{db}", values[0]);
 	}
 
 	[Fact]

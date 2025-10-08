@@ -9,6 +9,7 @@ public enum Expansion : long
 	NoS = 29,
 	LS = 30,
 	ToB = 31,
+	SoR = 32,
 	Unknown = 255,
 }
 
@@ -114,6 +115,7 @@ public class Item
 		ClickEffect = data.ClickEffect;
 		ClickLevel = data.ClickLevel;
 		WornEffect = data.WornEffect;
+		CharmFile = data.CharmFile;
 	}
 
 	[Key]
@@ -176,12 +178,11 @@ public class Item
 	public int ClickEffect { get; set; }
 	public int ClickLevel { get; set; }
 	public int WornEffect { get; set; }
+	public string CharmFile { get; set; } = "";
 
 	[InverseProperty(nameof(LootRequest.Item))]
 	public virtual List<LootRequest> LootRequests { get; } = [];
 
 	[InverseProperty(nameof(Loot.Item))]
 	public virtual List<Loot> Loots { get; } = [];
-
-
 }

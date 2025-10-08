@@ -108,7 +108,7 @@ public class LootService(
 
 		var grantedLoot = _db.LootRequests
 			.Where(x => x.Player.GuildId == guildId)
-			.Where(x => x.Granted && !x.Archived)
+			.Where(x => x.Granted && x.Archived == null)
 			.Where(x => x.RaidNight == raidNight)
 			.GroupBy(x => new
 			{
@@ -127,7 +127,7 @@ public class LootService(
 			.Select(x => new
 			{
 				x.Item.Name,
-				Quantity = x.RaidQuantity - x.Item.LootRequests.Count(x => x.Player.GuildId == guildId && x.Granted && !x.Archived && x.RaidNight == raidNight),
+				Quantity = x.RaidQuantity - x.Item.LootRequests.Count(x => x.Player.GuildId == guildId && x.Granted && x.Archived == null && x.RaidNight == raidNight),
 			})
 			.Where(x => x.Quantity > 0)
 			.Select(x => new LootOutput(x.Name, "ROT", x.Quantity))
@@ -229,6 +229,7 @@ public class LootService(
 				ClickEffect = x.Item.ClickEffect,
 				ClickLevel = x.Item.ClickLevel,
 				WornEffect = x.Item.WornEffect,
+				CharmFile = x.Item.CharmFile,
 			})
 			.ToArray()
 			.OrderBy(x => x.Name)
@@ -255,7 +256,7 @@ public class LootService(
 	{
 		return _db.LootRequests
 			.Where(x => x.Player.GuildId == EF.Constant(guildId))
-			.Where(x => !x.Archived)
+			.Where(x => x.Archived == null)
 			.OrderByDescending(x => x.Spell != null)
 			.ThenBy(x => x.ItemId)
 			.ThenByDescending(x => x.AltName ?? x.Player.Name)
@@ -275,6 +276,9 @@ public class LootService(
 				IsAlt = x.IsAlt,
 				Granted = x.Granted,
 				CurrentItem = x.CurrentItem,
+				Persona = x.Persona,
+				Archived = x.Archived,
+				Duplicate = x.Player.LootRequests.Any(lr => lr.ItemId == x.ItemId && lr.Granted && lr.Archived != null),
 			})
 			.ToArray();
 	}

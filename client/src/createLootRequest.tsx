@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Row, Col, Alert, Button, Form } from 'react-bootstrap';
+import { Row, Col, Alert, Button, Form, FormCheck } from 'react-bootstrap';
 import axios from 'axios';
 import classes from './eqClasses';
 import { EQClass } from './eqClass';
@@ -7,6 +7,7 @@ import { EQClass } from './eqClass';
 export default function CreateLootRequest(props: IContext) {
 
 	const [loading, setLoading] = useState(true);
+	const [persona, setPersona] = useState(false);
 	const [altName, setAltName] = useState('');
 	const [spell, setSpell] = useState('');
 	const [currentItem, setCurrentItem] = useState('');
@@ -49,6 +50,7 @@ export default function CreateLootRequest(props: IContext) {
 			Spell: spellSelected ? spell : null,
 			CurrentItem: currentItem,
 			RaidNight: props.raidNight,
+			Persona: persona,
 		};
 		setLoading(true);
 		axios
@@ -106,6 +108,17 @@ export default function CreateLootRequest(props: IContext) {
 						</Col>
 					</Row>
 				}
+				{!props.raidNight &&
+					<Row>
+						<Col xs={12} md={6}>
+							<FormCheck>
+								<FormCheck.Input checked={persona} onChange={e => setPersona(e.target.checked)} />
+								<FormCheck.Label>Persona</FormCheck.Label>
+							</FormCheck>
+						</Col>
+					</Row>
+				}
+				<hr />
 				<Row>
 					<Col xs={12} md={6}>
 						<Form.Group className="mb-3">
