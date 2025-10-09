@@ -10,7 +10,7 @@
 		"react": "19.2.0",
 		"react-bootstrap": "2.10.10",
 		"react-dom": "19.2.0",
-		"sweetalert2": "11.24.0",
+		"sweetalert2": "11.25.0",
 		"typescript": "5.9.3"
 	},
 	"source": "public/index.html",

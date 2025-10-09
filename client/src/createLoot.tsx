@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Row, Col, Alert, Button, Form, Spinner } from 'react-bootstrap';
 import axios from 'axios';
-import Swal from 'sweetalert2';
+import Swal from 'sweetalert2/dist/sweetalert2.js';
 
 export default function CreateLoot(props: { items: IItem[], raidNight: boolean }) {
 

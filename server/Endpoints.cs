@@ -151,17 +151,17 @@ public class Endpoints(string _adminKey)
 			db.Spells.AddRange(spells);
 			var addedCount = db.SaveChanges();
 
-			var props = new
+			var state = new
 			{
 				ElapsedMs = watch.ElapsedMilliseconds,
 				DeletedCount = deletedCount,
 				TotalSpellCount = totalSpellCount,
 				AddedCount = addedCount,
 			};
-			using var _ = logger.BeginScope(props);
+			using var _ = logger.BeginScope(state);
 			logger.LogInformation("Successfully completed spell sync");
 
-			return props;
+			return state;
 		});
 
 		app.MapPost("ItemSync", async (ILogger<Endpoints> logger, LootService lootService, LootGodContext db, TimeProvider time) =>
@@ -216,7 +216,7 @@ public class Endpoints(string _adminKey)
 			db.Items.AddRange(newItems);
 			var changeCount = db.SaveChanges();
 
-			var props = new
+			var state = new
 			{
 				ElapsedMs = watch.ElapsedMilliseconds,
 				ColdItemCount = coldItems.Length,
@@ -228,10 +228,10 @@ public class Endpoints(string _adminKey)
 				MissingCount = missingCount,
 				TotalItemCount = totalItemCount,
 			};
-			using var _ = logger.BeginScope(props);
+			using var _ = logger.BeginScope(state);
 			logger.LogInformation("Successfully completed item sync");
 
-			return props;
+			return state;
 		});
 
 		app.MapGet("GetPlayer", (LootService lootService, LootGodContext db) =>
@@ -623,7 +623,7 @@ public class Endpoints(string _adminKey)
 				await lootService.DiscordWebhook(output, webhook);
 			}
 
-			var props = new
+			var state = new
 			{
 				Output = output,
 				RequestCount = requests.Count,
@@ -632,7 +632,7 @@ public class Endpoints(string _adminKey)
 				FinishTime = now,
 				DiscordWebhook = webhook,
 			};
-			using var _ = logger.BeginScope(props);
+			using var _ = logger.BeginScope(state);
 			logger.LogInformation("Finished loot requests");
 
 			await lootService.RefreshLoots(guildId);

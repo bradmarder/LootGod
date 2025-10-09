@@ -17,7 +17,7 @@ public class LootService(
 	ConcurrentDictionary<string, DataSink> _dataSinks)
 {
 	private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-	private static readonly Expansion[] CurrentExpansions = [Expansion.ToB];
+	private static readonly Expansion[] CurrentExpansions = [Expansion.ToB, Expansion.SoR];
 	private static readonly ActivitySource source = new(nameof(LootService));
 
 	private HttpRequest Request => _httpContextAccessor.HttpContext!.Request;

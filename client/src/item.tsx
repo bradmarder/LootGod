@@ -75,6 +75,14 @@ function getSlot(flags: number) {
 		.map(x => x[0])
 		.join(' ');
 }
+function getKeywords(item: ILoot) {
+	return [
+		item.lore === 1 ? 'Lore' : '',
+		'Prestige'
+	]
+		.filter(x => x)
+		.join(', ');
+}
 
 export default function ItemView(item: ILoot) {
 	return (
@@ -97,11 +105,7 @@ export default function ItemView(item: ILoot) {
 					<div style={{ color: "green", fontWeight: "bold", fontSize: 20 }}>
 						{item.name}
 					</div>
-					<div>
-						{item.lore === 1 &&
-							<>Lore, </> 
-						}
-						Prestige, Placeable</div>
+					<div>{getKeywords(item)}</div>
 					<div>Class: {getClasses(item.classes)}</div>
 					<div>Race: ALL</div>
 					<div>{getSlot(item.slots)}</div>
