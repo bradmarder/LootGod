@@ -31,7 +31,7 @@ public class PayloadDeliveryService(
 				var text = new StringBuilder()
 					.AppendLine("event: " + payload.Event)
 					.AppendLine("data: " + payload.JsonData)
-					.AppendLine("id: " + sink.Value.IncrementEventId())
+					.AppendLine("id: " + sink.Value.EventId)
 					.AppendLine()
 					.AppendLine()
 					.ToString();
@@ -42,6 +42,7 @@ public class PayloadDeliveryService(
 				{
 					await response.WriteAsync(text, link.Token);
 					await response.Body.FlushAsync(link.Token);
+					sink.Value.EventId++;
 				}
 				catch (Exception ex)
 				{

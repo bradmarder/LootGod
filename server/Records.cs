@@ -24,13 +24,12 @@ public class SelfDestruct(string path) : IDisposable
 
 public class DataSink
 {
-	private int EventId = 1;
-
 	public required int GuildId { get; init; }
 	public required HttpResponse Response { get; init; }
 	public required CancellationToken Token { get; init; }
 
-	public int IncrementEventId() => EventId++;
+	public int EventId { get; set; } = 1;
 }
 
 public class ImportException(string message) : Exception(message) { }
+public record PlayerDto(EQClass Class);
