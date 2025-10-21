@@ -75,7 +75,7 @@ function getSlot(flags: number) {
 		.map(x => x[0])
 		.join(' ');
 }
-function getKeywords(item: ILoot) {
+function getKeywords(item: IItem) {
 	return [
 		item.lore === 1 ? 'Lore' : '',
 		'Prestige'
@@ -84,7 +84,7 @@ function getKeywords(item: ILoot) {
 		.join(', ');
 }
 
-export default function ItemView(item: ILoot) {
+export default function ItemView(item: IItem) {
 	return (
 		<div
 			style={{

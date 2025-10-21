@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Alert, Button, Table } from 'react-bootstrap';
 import axios from 'axios';
 import classes from './eqClasses';
-import Swal from "sweetalert2/dist/sweetalert2.js";
+import swal from './swal';
 
 export default function GrantedLoots(props: IContext) {
 
@@ -17,7 +17,7 @@ export default function GrantedLoots(props: IContext) {
 	const grantedLootRequests = props.requests.filter(x => x.granted);
 	const finishLootGranting = () => {
 		setLoading(true);
-		return Swal.fire({
+		return swal.fire({
 			title: 'Confirmation',
 			text: `Are you ready to finish granting ${grantedLootRequests.length} loot requests?`,
 			icon: 'warning',
@@ -27,7 +27,7 @@ export default function GrantedLoots(props: IContext) {
 		.then(x => x.isConfirmed
 			? axios.post('/FinishLootRequests', { raidNight: props.raidNight })
 			: Promise.reject())
-		.then(() => Swal.fire('Finished!', 'Successfully finished granting loot requests.', 'success'))
+		.then(() => swal.fire('Finished!', 'Successfully finished granting loot requests.', 'success'))
 		.finally(() => setLoading(false));
 	};
 

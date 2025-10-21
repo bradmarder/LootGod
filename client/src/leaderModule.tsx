@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 import axios from 'axios';
-import Swal from 'sweetalert2/dist/sweetalert2.js';
+import swal from './swal';
 
 export default function leaderModule() {
 
@@ -14,7 +14,7 @@ export default function leaderModule() {
 
 	const transferLeadership = () => {
 		setLoading(true);
-		return Swal.fire({
+		return swal.fire({
 			title: 'Confirmation',
 			text: `Are you sure you wish to transfer guild leadership to "${transferName}"? You will still retain admin privileges.`,
 			icon: 'warning',
@@ -24,12 +24,12 @@ export default function leaderModule() {
 		.then(x => x.isConfirmed
 			? axios.post('/TransferGuildLeadership', { name: transferName })
 			: Promise.reject())
-		.then(() => Swal.fire('Transferred', `Successfully transfered guild leadership to "${transferName}"`, 'success'))
+		.then(() => swal.fire('Transferred', `Successfully transfered guild leadership to "${transferName}"`, 'success'))
 		.finally(() => setLoading(false));
 	};
 	const createGuest = () => {
 		setLoading(true);
-		return Swal.fire({
+		return swal.fire({
 			title: 'Confirmation',
 			text: `Are you sure you wish to make "${transferName}" a guest? They *must* first be imported in a raid dump.`,
 			icon: 'warning',
@@ -39,7 +39,7 @@ export default function leaderModule() {
 		.then(x => x.isConfirmed
 			? axios.post('/Guest', { name: guestName })
 			: Promise.reject())
-		.then(() => Swal.fire('Guested', `Successfully created the guest "${guestName}"`, 'success'))
+		.then(() => swal.fire('Guested', `Successfully created the guest "${guestName}"`, 'success'))
 		.finally(() => setLoading(false));
 	};
 	const updateDiscord = () => {
@@ -48,14 +48,14 @@ export default function leaderModule() {
 		const b = axios.post('/GuildDiscord', { raidNight: false, webhook: rotDiscord });
 		Promise
 			.all([a, b])
-			.then(() => Swal.fire('Discord Webhooks Updated', 'Successfully updated Discord webhooks', 'success'))
+			.then(() => swal.fire('Discord Webhooks Updated', 'Successfully updated Discord webhooks', 'success'))
 			.finally(() => setLoading(false));
 	};
 	const uploadMessageOfTheDay = () => {
 		setLoading(true);
 		axios
 			.post('/UploadMessageOfTheDay', { message: messageOfTheDay })
-			.then(() => Swal.fire('MOTD Updated', 'Successfully updated the MOTD', 'success'))
+			.then(() => swal.fire('MOTD Updated', 'Successfully updated the MOTD', 'success'))
 			.finally(() => setLoading(false));
 	};
 	useEffect(() => {

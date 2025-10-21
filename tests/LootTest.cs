@@ -117,20 +117,22 @@ public class LootTest
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
 
-		var emptyItems = await app.Client.EnsureGetJsonAsync<ItemDto[]>("/GetItems");
+		var emptyItems = await app.Client.EnsureGetJsonAsync<ItemSearch[]>("/GetItems");
 		Assert.Empty(emptyItems);
 
-		var sse = app.Client.GetSsePayload<ItemDto>();
+		// broken cause must be array....
+		var sse = app.Client.GetSsePayload<ItemSearch>();
 		await app.Client.CreateItem();
 		var data = await sse;
 
-		var items = await app.Client.EnsureGetJsonAsync<ItemDto[]>("/GetItems");
+		var items = await app.Client.EnsureGetJsonAsync<ItemSearch[]>("/GetItems");
 		Assert.Single(items);
-		var item = items[0];
+		var item = items.Single();
 		Assert.Equal("items", data.Evt);
 		Assert.Equal(1, data.Id);
 		Assert.Equal(1, data.Json.Id);
-		Assert.True(item == data.Json);
+		Assert.True(item.Id == data.Json.Id);
+		Assert.True(item.Name == data.Json.Name);
 	}
 
 	[Theory]
@@ -183,6 +185,7 @@ public class LootTest
 		Assert.Equal(1, req.Id);
 		Assert.False(req.Granted);
 		Assert.True(req.RaidNight);
+		Assert.False(req.Duplicate);
 
 		// does not match primary class -> displays persona class when specified
 		Assert.Equal(EQClass.Berserker, req.Class);
@@ -250,6 +253,11 @@ public class LootTest
 		Assert.Single(archiveName);
 		Assert.True(archiveItem[0] == archiveName[0]);
 		Assert.True(archiveItem[0].Granted);
+
+		// create another request to ensure correct lootRequest duplicate logic
+		await app.Client.CreateLootRequest();
+		activeRequests = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetLootRequests");
+		Assert.True(activeRequests[0].Duplicate);
 	}
 
 	[Fact]

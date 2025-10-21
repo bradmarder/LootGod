@@ -1,7 +1,5 @@
 import axios, { AxiosError } from "axios";
-
-// use explicit ".js" version because it does not contain inline-svgs that conflict with CSP policy
-import Swal from "sweetalert2/dist/sweetalert2.js";
+import swal from './swal';
 
 export const setAxiosInterceptors = () => {
 	axios.interceptors.response.use(
@@ -17,7 +15,7 @@ export const setAxiosInterceptors = () => {
 			console.error(error);
 
 			if (error instanceof AxiosError && ['post', 'delete'].includes(error.config?.method ?? '')) {
-				await Swal.fire({
+				await swal.fire({
 					icon: 'error',
 					title: error.code,
 					text: error.response?.data || error.response?.statusText || error.message,
@@ -29,7 +27,7 @@ export const setAxiosInterceptors = () => {
 	);
 };
 
-export const toast = (title: string) => Swal.fire({
+export const toast = (title: string) => swal.fire({
 	title: title,
 	icon: 'success',
 	toast: true,
@@ -38,7 +36,7 @@ export const toast = (title: string) => Swal.fire({
 	timer: 3000,
 	timerProgressBar: true,
 	didOpen: (toast) => {
-		toast.onmouseenter = Swal.stopTimer;
-		toast.onmouseleave = Swal.resumeTimer;
+		toast.onmouseenter = swal.stopTimer;
+		toast.onmouseleave = swal.resumeTimer;
 	},
 });

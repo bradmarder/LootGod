@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Row, Col, Alert, Button, Form, FormCheck } from 'react-bootstrap';
 import axios from 'axios';
 import classes from './eqClasses';
-import { EQClass } from './eqClass';
 
 export default function CreateLootRequest(props: IContext) {
 
@@ -12,13 +11,13 @@ export default function CreateLootRequest(props: IContext) {
 	const [spell, setSpell] = useState('');
 	const [currentItem, setCurrentItem] = useState('');
 	const [quantity, setQuantity] = useState(1);
-	const [eqClass, setClass] = useState('');
+	const [eqClass, setClass] = useState<EQClass | ''>('');
 	const [itemId, setItemId] = useState(0);
 	const [linkedAlts, setLinkedAlts] = useState<string[]>([]);
 
 	const hasQtyLoots = props.loots.filter(x => (props.raidNight ? x.raidQuantity : x.rotQuantity) > 0);
 
-	const spellSelected = itemId > 0 && props.loots.find(x => x.itemId === itemId)!.isSpell;
+	const spellSelected = itemId > 0 && props.loots.find(x => x.itemId === itemId)!.item.isSpell;
 	const reset = () => {
 		setAltName('');
 		setItemId(0);
@@ -44,7 +43,7 @@ export default function CreateLootRequest(props: IContext) {
 	const createLootRequest = () => {
 		const data = {
 			AltName: altName || null,
-			Class: eqClass == '' ? null : classes.indexOf(eqClass as EQClass),
+			Class: eqClass === '' ? null : classes.indexOf(eqClass),
 			ItemId: itemId,
 			Quantity: spellSelected ? 1 : quantity,
 			Spell: spellSelected ? spell : null,
@@ -61,7 +60,7 @@ export default function CreateLootRequest(props: IContext) {
 
 		// if someone selects a spell, they must enter the name of the spell, and the quantity defaults to 1
 		// ....but then we have to remove the char/lootId unique combo...
-		if (itemId > 0 && props.loots.find(x => x.itemId === itemId)!.isSpell) {
+		if (itemId > 0 && props.loots.find(x => x.itemId === itemId)!.item.isSpell) {
 			setQuantity(1);
 		}
 
@@ -98,7 +97,7 @@ export default function CreateLootRequest(props: IContext) {
 						<Col xs={12} md={6}>
 							<Form.Group className="mb-3">
 								<Form.Label>Class</Form.Label>
-								<Form.Select value={eqClass} onChange={e => setClass(e.target.value)}>
+								<Form.Select value={eqClass} onChange={e => setClass(e.target.value as EQClass)}>
 									<option>Select Class</option>
 									{classes.map(item =>
 										<option key={item} value={item}>{item}</option>
@@ -126,7 +125,7 @@ export default function CreateLootRequest(props: IContext) {
 							<Form.Select value={itemId} onChange={e => setLootLogic(Number(e.target.value))}>
 								<option value={0}>Select an Item</option>
 								{hasQtyLoots.map(loot =>
-									<option key={loot.itemId} value={loot.itemId}>{loot.name}</option>
+									<option key={loot.itemId} value={loot.itemId}>{loot.item.name}</option>
 								)}
 							</Form.Select>
 						</Form.Group>

@@ -44,6 +44,7 @@ public class LootRequest
 
 	/// <summary>
 	/// Why have this property here and not just use Player.Class? Because the player may be requesting loot for a persona
+	/// Should have just made this required to simplify
 	/// </summary>
 	public EQClass? Class { get; set; }
 
@@ -59,7 +60,7 @@ public class LootRequest
 
 	/// <summary>
 	/// unix seconds when this request was archived
-	/// value of 0 implies this request was archived before tracking of archival timestamp
+	/// value of 0 implies this request was archived before tracking of archival timestamp (Oct 2025)
 	/// </summary>
 	public long? Archived { get; set; }
 

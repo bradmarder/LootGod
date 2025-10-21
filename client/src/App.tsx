@@ -38,7 +38,7 @@ export default function App() {
 	const [lootLock, setLootLock] = useState(false);
 	const [requests, setRequests] = useState<ILootRequest[]>([]);
 	const [loots, setLoots] = useState<ILoot[]>([]);
-	const [items, setItems] = useState<IItem[]>([]);
+	const [items, setItems] = useState<IItemSearch[]>([]);
 	const [attendanceCacheKey, setAttendanceCacheKey] = useState(0);
 	const [linkedAltsCacheKey, setLinkedAltsCacheKey] = useState(0);
 	const [intro, setIntro] = useState(!hasKey);
@@ -63,7 +63,7 @@ export default function App() {
 	};
 	const getItems = (signal: AbortSignal) => {
 		axios
-			.get<IItem[]>('/GetItems', { signal })
+			.get<IItemSearch[]>('/GetItems', { signal })
 			.then(x => setItems(x.data));
 	};
 	const getLootRequests = (signal: AbortSignal) => {

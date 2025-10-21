@@ -30,7 +30,7 @@ export default function Loots(props: IContext) {
 
 	const loots = props.loots
 		.filter(x => (props.raidNight ? x.raidQuantity : x.rotQuantity) > 0)
-		.filter(x => x.isSpell === props.spell)
+		.filter(x => x.item.isSpell === props.spell)
 
 		// subtract the granted loot quantity from the total loot quantity
 		.map(item => {
@@ -72,12 +72,12 @@ export default function Loots(props: IContext) {
 						<Accordion.Item key={loot.itemId} eventKey={i.toString()}>
 							<Accordion.Header>
 								{!props.spell &&
-									<OverlayTrigger key={loot.itemId} container={ref} overlay={() => ItemView(loot)}>
-										<span className='text-warning font-monospace' style={{ whiteSpace: 'pre' }}>{loot.name.padEnd(35)}</span>
+									<OverlayTrigger key={loot.itemId} container={ref} overlay={() => ItemView(loot.item)}>
+										<span className='text-warning font-monospace' style={{ whiteSpace: 'pre' }}>{loot.item.name.padEnd(35)}</span>
 									</OverlayTrigger>
 								}
 								{props.spell &&
-									<span className='text-warning font-monospace' style={{ whiteSpace: 'pre' }}>{loot.name.padEnd(35)}</span>
+									<span className='text-warning font-monospace' style={{ whiteSpace: 'pre' }}>{loot.item.name.padEnd(35)}</span>
 								}
 								{loot.availableQuantity} available
 								| {lootRequests.filter(x => x.itemId === loot.itemId && x.granted).length} granted
@@ -101,7 +101,7 @@ export default function Loots(props: IContext) {
 												<span className={request.granted ? 'text-success' : ''}>
 													{getText(request)}
 												</span>
-												{request.duplicate && !loot.isSpell &&
+												{request.duplicate && !loot.item.isSpell &&
 													<span className='text-danger'> | Duplicate Request?!</span>
 												}
 											</div>

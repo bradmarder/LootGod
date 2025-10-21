@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Row, Col, Alert, Button, Form, Spinner } from 'react-bootstrap';
 import axios from 'axios';
-import Swal from 'sweetalert2/dist/sweetalert2.js';
+import swal from './swal';
 
-export default function CreateLoot(props: { items: IItem[], raidNight: boolean }) {
+export default function CreateLoot(props: { items: IItemSearch[], raidNight: boolean }) {
 
 	const [loading, setLoading] = useState(false);
 	const [createItemId, setCreateItemId] = useState(0);
@@ -29,7 +29,7 @@ export default function CreateLoot(props: { items: IItem[], raidNight: boolean }
 		axios
 			.post('/ItemSync')
 			.then(() => {
-				Swal.fire('Item Sync Success', `Successfully synced items`, 'success');
+				swal.fire('Item Sync Success', `Successfully synced items`, 'success');
 			})
 			.finally(() => setLoading(false));
 	};
@@ -38,7 +38,7 @@ export default function CreateLoot(props: { items: IItem[], raidNight: boolean }
 		axios
 			.post('/SpellSync')
 			.then(() => {
-				Swal.fire('Spell Sync Success', `Successfully synced spells`, 'success');
+				swal.fire('Spell Sync Success', `Successfully synced spells`, 'success');
 			})
 			.finally(() => setLoading(false));
 	};

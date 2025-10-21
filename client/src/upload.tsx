@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Alert, Form } from 'react-bootstrap';
 import axios from 'axios';
-import Swal from 'sweetalert2/dist/sweetalert2.js';
+import swal from './swal';
 
 export default function Upload(props: { refreshCache: () => void }) {
 
@@ -15,7 +15,7 @@ export default function Upload(props: { refreshCache: () => void }) {
 		axios
 			.post('/ImportDump?offset=' + offset, formData)
 			.then(() => props.refreshCache())
-			.then(() => Swal.fire('Upload Success', `Successfully uploaded the file "${file.name}"`, 'success'))
+			.then(() => swal.fire('Upload Success', `Successfully uploaded the file "${file.name}"`, 'success'))
 			.finally(() => {
 				setKey(x => x + 1);
 				setLoading(false);

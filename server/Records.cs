@@ -11,6 +11,11 @@ public record TransferGuildName(string Name);
 public record MakeGuest(string Name);
 public record ToggleHiddenAdminPlayer(int Id);
 public record ChangePlayerName(int Id, string Name);
+public record ItemSearch
+{
+	public int Id { get; init; }
+	public string Name { get; init; } = null!;
+}
 
 /// <summary>
 /// null GuildId implies the payload is sent to every client (items)
@@ -25,8 +30,7 @@ public class SelfDestruct(string path) : IDisposable
 public class DataSink
 {
 	public required int GuildId { get; init; }
-	public required HttpResponse Response { get; init; }
-	public required CancellationToken Token { get; init; }
+	public required HttpContext Context { get; init; }
 
 	public int EventId { get; set; } = 1;
 }

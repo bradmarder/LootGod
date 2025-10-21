@@ -142,7 +142,7 @@ public class LootService(
 		return string.Join(Environment.NewLine, output);
 	}
 
-	public bool AddDataSink(string connectionId, HttpResponse response, CancellationToken token)
+	public bool AddDataSink(string connectionId, HttpContext context)
 	{
 		LogNewDataSink();
 
@@ -150,24 +150,19 @@ public class LootService(
 		var sink = new DataSink
 		{
 			GuildId = guildId,
-			Response = response,
-			Token = token,
+			Context = context,
 		};
 		return _dataSinks.TryAdd(connectionId, sink);
 	}
 
 	public bool RemoveDataSink(string connectionId) => _dataSinks.Remove(connectionId, out _);
 
-	public ItemDto[] LoadItems()
+	public ItemSearch[] LoadItems()
 	{
 		return _db.Items
 			.Where(x => EF.Constant(CurrentExpansions).Contains(x.Expansion))
 			.OrderBy(x => x.Name)
-			.Select(x => new ItemDto
-			{
-				Id = x.Id,
-				Name = x.Name,
-			})
+			.Select(x => new ItemSearch { Id = x.Id, Name = x.Name })
 			.ToArray();
 	}
 
@@ -179,76 +174,25 @@ public class LootService(
 			.Include(x => x.Item)
 			.Where(x => x.GuildId == EF.Constant(guildId))
 			.Where(x => EF.Constant(CurrentExpansions).Contains(x.Item.Expansion))
-			.Select(x => new LootDto
-			{
-				ItemId = x.ItemId,
-				Name = x.Item.Name,
-				RaidQuantity = x.RaidQuantity,
-				RotQuantity = x.RotQuantity,
-				Sync = x.Item.Sync,
-				Hash = x.Item.Hash,
-				Expansion = x.Item.Expansion,
-				Classes = x.Item.Classes,
-				Prestige = x.Item.Prestige,
-				Slots = x.Item.Slots,
-				Regen = x.Item.Regen,
-				ManaRegen = x.Item.ManaRegen,
-				EnduranceRegen = x.Item.EnduranceRegen,
-				HealAmt = x.Item.HealAmt,
-				SpellDmg = x.Item.SpellDmg,
-				Clairvoyance = x.Item.Clairvoyance,
-				Attack = x.Item.Attack,
-				Itemtype = x.Item.Itemtype,
-				Augslot1type = x.Item.Augslot1type,
-				Augslot3type = x.Item.Augslot3type,
-				Augslot4type = x.Item.Augslot4type,
-				Stacksize = x.Item.Stacksize,
-				HP = x.Item.HP,
-				Mana = x.Item.Mana,
-				Endurance = x.Item.Endurance,
-				AC = x.Item.AC,
-				Icon = x.Item.Icon,
-				Damage = x.Item.Damage,
-				Delay = x.Item.Delay,
-				ReqLevel = x.Item.ReqLevel,
-				RecLevel = x.Item.RecLevel,
-				HSTR = x.Item.HSTR,
-				HINT = x.Item.HINT,
-				HWIS = x.Item.HWIS,
-				HAGI = x.Item.HAGI,
-				HDEX = x.Item.HDEX,
-				HSTA = x.Item.HSTA,
-				HCHA = x.Item.HCHA,
-				MinLuck = x.Item.MinLuck,
-				MaxLuck = x.Item.MaxLuck,
-				Lore = x.Item.Lore,
-				ProcLevel = x.Item.ProcLevel,
-				FocusLevel = x.Item.FocusLevel,
-				ProcEffect = x.Item.ProcEffect,
-				FocusEffect = x.Item.FocusEffect,
-				ClickEffect = x.Item.ClickEffect,
-				ClickLevel = x.Item.ClickLevel,
-				WornEffect = x.Item.WornEffect,
-				CharmFile = x.Item.CharmFile,
-			})
+			.ProjectToDto()
 			.ToArray()
-			.OrderBy(x => x.Name)
 			.Select(x => x with
 			{
-				WornName = spells.GetValueOrDefault(x.WornEffect)?.Name,
-
-				ClickName = spells.GetValueOrDefault(x.ClickEffect)?.Name,
-				ClickDescription = spells.GetValueOrDefault(x.ClickEffect)?.Description,
-				ClickDescription2 = spells.GetValueOrDefault(x.ClickEffect)?.Description2,
-
-				ProcName = spells.GetValueOrDefault(x.ProcEffect)?.Name,
-				ProcDescription = spells.GetValueOrDefault(x.ProcEffect)?.Description,
-				ProcDescription2 = spells.GetValueOrDefault(x.ProcEffect)?.Description2,
-
-				FocusName = spells.GetValueOrDefault(x.FocusEffect)?.Name,
-				FocusDescription = spells.GetValueOrDefault(x.FocusEffect)?.Description,
-				FocusDescription2 = spells.GetValueOrDefault(x.FocusEffect)?.Description2,
+				Item = x.Item with
+				{
+					WornName = spells.GetValueOrDefault(x.Item.WornEffect)?.Name,
+					ClickName = spells.GetValueOrDefault(x.Item.ClickEffect)?.Name,
+					ClickDescription = spells.GetValueOrDefault(x.Item.ClickEffect)?.Description,
+					ClickDescription2 = spells.GetValueOrDefault(x.Item.ClickEffect)?.Description2,
+					ProcName = spells.GetValueOrDefault(x.Item.ProcEffect)?.Name,
+					ProcDescription = spells.GetValueOrDefault(x.Item.ProcEffect)?.Description,
+					ProcDescription2 = spells.GetValueOrDefault(x.Item.ProcEffect)?.Description2,
+					FocusName = spells.GetValueOrDefault(x.Item.FocusEffect)?.Name,
+					FocusDescription = spells.GetValueOrDefault(x.Item.FocusEffect)?.Description,
+					FocusDescription2 = spells.GetValueOrDefault(x.Item.FocusEffect)?.Description2,
+				},
 			})
+			.OrderBy(x => x.Item.Name)
 			.ToArray();
 	}
 
@@ -260,26 +204,7 @@ public class LootService(
 			.OrderByDescending(x => x.Spell != null)
 			.ThenBy(x => x.ItemId)
 			.ThenByDescending(x => x.AltName ?? x.Player.Name)
-			.Select(x => new LootRequestDto
-			{
-				Id = x.Id,
-				PlayerId = x.PlayerId,
-				CreatedDate = x.CreatedDate,
-				AltName = x.AltName,
-				MainName = x.Player.Name,
-				Class = x.Class ?? x.Player.Class,
-				Spell = x.Spell,
-				ItemId = x.ItemId,
-				LootName = x.Item.Name,
-				Quantity = x.Quantity,
-				RaidNight = x.RaidNight,
-				IsAlt = x.IsAlt,
-				Granted = x.Granted,
-				CurrentItem = x.CurrentItem,
-				Persona = x.Persona,
-				Archived = x.Archived,
-				Duplicate = x.Player.LootRequests.Any(lr => lr.ItemId == x.ItemId && lr.Granted && lr.Archived != null),
-			})
+			.ProjectToDto()
 			.ToArray();
 	}
 

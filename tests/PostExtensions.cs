@@ -69,11 +69,11 @@ public static class PostExtensions
 	{
 		await client.EnsurePostAsJsonAsync("/CreateItem?name=" + TestData.DefaultItemName);
 
-		var items = await client.EnsureGetJsonAsync<ItemDto[]>("/GetItems");
+		var items = await client.EnsureGetJsonAsync<ItemSearch[]>("/GetItems");
 		Assert.Single(items);
-		var item = items[0];
-		Assert.Equal(TestData.DefaultItemName, item.Name);
+		var item = items.Single();
 		Assert.Equal(1, item.Id);
+		Assert.Equal(TestData.DefaultItemName, item.Name);
 	}
 
 	public static async Task CreateLootRequest(this HttpClient client)

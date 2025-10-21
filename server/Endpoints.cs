@@ -62,7 +62,6 @@ public class Endpoints(string _adminKey)
 	{
 		app.MapGet("SSE", async (HttpContext ctx, IServiceScopeFactory factory, ConcurrentDictionary<string, DataSink> dataSinks) =>
 		{
-			var res = ctx.Response;
 			var token = ctx.RequestAborted;
 			var connectionId = ctx.Connection.Id ?? "";
 
@@ -71,17 +70,17 @@ public class Endpoints(string _adminKey)
 			{
 				scope.ServiceProvider
 					.GetRequiredService<LootService>()
-					.AddDataSink(connectionId, res, token);
+					.AddDataSink(connectionId, ctx);
 			}
 
 			token.Register(() => dataSinks.Remove(connectionId, out _));
 
-			res.Headers.Append("Content-Type", "text/event-stream");
-			res.Headers.Append("Cache-Control", "no-cache");
-			res.Headers.Append("Connection", "keep-alive");
+			ctx.Response.Headers.Append("Content-Type", "text/event-stream");
+			ctx.Response.Headers.Append("Cache-Control", "no-cache");
+			ctx.Response.Headers.Append("Connection", "keep-alive");
 
-			await res.WriteAsync("data: empty\n\n\n", token);
-			await res.Body.FlushAsync(token);
+			await ctx.Response.WriteAsync("data: empty\n\n\n", token);
+			await ctx.Response.Body.FlushAsync(token);
 			await Task.Delay(Timeout.InfiniteTimeSpan, token);
 		});
 
@@ -262,26 +261,7 @@ public class Endpoints(string _adminKey)
 				.Where(x => x.AltName!.StartsWith(normalizedName) || x.Player.Name.StartsWith(normalizedName))
 				.Where(x => itemId == null || x.ItemId == itemId)
 				.OrderByDescending(x => x.CreatedDate)
-				.Select(x => new LootRequestDto
-				{
-					Id = x.Id,
-					PlayerId = x.PlayerId,
-					CreatedDate = x.CreatedDate,
-					AltName = x.AltName,
-					MainName = x.Player.Name,
-					Class = x.Class ?? x.Player.Class,
-					Spell = x.Spell,
-					ItemId = x.ItemId,
-					LootName = x.Item.Name,
-					Quantity = x.Quantity,
-					RaidNight = x.RaidNight,
-					IsAlt = x.IsAlt,
-					Granted = x.Granted,
-					CurrentItem = x.CurrentItem,
-					Persona = x.Persona,
-					Archived = x.Archived,
-					Duplicate = false,
-				})
+				.ProjectToDto()
 				.ToArray();
 		});
 

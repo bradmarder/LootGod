@@ -1,17 +1,37 @@
-declare interface ILoot extends IItemStats {
+declare type EQClass =
+	'Bard'
+	| 'Beastlord'
+	| 'Berserker'
+	| 'Cleric'
+	| 'Druid'
+	| 'Enchanter'
+	| 'Magician'
+	| 'Monk'
+	| 'Necromancer'
+	| 'Paladin'
+	| 'Ranger'
+	| 'Rogue'
+	| 'Shadowknight'
+	| 'Shaman'
+	| 'Warrior'
+	| 'Wizard';
+declare interface ILoot {
 	readonly itemId: number
-	readonly name: string;
 	readonly raidQuantity: number;
 	readonly rotQuantity: number;
-	readonly isSpell: boolean;
 
 	/** value computed on the client */
 	readonly availableQuantity: number;
+
+	readonly item: IItem;
 }
-declare interface IItemStats
+declare interface IItem
 {
+	readonly id: number;
+	readonly name: string;
+	readonly isSpell: boolean;
 	readonly sync: number;
-	readonly hash: any;
+	readonly hash: string;
 	readonly expansion: number;
 	readonly classes: number;
 	readonly prestige: number;
@@ -66,7 +86,7 @@ declare interface IItemStats
 	readonly focusDescription2: string | null;
 	readonly charmFile: string;
 }
-declare interface IItem {
+declare interface IItemSearch {
 	readonly id: number;
 	readonly name: string;
 }
@@ -77,7 +97,7 @@ declare interface ILootRequest {
 	readonly mainName: string;
 	readonly altName: string;
 	readonly spell: string | null;
-	readonly class: EQClass;
+	readonly class: number;
 	readonly itemId: number;
 	readonly lootName: string;
 	readonly quantity: number;
@@ -92,7 +112,7 @@ declare interface IContext {
 	readonly raidNight: boolean;
 	readonly isAdmin: boolean;
 	readonly loots: readonly ILoot[];
-	readonly items: readonly IItem[];
+	readonly items: readonly IItemSearch[];
 	readonly requests: readonly ILootRequest[];
 	readonly spell?: boolean;
 	readonly lootLocked?: boolean;
@@ -111,7 +131,7 @@ declare interface IRaidAttendance {
 	readonly guest: boolean;
 	readonly notes: string | null;
 	readonly zone: string | null;
-	readonly class: EQClass;
+	readonly class: number;
 	readonly level: number;
 	readonly alts: readonly string[];
 	readonly t1GrantedLootCount: number;
