@@ -168,30 +168,10 @@ public class LootService(
 
 	public LootDto[] LoadLoots(int guildId)
 	{
-		var spells = _db.Spells.ToDictionary(x => x.Id);
-
 		return _db.Loots
-			.Include(x => x.Item)
 			.Where(x => x.GuildId == EF.Constant(guildId))
 			.Where(x => EF.Constant(CurrentExpansions).Contains(x.Item.Expansion))
 			.ProjectToDto()
-			.ToArray()
-			.Select(x => x with
-			{
-				Item = x.Item with
-				{
-					WornName = spells.GetValueOrDefault(x.Item.WornEffect)?.Name,
-					ClickName = spells.GetValueOrDefault(x.Item.ClickEffect)?.Name,
-					ClickDescription = spells.GetValueOrDefault(x.Item.ClickEffect)?.Description,
-					ClickDescription2 = spells.GetValueOrDefault(x.Item.ClickEffect)?.Description2,
-					ProcName = spells.GetValueOrDefault(x.Item.ProcEffect)?.Name,
-					ProcDescription = spells.GetValueOrDefault(x.Item.ProcEffect)?.Description,
-					ProcDescription2 = spells.GetValueOrDefault(x.Item.ProcEffect)?.Description2,
-					FocusName = spells.GetValueOrDefault(x.Item.FocusEffect)?.Name,
-					FocusDescription = spells.GetValueOrDefault(x.Item.FocusEffect)?.Description,
-					FocusDescription2 = spells.GetValueOrDefault(x.Item.FocusEffect)?.Description2,
-				},
-			})
 			.OrderBy(x => x.Item.Name)
 			.ToArray();
 	}

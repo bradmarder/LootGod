@@ -66,58 +66,6 @@ public enum Slots
 [Index(nameof(Expansion))]
 public class Item
 {
-	public Item() { }
-	public Item(ItemParseOutput data, long sync)
-	{
-		Sync = sync;
-		Id = data.Id;
-		Name = data.Name;
-		Hash = data.Hash;
-		Expansion = data.Expansion;
-		Classes = data.Classes;
-		Prestige = data.Prestige;
-		Slots = data.Slots;
-		Regen = data.Regen;
-		ManaRegen =  data.ManaRegen;
-		EnduranceRegen = data.EnduranceRegen;
-		HealAmt = data.HealAmt;
-		SpellDmg = data.SpellDmg;
-		Clairvoyance = data.Clairvoyance;
-		Attack = data.Attack;
-		Itemtype = data.Itemtype;
-		Augslot1type = data.Augslot1type;
-		Augslot3type = data.Augslot3type;
-		Augslot4type = data.Augslot4type;
-		Stacksize = data.Stacksize;
-		HP = data.HP;
-		Mana = data.Mana;
-		Endurance = data.Endurance;
-		AC = data.AC;
-		Icon = data.Icon;
-		Damage = data.Damage;
-		Delay = data.Delay;
-		ReqLevel = data.ReqLevel;
-		RecLevel = data.RecLevel;
-		HSTR = data.HSTR;
-		HINT = data.HINT;
-		HWIS = data.HWIS;
-		HAGI = data.HAGI;
-		HDEX = data.HDEX;
-		HSTA = data.HSTA;
-		HCHA = data.HCHA;
-		MinLuck = data.MinLuck;
-		MaxLuck = data.MaxLuck;
-		Lore = data.Lore;
-		ProcLevel = data.ProcLevel;
-		FocusLevel = data.FocusLevel;
-		ProcEffect = data.ProcEffect;
-		FocusEffect = data.FocusEffect;
-		ClickEffect = data.ClickEffect;
-		ClickLevel = data.ClickLevel;
-		WornEffect = data.WornEffect;
-		CharmFile = data.CharmFile;
-	}
-
 	[Key]
 	[DatabaseGenerated(DatabaseGeneratedOption.None)]
 	public int Id { get; set; }
@@ -173,11 +121,11 @@ public class Item
 	public bool Lore { get; set; }
 	public byte ProcLevel { get; set; }
 	public byte FocusLevel { get; set; }
-	public int ProcEffect { get; set; }
-	public int FocusEffect { get; set; }
-	public int ClickEffect { get; set; }
+	public int? ProcEffect { get; set; }
+	public int? FocusEffect { get; set; }
+	public int? ClickEffect { get; set; }
 	public int ClickLevel { get; set; }
-	public int WornEffect { get; set; }
+	public int? WornEffect { get; set; }
 	public string CharmFile { get; set; } = "";
 
 	[InverseProperty(nameof(LootRequest.Item))]
@@ -185,4 +133,16 @@ public class Item
 
 	[InverseProperty(nameof(Loot.Item))]
 	public virtual List<Loot> Loots { get; } = [];
+
+	[ForeignKey(nameof(WornEffect))]
+	public virtual Spell? WornSpell { get; set; }
+
+	[ForeignKey(nameof(ClickEffect))]
+	public virtual Spell? ClickSpell { get; set; }
+
+	[ForeignKey(nameof(ProcEffect))]
+	public virtual Spell? ProcSpell { get; set; }
+
+	[ForeignKey(nameof(FocusEffect))]
+	public virtual Spell? FocusSpell { get; set; }
 }

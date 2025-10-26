@@ -187,7 +187,7 @@ public class Endpoints(string _adminKey)
 			var coldIds = coldItems.Select(x => x.Id).ToHashSet();
 			var newItems = hotRaidItems
 				.Where(x => !coldIds.Contains(x.Key))
-				.Select(x => new Item(x.Value, now))
+				.Select(x => ItemMapper.ItemOutputMap(x.Value, now))
 				.ToArray();
 			var replaceCount = 0;
 			var missingCount = 0;
@@ -208,7 +208,7 @@ public class Endpoints(string _adminKey)
 
 				// instead of update, remove old, add replacement
 				db.Items.Remove(cold);
-				db.Items.Add(new Item(hot!, now));
+				db.Items.Add(ItemMapper.ItemOutputMap(hot, now));
 				replaceCount++;
 			}
 
