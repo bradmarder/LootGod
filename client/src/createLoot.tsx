@@ -24,21 +24,12 @@ export default function CreateLoot(props: { items: IItemSearch[], raidNight: boo
 			})
 			.finally(() => setLoading(false));
 	};
-	const syncItems = () => {
+	const syncData = () => {
 		setLoading(true);
 		axios
-			.post('/ItemSync')
+			.post('/DataSync')
 			.then(() => {
-				swal.fire('Item Sync Success', `Successfully synced items`, 'success');
-			})
-			.finally(() => setLoading(false));
-	};
-	const syncSpells = () => {
-		setLoading(true);
-		axios
-			.post('/SpellSync')
-			.then(() => {
-				swal.fire('Spell Sync Success', `Successfully synced spells`, 'success');
+				swal.fire('Data Sync Success', `Successfully synced items`, 'success');
 			})
 			.finally(() => setLoading(false));
 	};
@@ -68,16 +59,8 @@ export default function CreateLoot(props: { items: IItemSearch[], raidNight: boo
 				</Row>
 				<br />
 				<Button variant='success' disabled={loading || createItemId === 0} onClick={createLoot}>Create</Button>
-				<Button variant='warning' disabled={loading} onClick={syncItems} className='float-end'>
-					Sync Items
-					{loading &&
-						<Spinner animation="border" role="status">
-							<span className="visually-hidden">Loading...</span>
-						</Spinner>
-					}
-				</Button>
-				<Button variant='warning' disabled={loading} onClick={syncSpells} className='float-end'>
-					Sync Spells
+				<Button variant='warning' disabled={loading} onClick={syncData} className='float-end'>
+					Sync Spells/Items
 					{loading &&
 						<Spinner animation="border" role="status">
 							<span className="visually-hidden">Loading...</span>

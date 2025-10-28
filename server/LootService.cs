@@ -448,40 +448,6 @@ public class LootService(
 		activity?.SetTag("PlayerCreatedCount", playerCreatedCount);
 	}
 
-	public async IAsyncEnumerable<SpellParseOutput> FetchSpells([EnumeratorCancellation] CancellationToken cancellationToken)
-	{
-		using var response = await _httpClient.GetAsync("https://lucy.allakhazam.com/static/spelldata/spelldata_Live_2025-08-27_01:59:10.txt.gz", HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-		response.EnsureSuccessStatusCode();
-		await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-		await using var gzip = new GZipStream(stream, CompressionMode.Decompress);
-		using var reader = new StreamReader(gzip);
-
-		// skip header
-		await reader.ReadLineAsync(cancellationToken);
-
-		while (await reader.ReadLineAsync(cancellationToken) is string line)
-		{
-			yield return new(line);
-		}
-	}
-
-	public async IAsyncEnumerable<ItemParseOutput> FetchItems([EnumeratorCancellation] CancellationToken cancellationToken)
-	{
-		using var response = await _httpClient.GetAsync("https://items.sodeq.org/downloads/items.txt.gz", HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-		response.EnsureSuccessStatusCode();
-		await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-		await using var gzip = new GZipStream(stream, CompressionMode.Decompress);
-		using var reader = new StreamReader(gzip);
-
-		// skip header
-		await reader.ReadLineAsync(cancellationToken);
-
-		while (await reader.ReadLineAsync(cancellationToken) is string line)
-		{
-			yield return new(line);
-		}
-	}
-
 	// parse the guild dump player output
 	private static async Task<GuildDumpPlayerOutput[]> ParseGuildDump(IFormFile file)
 	{

@@ -119,118 +119,13 @@ public class Endpoints(string _adminKey)
 			return Results.File(tempFileName, fileDownloadName: $"lootgod-backup-{now}.db");
 		});
 
-		app.MapPost("SpellSync", async (ILogger<Endpoints> logger, LootService lootService, LootGodContext db, TimeProvider time) =>
+		app.MapPost("DataSync", async (LootService lootService, SyncService syncService) =>
 		{
 			lootService.EnsureAdminStatus();
 
-			var now = time.GetUtcNow().ToUnixTimeSeconds();
-			var watch = Stopwatch.StartNew();
-			var spells = new List<Spell>();
-			var totalSpellCount = 0;
-			var itemSpells = db.Items
-				.Select(x => new { x.ProcEffect, x.FocusEffect, x.ClickEffect, x.WornEffect })
-				.ToArray();
-			var spellIds = itemSpells
-				.SelectMany(x => new[] { x.ProcEffect, x.FocusEffect, x.ClickEffect, x.WornEffect })
-				.Where(x => x > 0)
-				.ToHashSet();
-
-			await foreach (var spell in lootService.FetchSpells(CancellationToken.None))
-			{
-				totalSpellCount++;
-				if (spellIds.Contains(spell.Id))
-				{
-					spells.Add(new(spell, now));
-				}
-			}
-
-			// simple just to delete and re-add all spells
-			var deletedCount = db.Spells.ExecuteDelete();
-
-			db.Spells.AddRange(spells);
-			var addedCount = db.SaveChanges();
-
-			var state = new
-			{
-				ElapsedMs = watch.ElapsedMilliseconds,
-				DeletedCount = deletedCount,
-				TotalSpellCount = totalSpellCount,
-				AddedCount = addedCount,
-			};
-			using var _ = logger.BeginScope(state);
-			logger.LogInformation("Successfully completed spell sync");
-
-			return state;
-		});
-
-		app.MapPost("ItemSync", async (ILogger<Endpoints> logger, LootService lootService, LootGodContext db, TimeProvider time) =>
-		{
-			lootService.EnsureAdminStatus();
-
-			var now = time.GetUtcNow().ToUnixTimeSeconds();
-			var watch = Stopwatch.StartNew();
-			var hotRaidItems = new Dictionary<int, ItemParseOutput>();
-			var totalItemCount = 0;
-
-			await foreach (var item in lootService.FetchItems(CancellationToken.None))
-			{
-				totalItemCount++;
-				if (item is { IsRaid: true, Expansion: not Expansion.Unknown })
-				{
-					hotRaidItems[item.Id] = item;
-				}
-			}
-
-			// expensive? could only load where hash has changed since last sync
-			var coldItems = db.Items.ToArray();
-
-			var coldIds = coldItems.Select(x => x.Id).ToHashSet();
-			var newItems = hotRaidItems
-				.Where(x => !coldIds.Contains(x.Key))
-				.Select(x => ItemMapper.ItemOutputMap(x.Value, now))
-				.ToArray();
-			var replaceCount = 0;
-			var missingCount = 0;
-			var equalHashCount = 0;
-
-			foreach (var cold in coldItems)
-			{
-				if (!hotRaidItems.TryGetValue(cold.Id, out var hot))
-				{
-					missingCount++;
-					continue;
-				}
-				if (Enumerable.SequenceEqual(hot!.Hash, cold.Hash))
-				{
-					equalHashCount++;
-					continue;
-				}
-
-				// instead of update, remove old, add replacement
-				db.Items.Remove(cold);
-				db.Items.Add(ItemMapper.ItemOutputMap(hot, now));
-				replaceCount++;
-			}
-
-			db.Items.AddRange(newItems);
-			var changeCount = db.SaveChanges();
-
-			var state = new
-			{
-				ElapsedMs = watch.ElapsedMilliseconds,
-				ColdItemCount = coldItems.Length,
-				HotItemCount = hotRaidItems.Count,
-				ChangeCount = changeCount,
-				ReplaceCount = replaceCount,
-				NewItemCount = newItems.Length,
-				EqualHashCount = equalHashCount,
-				MissingCount = missingCount,
-				TotalItemCount = totalItemCount,
-			};
-			using var _ = logger.BeginScope(state);
-			logger.LogInformation("Successfully completed item sync");
-
-			return state;
+			await syncService.SpellSync();
+			await syncService.ItemSync();
+			await lootService.RefreshItems();
 		});
 
 		app.MapGet("GetPlayer", (LootService lootService, LootGodContext db) =>

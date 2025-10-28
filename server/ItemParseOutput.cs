@@ -111,14 +111,16 @@ public record ItemParseOutput
 	public bool Lore => _data[120] is "-1";
 	public byte ProcLevel => byte.Parse(_data[152]);
 	public byte FocusLevel => byte.Parse(_data[174]);
-	public int ProcEffect => int.Parse(_data[149]);
-	public int FocusEffect => int.Parse(_data[171]);
-	public int ClickEffect => int.Parse(_data[138]);
+	public int? ProcEffect => NullIfZero(int.Parse(_data[149]));
+	public int? FocusEffect => NullIfZero(int.Parse(_data[171]));
+	public int? ClickEffect => NullIfZero(int.Parse(_data[138]));
+	public int? WornEffect => NullIfZero(int.Parse(_data[160]));
 	public int ClickLevel => byte.Parse(_data[141]);
-	public int WornEffect => int.Parse(_data[160]);
 	public int UNKNOWN77 => int.Parse(_data[279]);
 	public DateTime Created => DateTime.Parse(_data[310]);
 	public string CharmFile => _data[86];
+
+	private static int? NullIfZero(int x) => x > 0 ? x : null;
 
 	public bool IsRaid => IsRaidGear || IsRaidContainer || IsRaidSpell;
 
