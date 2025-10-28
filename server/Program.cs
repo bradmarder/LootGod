@@ -101,11 +101,13 @@ if (builder.Environment.IsProduction())
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<LootService>();
+builder.Services.AddScoped<SyncService>();
 builder.Services.AddScoped<LogMiddleware>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(x => Channel.CreateUnbounded<Payload>(new() { SingleReader = true, SingleWriter = false }));
 builder.Services.AddSingleton<ConcurrentDictionary<string, DataSink>>();
 builder.Services.AddHttpClient<LootService>();
+builder.Services.AddHttpClient<SyncService>();
 builder.Services.AddHostedService<PayloadDeliveryService>();
 builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
 builder.Services.AddLogging(x => x
@@ -138,13 +140,15 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 	//try
 	//{
 	//	db.Database.ExecuteSqlRaw("""
-	//		ALTER TABLE Items ADD COLUMN WornEffect INTEGER NOT NULL DEFAULT 0;
+	//		ALTER TABLE LootRequests ADD COLUMN Persona INTEGER NOT NULL DEFAULT 0;
 	//		""");
-	//	app.Logger.LogInformation("add item WornEffect success");
+	//	app.Logger.LogInformation("add item Persona success");
+	//	db.Database.ExecuteSqlRaw("DELETE from Items where ItemType in (11,67) and CharmFile like '%GroupT%'");
+	//	app.Logger.LogInformation("delete items success");
 	//}
 	//catch (Exception ex)
 	//{
-	//	app.Logger.LogError(ex, "add item WornEffect");
+	//	app.Logger.LogError(ex, "add item Persona");
 	//}
 }
 
