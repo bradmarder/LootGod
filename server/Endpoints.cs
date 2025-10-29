@@ -123,8 +123,7 @@ public class Endpoints(string _adminKey)
 		{
 			lootService.EnsureAdminStatus();
 
-			await syncService.SpellSync();
-			await syncService.ItemSync();
+			await syncService.DataSync();
 			await lootService.RefreshItems();
 		});
 

@@ -9,6 +9,16 @@ public class SyncService(
 	LootGodContext _db,
 	HttpClient _httpClient)
 {
+	public async Task DataSync()
+	{
+		_db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = OFF;");
+
+		await SpellSync();
+		await ItemSync();
+
+		_db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON;");
+	}
+
 	private async IAsyncEnumerable<string> FetchLines(string requestUri, [EnumeratorCancellation] CancellationToken cancellationToken)
 	{
 		using var response = await _httpClient.GetAsync(requestUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
@@ -25,8 +35,7 @@ public class SyncService(
 			yield return line;
 		}
 	}
-
-	public async Task SpellSync()
+	private async Task SpellSync()
 	{
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
 		var watch = Stopwatch.StartNew();
@@ -65,7 +74,7 @@ public class SyncService(
 		_logger.LogInformation("Successfully completed spell sync");
 	}
 
-	public async Task ItemSync()
+	private async Task ItemSync()
 	{
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
 		var watch = Stopwatch.StartNew();
