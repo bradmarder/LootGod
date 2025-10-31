@@ -132,7 +132,7 @@ declare interface IRaidAttendance {
 	readonly notes: string | null;
 	readonly zone: string | null;
 	readonly class: number;
-	readonly level: number;
+	readonly level: number | null;
 	readonly alts: readonly string[];
 	readonly t1GrantedLootCount: number;
 	readonly t2GrantedLootCount: number;

@@ -431,4 +431,15 @@ public class LootTest
 		Assert.Equal(expected90, ra._90);
 		Assert.Equal(expected180, ra._180);
 	}
+
+	[Fact]
+	public async Task DataSync()
+	{
+		await using var app = new AppFixture();
+
+		await app.Client.EnsurePostAsJsonAsync("/DataSync");
+
+		var items = await app.Client.EnsureGetJsonAsync<ItemSearch[]>("/GetItems");
+		Assert.NotEmpty(items);
+	}
 }

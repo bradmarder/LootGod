@@ -21,15 +21,14 @@ public static partial class LootMapper
 	[MapPropertyFromSource(nameof(ItemDto.FocusDescription2), Use = nameof(MapFocusDescription2))]
 	public static partial ItemDto ItemMap(Item item);
 
-	// ALL THIS FAILS CAUSE THE FK ARE 0 INSTEAD OF NULL....
-	private static string? MapWornName(Item item) => item.WornSpell?.Name;
-	private static string? MapClickName(Item item) => item.ClickSpell?.Name;
-	private static string? MapClickDescription(Item item) => item.ClickSpell?.Description;
-	private static string? MapClickDescription2(Item item) => item.ClickSpell?.Description2;
-	private static string? MapProcName(Item item) => item.ProcSpell?.Name;
-	private static string? MapProcDescription(Item item) => item.ProcSpell?.Description;
-	private static string? MapProcDescription2(Item item) => item.ProcSpell?.Description2;
-	private static string? MapFocusName(Item item) => item.FocusSpell?.Name;
-	private static string? MapFocusDescription(Item item) => item.FocusSpell?.Description;
-	private static string? MapFocusDescription2(Item item) => item.FocusSpell?.Description2;
+	private static string? MapWornName(Item item) => item.WornSpell!.Name;
+	private static string? MapClickName(Item item) => item.ClickSpell!.Name;
+	private static string? MapClickDescription(Item item) => item.ClickSpell!.Description;
+	private static string? MapClickDescription2(Item item) => item.ClickSpell!.Description2;
+	private static string? MapProcName(Item item) => item.ProcSpell!.Name;
+	private static string? MapProcDescription(Item item) => item.ProcSpell!.Description;
+	private static string? MapProcDescription2(Item item) => item.ProcSpell!.Description2;
+	private static string? MapFocusName(Item item) => item.FocusSpell!.Name;
+	private static string? MapFocusDescription(Item item) => item.FocusSpell!.Description;
+	private static string? MapFocusDescription2(Item item) => item.FocusSpell!.Description2;
 }

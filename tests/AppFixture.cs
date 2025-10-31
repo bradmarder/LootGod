@@ -35,12 +35,29 @@ public class AppFixture : IAsyncDisposable
 
 public class LootGodApplicationFactory(DateTimeOffset now) : WebApplicationFactory<Program>
 {
+	private static HttpResponseMessage HandlerFunc(HttpRequestMessage msg)
+	{
+		// the spellDataUrl has a `:` in the path which is automatically converted to '_' when downloading
+		var file = msg.RequestUri!.AbsolutePath
+			.Split('/')
+			.Last()
+			.Replace(':', '_');
+		var path = Path.Combine(AppContext.BaseDirectory, file);
+		var stream = File.OpenRead(path);
+
+		return new()
+		{
+			Content = new StreamContent(stream)
+		};
+	}
+
 	protected override void ConfigureWebHost(IWebHostBuilder builder)
 	{
 		builder.ConfigureServices(x =>
 		{
 			x.AddSingleton<TimeProvider>(new FixedTimeProvider(now));
 			x.AddLogging(y => y.ClearProviders());
+			x.AddHttpClient<SyncService>().ConfigurePrimaryHttpMessageHandler(() => new FakeHttpMessageHandler(HandlerFunc));
 		});
 	}
 }
@@ -48,4 +65,19 @@ public class LootGodApplicationFactory(DateTimeOffset now) : WebApplicationFacto
 public class FixedTimeProvider(DateTimeOffset now) : TimeProvider
 {
 	public override DateTimeOffset GetUtcNow() => now;
+}
+
+public class FakeHttpMessageHandler : DelegatingHandler
+{
+	private readonly Func<HttpRequestMessage, HttpResponseMessage> _handlerFunc;
+
+	public FakeHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> handlerFunc)
+	{
+		_handlerFunc = handlerFunc;
+	}
+
+	protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+	{
+		return Task.FromResult(_handlerFunc(request));
+	}
 }

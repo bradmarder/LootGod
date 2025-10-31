@@ -9,6 +9,9 @@ public class SyncService(
 	LootGodContext _db,
 	HttpClient _httpClient)
 {
+	private const string ItemDataUrl = "https://items.sodeq.org/downloads/items.txt.gz";
+	private const string SpellDataUrl = "https://lucy.allakhazam.com/static/spelldata/spelldata_Live_2025-08-27_01:59:10.txt.gz";
+
 	public async Task DataSync()
 	{
 		_db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = OFF;");
@@ -35,6 +38,7 @@ public class SyncService(
 			yield return line;
 		}
 	}
+
 	private async Task SpellSync()
 	{
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
@@ -42,7 +46,7 @@ public class SyncService(
 		var spells = new List<Spell>();
 		var deletedCount = 0;
 
-		await foreach (var line in FetchLines("https://lucy.allakhazam.com/static/spelldata/spelldata_Live_2025-08-27_01:59:10.txt.gz", CancellationToken.None))
+		await foreach (var line in FetchLines(SpellDataUrl, CancellationToken.None))
 		{
 			var output = new SpellParseOutput(line);
 			spells.Add(new(output, now));
@@ -82,7 +86,7 @@ public class SyncService(
 		var totalItemCount = 0;
 		var deletedCount = 0;
 
-		await foreach (var line in FetchLines("https://items.sodeq.org/downloads/items.txt.gz", CancellationToken.None))
+		await foreach (var line in FetchLines(ItemDataUrl, CancellationToken.None))
 		{
 			totalItemCount++;
 			var item = new ItemParseOutput(line);
