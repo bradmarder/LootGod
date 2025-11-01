@@ -16,8 +16,8 @@ public class SyncService(
 	{
 		_db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = OFF;");
 
-		await SpellSync();
 		await ItemSync();
+		await SpellSync();
 
 		_db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON;");
 	}
@@ -44,12 +44,23 @@ public class SyncService(
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
 		var watch = Stopwatch.StartNew();
 		var spells = new List<Spell>();
+		var totalSpellCount = 0;
 		var deletedCount = 0;
+
+		var procIds = _db.Items.Select(x => x.ProcEffect).Where(x => x != null).ToHashSet();
+		var focusIds = _db.Items.Select(x => x.FocusEffect).Where(x => x != null).ToHashSet();
+		var clickIds = _db.Items.Select(x => x.ClickEffect).Where(x => x != null).ToHashSet();
+		var wornIds = _db.Items.Select(x => x.WornEffect).Where(x => x != null).ToHashSet();
+		HashSet<int?> spellIds = [.. procIds, .. focusIds, .. clickIds, .. wornIds];
 
 		await foreach (var line in FetchLines(SpellDataUrl, CancellationToken.None))
 		{
+			totalSpellCount++;
 			var output = new SpellParseOutput(line);
-			spells.Add(new(output, now));
+			if (spellIds.Contains(output.Id))
+			{
+				spells.Add(new(output, now));
+			}
 		}
 
 		using (var transaction = _db.Database.BeginTransaction())
@@ -73,6 +84,7 @@ public class SyncService(
 			ElapsedMs = watch.ElapsedMilliseconds,
 			DeletedCount = deletedCount,
 			SpellCount = spells.Count,
+			TotalSpellCount = totalSpellCount,
 		};
 		using var _ = _logger.BeginScope(state);
 		_logger.LogInformation("Successfully completed spell sync");

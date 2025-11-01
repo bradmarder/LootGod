@@ -139,16 +139,14 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 
 	//try
 	//{
-	//	db.Database.ExecuteSqlRaw("""
-	//		ALTER TABLE LootRequests ADD COLUMN Persona INTEGER NOT NULL DEFAULT 0;
-	//		""");
-	//	app.Logger.LogInformation("add item Persona success");
-	//	db.Database.ExecuteSqlRaw("DELETE from Items where ItemType in (11,67) and CharmFile like '%GroupT%'");
-	//	app.Logger.LogInformation("delete items success");
+	//	db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = OFF;");
+	//	db.Database.ExecuteSqlRaw("DELETE FROM ITEMS;");
+	//	db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON;");
+	//	app.Logger.LogInformation("SYNC RESET");
 	//}
 	//catch (Exception ex)
 	//{
-	//	app.Logger.LogError(ex, "add item Persona");
+	//	app.Logger.LogError(ex, "SYNC RESET FAIL");
 	//}
 }
 

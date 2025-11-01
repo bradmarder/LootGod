@@ -101,11 +101,7 @@ public record ItemDto
 	public bool Lore { get; init; }
 	public byte ProcLevel { get; init; }
 	public byte FocusLevel { get; init; }
-	public int ProcEffect { get; init; }
-	public int FocusEffect { get; init; }
-	public int ClickEffect { get; init; }
 	public int ClickLevel { get; init; }
-	public int WornEffect { get; init; }
 	public string CharmFile { get; init; } = null!;
 	public string? WornName { get; init; }
 	public string? ProcName { get; init; }

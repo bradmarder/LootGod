@@ -192,7 +192,11 @@ export default function App() {
 						<br />
 						<LootRequests requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight} items={items}></LootRequests>
 						<br />
+						<Row>
+						<Col xs={12} xl={6}>
 						<LinkAlt refreshLinkedAltsCacheKey={refreshLinkedAltsCacheKey}></LinkAlt>
+						</Col>
+						</Row>
 						<br />
 						{isAdmin &&
 							<GrantedLoots requests={requests} loots={loots} isAdmin={isAdmin} lootLocked={lootLock} raidNight={raidNight} items={items}></GrantedLoots>

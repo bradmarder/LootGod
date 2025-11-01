@@ -69,10 +69,6 @@ declare interface IItem
 	readonly lore: number;
 	readonly procLevel: number;
 	readonly focusLevel: number;
-	readonly procEffect: number;
-	readonly focusEffect: number;
-	readonly clickEffect: number;
-	readonly wornEffect: number;
 	readonly clickLevel: number;
 	readonly wornName: string | null;
 	readonly procName: string | null;
