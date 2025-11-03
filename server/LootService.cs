@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
@@ -16,7 +15,6 @@ public class LootService(
 	Channel<Payload> _payloadChannel,
 	ConcurrentDictionary<string, DataSink> _dataSinks)
 {
-	private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 	private static readonly Expansion[] CurrentExpansions = [Expansion.ToB, Expansion.SoR];
 	private static readonly ActivitySource source = new(nameof(LootService));
 
@@ -206,7 +204,7 @@ public class LootService(
 	public async Task RefreshItems()
 	{
 		var items = LoadItems();
-		var json = JsonSerializer.Serialize(items, _jsonOptions);
+		var json = JsonSerializer.Serialize(items, AppJsonSerializerContext.Default.ItemDtoArray);
 		var payload = new Payload(null, "items", json);
 
 		await _payloadChannel.Writer.WriteAsync(payload);
@@ -215,7 +213,7 @@ public class LootService(
 	public async Task RefreshLoots(int guildId)
 	{
 		var loots = LoadLoots(guildId);
-		var json = JsonSerializer.Serialize(loots, _jsonOptions);
+		var json = JsonSerializer.Serialize(loots, AppJsonSerializerContext.Default.LootDtoArray);
 		var payload = new Payload(guildId, "loots", json);
 
 		await _payloadChannel.Writer.WriteAsync(payload);
@@ -224,7 +222,7 @@ public class LootService(
 	public async Task RefreshRequests(int guildId)
 	{
 		var requests = LoadLootRequests(guildId);
-		var json = JsonSerializer.Serialize(requests, _jsonOptions);
+		var json = JsonSerializer.Serialize(requests, AppJsonSerializerContext.Default.LootRequestDtoArray);
 		var payload = new Payload(guildId, "requests", json);
 
 		await _payloadChannel.Writer.WriteAsync(payload);

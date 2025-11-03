@@ -9,6 +9,7 @@
 		<DebugSymbols>false</DebugSymbols>
 		<DebugType>none</DebugType>
 		<InvariantGlobalization>true</InvariantGlobalization>
+		<EnableRequestDelegateGenerator>true</EnableRequestDelegateGenerator>
 		<!--<PublishAot>true</PublishAot>-->
 	</PropertyGroup>
 

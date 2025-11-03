@@ -99,6 +99,10 @@ if (builder.Environment.IsProduction())
 		});
 }
 
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+	options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
+});
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<LootService>();
 builder.Services.AddScoped<SyncService>();
