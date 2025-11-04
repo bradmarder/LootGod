@@ -204,7 +204,7 @@ public class LootService(
 	public async Task RefreshItems()
 	{
 		var items = LoadItems();
-		var json = JsonSerializer.Serialize(items, AppJsonSerializerContext.Default.ItemDtoArray);
+		var json = JsonSerializer.Serialize(items, AppJsonSerializerContext.Default.ItemSearchArray);
 		var payload = new Payload(null, "items", json);
 
 		await _payloadChannel.Writer.WriteAsync(payload);
