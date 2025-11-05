@@ -55,7 +55,7 @@ public class PayloadDeliveryService(
 						StoppingCancel = stoppingToken.IsCancellationRequested,
 						RequestCancel = sink.Value.Context.RequestAborted.IsCancellationRequested,
 					});
-					_logger.LogError(ex, "Broken connection detected - {ConnectionId}", sink.Key);
+					_logger.BrokenConnection(ex, sink.Key);
 
 					// something is wrong with this connection, remove it
 					sink.Value.Context.Abort();
@@ -66,7 +66,7 @@ public class PayloadDeliveryService(
 			{
 				ElapsedMs = watch.ElapsedMilliseconds,
 			});
-			_logger.LogInformation("PayloadDeliveryService");
+			_logger.PayloadDeliveryComplete();
 		}
 	}
 }

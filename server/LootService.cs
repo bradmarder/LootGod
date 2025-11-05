@@ -252,7 +252,14 @@ public class LootService(
 			catch (Exception ex)
 			{
 				var content = await TryReadContentAsync(response);
-				_logger.LogError(ex, "Discord Webhook Failure - {Url} - {ResponseContent}", discordWebhookUrl, content);
+				var state = new
+				{
+					Output = output,
+					DiscordWebhookUrl = discordWebhookUrl,
+					ResponseContent = content,
+				};
+				using var _ = _logger.BeginScope(state);
+				_logger.DiscordWebhookFailure(ex);
 			}
 			finally
 			{
@@ -468,7 +475,7 @@ public class LootService(
 		}
 		catch (Exception ex)
 		{
-			_logger.LogError(ex, nameof(TryReadContentAsync));
+			_logger.DiscordReadContentError(ex);
 			return "";
 		}
 	}
@@ -487,6 +494,6 @@ public class LootService(
 			Name = player.Name,
 			GuildName = player.Guild.Name,
 		});
-		_logger.LogInformation(nameof(AddDataSink));
+		_logger.DataSinkCreated();
 	}
 }

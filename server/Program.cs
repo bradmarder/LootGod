@@ -92,7 +92,7 @@ if (builder.Environment.IsProduction())
 					catch (Exception ex)
 					{
 						activity.AddException(ex);
-						logger.LogError(ex, null);
+						logger.ActivityLoggingError(ex);
 					}
 				}
 			};
@@ -167,7 +167,7 @@ else
 			var ex = context.Features.Get<IExceptionHandlerFeature>();
 			if (ex is not null)
 			{
-				app.Logger.LogError(ex.Error, "UseExceptionHandler - {RequestPath}", context.Request.Path);
+				app.Logger.UseExceptionHandler(ex.Error, context.Request.Path);
 			}
 			return Task.CompletedTask;
 		});

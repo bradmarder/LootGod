@@ -25,7 +25,7 @@ public class LogMiddleware(
 			GuildName = player.Guild.Name,
 			Path = context.Request.Path.Value,
 		});
-		_logger.LogInformation("{Method} - {Path}", context.Request.Method, context.Request.Path);
+		_logger.MiddlewareLog(context.Request.Method, context.Request.Path);
 
 		await next(context);
 	}

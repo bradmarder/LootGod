@@ -506,8 +506,10 @@ public class Endpoints(string _adminKey)
 				FinishTime = now,
 				DiscordWebhook = webhook,
 			};
-			using var _ = logger.BeginScope(state);
-			logger.LogInformation("Finished loot requests");
+			using (logger.BeginScope(state))
+			{
+				logger.LootRequestsFinished();
+			}
 
 			await lootService.RefreshLoots(guildId);
 			await lootService.RefreshRequests(guildId);

@@ -87,7 +87,7 @@ public class SyncService(
 			TotalSpellCount = totalSpellCount,
 		};
 		using var _ = _logger.BeginScope(state);
-		_logger.LogInformation("Successfully completed spell sync");
+		_logger.SpellSyncSuccess();
 	}
 
 	private async Task ItemSync()
@@ -132,6 +132,6 @@ public class SyncService(
 			TotalItemCount = totalItemCount,
 		};
 		using var _ = _logger.BeginScope(state);
-		_logger.LogInformation("Successfully completed item sync");
+		_logger.ItemSyncSuccess();
 	}
 }
