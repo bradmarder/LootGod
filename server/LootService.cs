@@ -229,21 +229,30 @@ public class LootService(
 		await _payloadChannel.Writer.WriteAsync(payload);
 	}
 
-	public async Task DiscordWebhook(string output, string discordWebhookUrl)
+	private static IEnumerable<string[]> GetBuckets(string output)
 	{
-		const string syntax = "coq";
-
 		// A single bucket must be under the 2k max for discord (excludes backticks/newlines/emojis?)
 		// Assume 1_700 max characters per bucket to safely account for splitting lines evenly
 		var bucketCount = Math.Round(output.Length / 1_700d, MidpointRounding.ToPositiveInfinity);
 		var lines = output.Split(Environment.NewLine);
 		var maxLinesPerBucket = (int)Math.Round(lines.Length / bucketCount, MidpointRounding.ToPositiveInfinity);
-		var buckets = lines.Chunk(maxLinesPerBucket);
 
-		foreach (var bucket in buckets)
+		return lines.Chunk(maxLinesPerBucket);
+	}
+
+	public async Task DiscordWebhook(string output, string discordWebhookUrl)
+	{
+		const string syntax = "coq";
+
+		foreach (var bucket in GetBuckets(output))
 		{
 			var data = string.Join(Environment.NewLine, bucket);
 			var json = new DiscordWebhookContent($"```{syntax}{Environment.NewLine}{data}{Environment.NewLine}```");
+			using var _ = _logger.BeginScope(new
+			{
+				Data = data,
+				DiscordWebhookUrl = discordWebhookUrl,
+			});
 			HttpResponseMessage? response = null;
 			try
 			{
@@ -254,14 +263,11 @@ public class LootService(
 			catch (Exception ex)
 			{
 				var content = await TryReadContentAsync(response);
-				var state = new
+				var state = new { ResponseContent = content };
+				using (_logger.BeginScope(state))
 				{
-					Data = data,
-					DiscordWebhookUrl = discordWebhookUrl,
-					ResponseContent = content,
-				};
-				using var _ = _logger.BeginScope(state);
-				_logger.DiscordWebhookFailure(ex);
+					_logger.DiscordWebhookFailure(ex);
+				}
 			}
 			finally
 			{
