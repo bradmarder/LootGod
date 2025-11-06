@@ -68,7 +68,7 @@ if (builder.Environment.IsProduction())
 			})
 			.AddAspNetCoreInstrumentation()
 			.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("LootGod"))
-			.AddSource(nameof(LootService), nameof(Endpoints))
+			.AddSource(nameof(LootService), nameof(Endpoints), nameof(SyncService))
 			.AddOtlpExporter());
 
 	builder.Services
@@ -167,7 +167,11 @@ else
 			var ex = context.Features.Get<IExceptionHandlerFeature>();
 			if (ex is not null)
 			{
-				app.Logger.UseExceptionHandler(ex.Error, context.Request.Path);
+				using var _ = app.Logger.BeginScope(new
+				{
+					context.RequestAborted.IsCancellationRequested,
+				});
+				app.Logger.GlobalExceptionHandler(ex.Error, context.Request.Path);
 			}
 			return Task.CompletedTask;
 		});

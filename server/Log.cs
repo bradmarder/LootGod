@@ -30,6 +30,15 @@
 	[LoggerMessage(EventId = 10, Level = LogLevel.Error, Message = "Activity logging error")]
 	public static partial void ActivityLoggingError(this ILogger logger, Exception ex);
 
-	[LoggerMessage(EventId = 11, Level = LogLevel.Error, Message = "UseExceptionHandler - {RequestPath}")]
-	public static partial void UseExceptionHandler(this ILogger logger, Exception ex, string requestPath);
+	[LoggerMessage(EventId = 11, Level = LogLevel.Error, Message = "GlobalExceptionHandler - {RequestPath}")]
+	public static partial void GlobalExceptionHandler(this ILogger logger, Exception ex, string requestPath);
+
+	[LoggerMessage(EventId = 12, Level = LogLevel.Information, Message = "Raid dump import completed")]
+	public static partial void RaidDumpImportCompleted(this ILogger logger);
+
+	[LoggerMessage(EventId = 13, Level = LogLevel.Information, Message = "Guild dump import completed")]
+	public static partial void GuildDumpImportCompleted(this ILogger logger);
+
+	[LoggerMessage(EventId = 14, Level = LogLevel.Information, Message = "Discord webhook success")]
+	public static partial void DiscordWebhookSuccess(this ILogger logger);
 }

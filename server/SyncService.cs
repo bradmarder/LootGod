@@ -12,8 +12,12 @@ public class SyncService(
 	private const string ItemDataUrl = "https://items.sodeq.org/downloads/items.txt.gz";
 	private const string SpellDataUrl = "https://lucy.allakhazam.com/static/spelldata/spelldata_Live_2025-08-27_01:59:10.txt.gz";
 
+	private static readonly ActivitySource source = new(nameof(SyncService));
+
 	public async Task DataSync()
 	{
+		using var activity = source.StartActivity(nameof(DataSync));
+
 		_db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = OFF;");
 
 		await ItemSync();
@@ -24,6 +28,7 @@ public class SyncService(
 
 	private async IAsyncEnumerable<string> FetchLines(string requestUri, [EnumeratorCancellation] CancellationToken cancellationToken)
 	{
+		using var activity = source.StartActivity(nameof(FetchLines));
 		using var response = await _httpClient.GetAsync(requestUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 		response.EnsureSuccessStatusCode();
 		await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -41,6 +46,7 @@ public class SyncService(
 
 	private async Task SpellSync()
 	{
+		using var activity = source.StartActivity(nameof(SpellSync));
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
 		var watch = Stopwatch.StartNew();
 		var spells = new List<Spell>();
@@ -92,6 +98,7 @@ public class SyncService(
 
 	private async Task ItemSync()
 	{
+		using var activity = source.StartActivity(nameof(ItemSync));
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
 		var watch = Stopwatch.StartNew();
 		var raidItems = new List<Item>();

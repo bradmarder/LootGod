@@ -121,7 +121,7 @@ public class Endpoints(string _adminKey)
 
 		app.MapPost("DataSync", async (LootService lootService, SyncService syncService) =>
 		{
-			lootService.EnsureAdminStatus();
+			//lootService.EnsureAdminStatus();
 
 			await syncService.DataSync();
 			await lootService.RefreshItems();
@@ -543,21 +543,25 @@ public class Endpoints(string _adminKey)
 			return TypedResults.Ok();
 		});
 
-		app.MapPost("ImportDump", async Task<Results<Ok, BadRequest<string>>> (LootService lootService, IFormFile file, int offset) =>
+		app.MapPost("ImportDump", async Task<Results<Ok, BadRequest<string>>> (ILogger<Endpoints> logger, LootService lootService, IFormFile file, int offset, CancellationToken token) =>
 		{
 			lootService.EnsureAdminStatus();
 
-			using var activity = source.StartActivity("ImportDump")?
-				.SetTag("FileName", file.FileName)
-				.SetTag("FileLength", file.Length)
-				.SetTag("Offset", offset);
+			using var activity = source.StartActivity("ImportDump");
+			var state = new
+			{
+				FileName = file.FileName,
+				FileLength = file.Length,
+				Offset = offset,
+			};
+			using var _ = logger.BeginScope(state);
 
 			var ext = Path.GetExtension(file.FileName);
 			var import = (ext, file.FileName) switch
 			{
-				(".zip", _) => lootService.BulkImportRaidDump(file, offset),
-				(".txt", var x) when x.StartsWith("RaidRoster") => lootService.ImportRaidDump(file, offset),
-				(".txt", var x) when x.Split('-').Length is 3 => lootService.ImportGuildDump(file),
+				(".zip", _) => lootService.BulkImportRaidDump(file, offset, token),
+				(".txt", var x) when x.StartsWith("RaidRoster") => lootService.ImportRaidDump(file, offset, token),
+				(".txt", var x) when x.Split('-').Length is 3 => lootService.ImportGuildDump(file, token),
 				_ => Task.FromException(new ImportException($"Cannot determine import dump for filename '{file.FileName}'"))
 			};
 			try

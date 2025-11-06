@@ -16,6 +16,7 @@ public record ItemSearch
 	public int Id { get; init; }
 	public string Name { get; init; } = null!;
 }
+public record DiscordWebhookContent(string Content);
 
 /// <summary>
 /// null GuildId implies the payload is sent to every client (items)

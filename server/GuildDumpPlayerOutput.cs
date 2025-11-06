@@ -1,5 +1,12 @@
-public record GuildDumpPlayerOutput(string[] _output)
+public record GuildDumpPlayerOutput
 {
+	private readonly string[] _output;
+
+	public GuildDumpPlayerOutput(string line)
+	{
+		_output = line.Split('\t');
+	}
+
 	public string Name => _output[0];
 	public byte Level => byte.Parse(_output[1]);
 	public string Class => _output[2];

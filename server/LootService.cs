@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
@@ -242,12 +243,13 @@ public class LootService(
 		foreach (var bucket in buckets)
 		{
 			var data = string.Join(Environment.NewLine, bucket);
-			var json = new { content = $"```{syntax}{Environment.NewLine}{data}{Environment.NewLine}```" };
+			var json = new DiscordWebhookContent($"```{syntax}{Environment.NewLine}{data}{Environment.NewLine}```");
 			HttpResponseMessage? response = null;
 			try
 			{
-				response = await _httpClient.PostAsJsonAsync(discordWebhookUrl, json);
+				response = await _httpClient.PostAsJsonAsync(discordWebhookUrl, json, AppJsonSerializerContext.Default.DiscordWebhookContent);
 				response.EnsureSuccessStatusCode();
+				_logger.DiscordWebhookSuccess();
 			}
 			catch (Exception ex)
 			{
@@ -283,25 +285,21 @@ public class LootService(
 			.ToUnixTimeSeconds();
 	}
 
-	public async Task ImportRaidDump(Stream stream, string fileName, int offset)
+	public async Task ImportRaidDump(Stream stream, string fileName, int offset, CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(ImportRaidDump));
 
 		var guildId = GetGuildId();
 		var timestamp = ParseTimestamp(fileName, offset);
 		using var sr = new StreamReader(stream);
-		var output = await sr.ReadToEndAsync();
+		var output = await sr.ReadToEndAsync(token);
 		var nameToClassMap = output
 			.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
 			.Select(x => x.Split('\t'))
 			.Where(x => x.Length > 4) // filter out "missing" rows that start with a number, but have nothing after
 			.ToDictionary(x => x[1], x => x[3]);
 
-		activity?.AddEvent(new ActivityEvent("File Read"));
-		activity?.SetTag("StreamLength", stream.Length);
-		activity?.SetTag("RaidPlayerCount", nameToClassMap.Count);
-		activity?.SetTag("FileName", fileName);
-		activity?.SetTag("FileNameTimestamp", timestamp);
+		activity?.AddEvent(new("Raid dump parsed"));
 
 		// create new players by comparing names with preexisting ones
 		var existingNames = _db.Players
@@ -315,8 +313,7 @@ public class LootService(
 		_db.Players.AddRange(players);
 		var playerCreatedCount = _db.SaveChanges();
 
-		activity?.AddEvent(new ActivityEvent("Players Saved"));
-		activity?.SetTag("PlayerCreatedCount", playerCreatedCount);
+		activity?.AddEvent(new("Players saved"));
 
 		// save raid dumps for all players
 		var values = _db.Players
@@ -331,39 +328,56 @@ public class LootService(
 			.ToString();
 		var raidDumpCreatedCount = _db.Database.ExecuteSqlRaw(sql);
 
-		activity?.AddEvent(new ActivityEvent("Raid Dumps Saved"));
-		activity?.SetTag("RaidDumpCreatedCount", raidDumpCreatedCount);
+		activity?.AddEvent(new("Raid dumps saved"));
+
+		using var _ = _logger.BeginScope(new
+		{
+			StreamLength = output.Length,
+			RaidPlayerCount = nameToClassMap.Count,
+			InnerFileName = fileName,
+			FileNameTimestamp = timestamp,
+			PlayerCreatedCount = playerCreatedCount,
+			RaidDumpCreatedCount = raidDumpCreatedCount,
+		});
+		_logger.RaidDumpImportCompleted();
 	}
 
-	public async Task BulkImportRaidDump(IFormFile file, int offset)
+	public async Task BulkImportRaidDump(IFormFile file, int offset, CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(BulkImportRaidDump));
 		await using var stream = file.OpenReadStream();
 		using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
-
-		activity?.SetTag("EntryCount", zip.Entries.Count);
+		using var _ = _logger.BeginScope(new { ZipEntryCount = zip.Entries.Count });
 
 		foreach (var entry in zip.Entries.OrderBy(x => x.LastWriteTime))
 		{
 			await using var dump = entry.Open();
-			await ImportRaidDump(dump, entry.FullName, offset);
+			await ImportRaidDump(dump, entry.FullName, offset, token);
 		}
 	}
 
-	public async Task ImportRaidDump(IFormFile file, int offset)
+	// todo: replace in .net10
+	public static async Task<List<T>> ToListAsync<T>(IAsyncEnumerable<T> items)
 	{
-		await using var stream = file.OpenReadStream();
-		await ImportRaidDump(stream, file.FileName, offset);
+		var evaluatedItems = new List<T>();
+		await foreach (var item in items)
+			evaluatedItems.Add(item);
+		return evaluatedItems;
 	}
 
-	public async Task ImportGuildDump(IFormFile file)
+	public async Task ImportRaidDump(IFormFile file, int offset, CancellationToken token)
+	{
+		await using var stream = file.OpenReadStream();
+		await ImportRaidDump(stream, file.FileName, offset, token);
+	}
+
+	public async Task ImportGuildDump(IFormFile file, CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(ImportGuildDump));
 		var guildId = GetGuildId();
+		var dumps = await ToListAsync(ParseGuildDump(file, token));
 
-		var dumps = await ParseGuildDump(file);
-		activity?.AddEvent(new ActivityEvent("Guild Dump Parsed"));
-		activity?.SetTag("DumpCount", dumps.Length);
+		activity?.AddEvent(new("Guild dump parsed"));
 
 		// ensure not partial guild dump by checking a leader exists
 		if (!dumps.Any(x => StringComparer.OrdinalIgnoreCase.Equals(Rank.Leader, x.Rank)))
@@ -394,8 +408,7 @@ public class LootService(
 		_db.Ranks.AddRange(ranks);
 		var rankCreatedCount = _db.SaveChanges();
 
-		activity?.AddEvent(new ActivityEvent("Ranks Created"));
-		activity?.SetTag("RankCreatedCount", rankCreatedCount);
+		activity?.AddEvent(new("Ranks created"));
 
 		// load all ranks
 		var rankNameToIdMap = _db.Ranks
@@ -435,8 +448,7 @@ public class LootService(
 		}
 		var playerUpdatedCount = _db.SaveChanges();
 
-		activity?.AddEvent(new ActivityEvent("Preexisting Players Updated"));
-		activity?.SetTag("PlayerUpdatedCount", playerUpdatedCount);
+		activity?.AddEvent(new("Preexisting players updated"));
 
 		// create players who do not exist
 		var existingNames = players
@@ -449,22 +461,28 @@ public class LootService(
 		_db.Players.AddRange(dumpPlayers);
 		var playerCreatedCount = _db.SaveChanges();
 
-		activity?.AddEvent(new ActivityEvent("Players Created"));
-		activity?.SetTag("PlayerCreatedCount", playerCreatedCount);
+		activity?.AddEvent(new("Players created"));
+
+		using var _ = _logger.BeginScope(new
+		{
+			DumpCount = dumps.Count,
+			RankCreatedCount = rankCreatedCount,
+			PlayerUpdatedCount = playerUpdatedCount,
+			PlayerCreatedCount = playerCreatedCount,
+		});
+		_logger.GuildDumpImportCompleted();
 	}
 
-	// parse the guild dump player output
-	private static async Task<GuildDumpPlayerOutput[]> ParseGuildDump(IFormFile file)
+	private static async IAsyncEnumerable<GuildDumpPlayerOutput> ParseGuildDump(IFormFile file, [EnumeratorCancellation] CancellationToken token)
 	{
+		using var activity = source.StartActivity(nameof(ParseGuildDump));
 		await using var stream = file.OpenReadStream();
 		using var sr = new StreamReader(stream);
-		var output = await sr.ReadToEndAsync();
 
-		return output
-			.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
-			.Select(x => x.Split('\t'))
-			.Select(x => new GuildDumpPlayerOutput(x))
-			.ToArray();
+		while (await sr.ReadLineAsync(token) is string line)
+		{
+			yield return new(line);
+		}
 	}
 
 	private async Task<string> TryReadContentAsync(HttpResponseMessage? response)

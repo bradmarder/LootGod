@@ -41,7 +41,7 @@ public static class PostExtensions
 
 		using var res = await client.PostAsync("/ImportDump?offset=500", content);
 
-		Assert.True(res.IsSuccessStatusCode);
+		Assert.True(res.IsSuccessStatusCode, await res.Content.ReadAsStringAsync());
 	}
 
 	public static async Task CreateGuildDump(this HttpClient client)
