@@ -256,7 +256,7 @@ public class LootService(
 				var content = await TryReadContentAsync(response);
 				var state = new
 				{
-					Output = output,
+					Data = data,
 					DiscordWebhookUrl = discordWebhookUrl,
 					ResponseContent = content,
 				};
