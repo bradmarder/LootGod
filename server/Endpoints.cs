@@ -121,11 +121,11 @@ public class Endpoints(string _adminKey)
 			return Results.File(tempFileName, fileDownloadName: $"lootgod-backup-{now}.db");
 		});
 
-		app.MapPost("DataSync", async (LootService lootService, SyncService syncService) =>
+		app.MapPost("DataSync", async (LootService lootService, SyncService syncService, CancellationToken token) =>
 		{
 			//lootService.EnsureAdminStatus();
 
-			await syncService.DataSync();
+			await syncService.DataSync(token);
 			await lootService.RefreshItems();
 		});
 
@@ -306,7 +306,7 @@ public class Endpoints(string _adminKey)
 			await lootService.RefreshRequests(guildId);
 		});
 
-		app.MapPost("UpdateLootQuantity", async (CreateLoot dto, LootGodContext db, LootService lootService) =>
+		app.MapPost("UpdateLootQuantity", async (ILogger<Endpoints> logger, CreateLoot dto, LootGodContext db, LootService lootService) =>
 		{
 			lootService.EnsureAdminStatus();
 
@@ -329,6 +329,9 @@ public class Endpoints(string _adminKey)
 			}
 
 			db.SaveChanges();
+
+			using var __ = logger.BeginScope(dto);
+			logger.LootQuantityUpdated();
 
 			await lootService.RefreshLoots(guildId);
 		});

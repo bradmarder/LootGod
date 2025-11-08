@@ -14,14 +14,14 @@ public class SyncService(
 
 	private static readonly ActivitySource source = new(nameof(SyncService));
 
-	public async Task DataSync()
+	public async Task DataSync(CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(DataSync));
 
 		_db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = OFF;");
 
-		await ItemSync();
-		await SpellSync();
+		await ItemSync(token);
+		await SpellSync(token);
 
 		_db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON;");
 	}
@@ -44,7 +44,7 @@ public class SyncService(
 		}
 	}
 
-	private async Task SpellSync()
+	private async Task SpellSync(CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(SpellSync));
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
@@ -59,7 +59,7 @@ public class SyncService(
 		var wornIds = _db.Items.Select(x => x.WornEffect).Where(x => x != null).ToHashSet();
 		HashSet<int?> spellIds = [.. procIds, .. focusIds, .. clickIds, .. wornIds];
 
-		await foreach (var line in FetchLines(SpellDataUrl, CancellationToken.None))
+		await foreach (var line in FetchLines(SpellDataUrl, token))
 		{
 			totalSpellCount++;
 			var output = new SpellParseOutput(line);
@@ -96,7 +96,7 @@ public class SyncService(
 		_logger.SpellSyncSuccess();
 	}
 
-	private async Task ItemSync()
+	private async Task ItemSync(CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(ItemSync));
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
@@ -105,7 +105,7 @@ public class SyncService(
 		var totalItemCount = 0;
 		var deletedCount = 0;
 
-		await foreach (var line in FetchLines(ItemDataUrl, CancellationToken.None))
+		await foreach (var line in FetchLines(ItemDataUrl, token))
 		{
 			totalItemCount++;
 			var item = new ItemParseOutput(line);

@@ -65,4 +65,7 @@
 
 	[LoggerMessage(EventId = 22, Level = LogLevel.Error, Message = "Broken connection detected - {ConnectionId}")]
 	public static partial void BrokenConnection(this ILogger logger, Exception ex, string connectionId);
+
+	[LoggerMessage(EventId = 23, Level = LogLevel.Information, Message = "Loot quantity updated")]
+	public static partial void LootQuantityUpdated(this ILogger logger);
 }
