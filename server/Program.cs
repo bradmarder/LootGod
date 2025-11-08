@@ -61,11 +61,7 @@ if (builder.Environment.IsProduction())
 					//activity.SetTag("Parameters", parameters);
 				};
 			})
-			.AddHttpClientInstrumentation(options =>
-			{
-				options.FilterHttpWebRequest = req => req.RequestUri?.Host is not "api.honeycomb.io"; // TODO:
-				options.FilterHttpRequestMessage = req => req.RequestUri?.Host is not "api.honeycomb.io"; // TODO:
-			})
+			.AddHttpClientInstrumentation()
 			.AddAspNetCoreInstrumentation()
 			.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("LootGod"))
 			.AddSource(nameof(LootService), nameof(Endpoints), nameof(SyncService))
@@ -103,6 +99,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 {
 	options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
 });
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<LootService>();
 builder.Services.AddScoped<SyncService>();
@@ -154,28 +151,16 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 	//}
 }
 
+// ensure this comes before app.UseExceptionHandler() so that the GlobalExceptionHandler has access to log state properties
+app.UseMiddleware<LogMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
 	app.UseDeveloperExceptionPage();
 }
 else
 {
-	app.UseExceptionHandler(opt =>
-	{
-		opt.Run(context =>
-		{
-			var ex = context.Features.Get<IExceptionHandlerFeature>();
-			if (ex is not null)
-			{
-				using var _ = app.Logger.BeginScope(new
-				{
-					context.RequestAborted.IsCancellationRequested,
-				});
-				app.Logger.GlobalExceptionHandler(ex.Error, context.Request.Path);
-			}
-			return Task.CompletedTask;
-		});
-	});
+	app.UseExceptionHandler(_ => { });
 }
 
 app.UseResponseCompression();
@@ -196,7 +181,6 @@ if (app.Environment.IsProduction())
 	app.MapStaticAssets();
 }
 app.UsePathBase("/api");
-app.UseMiddleware<LogMiddleware>();
 app.MapHealthChecks("/healthz").DisableHttpMetrics();
 
 new Endpoints(adminKey).Map(app);

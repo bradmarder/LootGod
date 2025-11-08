@@ -104,7 +104,7 @@ public class Endpoints(string _adminKey)
 
 		app.MapGet("Vacuum", (LootGodContext db) => db.Database.ExecuteSqlRaw("VACUUM"));
 
-		app.MapGet("Backup", (HttpContext ctx, LootGodContext db, TimeProvider time, string key) =>
+		app.MapGet("Backup", (ILogger<Endpoints> logger, HttpContext ctx, LootGodContext db, TimeProvider time, string key) =>
 		{
 			EnsureOwner(key);
 
@@ -115,6 +115,8 @@ public class Endpoints(string _adminKey)
 			// ensure the backup temp file is deleted once the request finishes processing
 			var delete = new SelfDestruct(tempFileName);
 			ctx.Response.RegisterForDispose(delete);
+
+			logger.DatabaseBackup(tempFileName, now);
 
 			return Results.File(tempFileName, fileDownloadName: $"lootgod-backup-{now}.db");
 		});
@@ -159,6 +161,7 @@ public class Endpoints(string _adminKey)
 				.ToArray();
 		});
 
+		// TODO!
 		// TODO: remove? lockdown somehow
 		app.MapPost("CreateItem", async (LootGodContext db, string name, LootService lootService, int id = 1) =>
 		{
@@ -254,7 +257,7 @@ public class Endpoints(string _adminKey)
 				.EnsureSingle();
 		});
 
-		app.MapPost("CreateLootRequest", async (CreateLootRequest dto, LootGodContext db, LootService lootService) =>
+		app.MapPost("CreateLootRequest", async(ILogger<Endpoints> logger, CreateLootRequest dto, LootGodContext db, LootService lootService) =>
 		{
 			lootService.EnsureRaidLootUnlocked();
 
@@ -273,10 +276,13 @@ public class Endpoints(string _adminKey)
 			db.LootRequests.Add(request);
 			db.SaveChanges();
 
+			using var _ = logger.BeginScope(dto);
+			logger.LootRequestCreated();
+
 			await lootService.RefreshRequests(guildId);
 		});
 
-		app.MapDelete("DeleteLootRequest", async (LootGodContext db, int id, LootService lootService) =>
+		app.MapDelete("DeleteLootRequest", async (ILogger<Endpoints> logger, LootGodContext db, int id, LootService lootService) =>
 		{
 			lootService.EnsureRaidLootUnlocked();
 
@@ -294,6 +300,8 @@ public class Endpoints(string _adminKey)
 
 			db.LootRequests.Remove(request);
 			db.SaveChanges();
+
+			logger.LootRequestDeleted();
 
 			await lootService.RefreshRequests(guildId);
 		});
@@ -325,16 +333,19 @@ public class Endpoints(string _adminKey)
 			await lootService.RefreshLoots(guildId);
 		});
 
-		app.MapPost("CreateGuild", (LootGodContext db, CreateGuild dto) =>
+		app.MapPost("CreateGuild", (ILogger<Endpoints> logger, LootGodContext db, CreateGuild dto) =>
 		{
 			var player = new Player(NormalizeName(dto.LeaderName), dto.GuildName, dto.Server);
 			db.Players.Add(player);
 			db.SaveChanges();
 
+			using var _ = logger.BeginScope(dto);
+			logger.GuildCreated();
+
 			return player.Key!.Value;
 		});
 
-		app.MapPost("ToggleLootLock", async (LootGodContext db, LootService lootService, LootLock lootLock) =>
+		app.MapPost("ToggleLootLock", async (ILogger<Endpoints> logger, LootGodContext db, LootService lootService, LootLock lootLock) =>
 		{
 			lootService.EnsureAdminStatus();
 
@@ -343,6 +354,8 @@ public class Endpoints(string _adminKey)
 				.Where(x => x.Id == guildId)
 				.ExecuteUpdate(x => x.SetProperty(y => y.LootLocked, lootLock.Enable))
 				.EnsureSingle();
+
+			logger.LootLocked(lootLock.Enable);
 
 			await lootService.RefreshLock(guildId, lootLock.Enable);
 		});
@@ -359,7 +372,7 @@ public class Endpoints(string _adminKey)
 				.ToArray();
 		});
 
-		app.MapPost("LinkAlt", Results<Ok, BadRequest<string>> (LootGodContext db, LootService lootService, string altName) =>
+		app.MapPost("LinkAlt", Results<Ok, BadRequest<string>> (ILogger<Endpoints> logger, LootGodContext db, LootService lootService, string altName) =>
 		{
 			var playerId = lootService.GetPlayerId();
 			var guildId = lootService.GetGuildId();
@@ -388,10 +401,12 @@ public class Endpoints(string _adminKey)
 			alt.MainId = playerId;
 			db.SaveChanges();
 
+			logger.AltLinked(altName);
+
 			return TypedResults.Ok();
 		});
 
-		app.MapPost("UnlinkAlt", (LootGodContext db, LootService lootService, string altName) =>
+		app.MapPost("UnlinkAlt", (ILogger<Endpoints> logger, LootGodContext db, LootService lootService, string altName) =>
 		{
 			var playerId = lootService.GetPlayerId();
 			var normalizedAltName = NormalizeName(altName);
@@ -399,6 +414,8 @@ public class Endpoints(string _adminKey)
 			db.Players
 				.Where(x => x.MainId == playerId && x.Name == normalizedAltName)
 				.ExecuteUpdate(x => x.SetProperty(y => y.MainId, (int?)null));
+
+			logger.AltUnlinked(altName);
 		});
 
 		app.MapGet("GetLootLock", (LootService x) => x.GetRaidLootLock());
@@ -427,7 +444,7 @@ public class Endpoints(string _adminKey)
 			await lootService.RefreshMessageOfTheDay(guildId, dto.Message);
 		});
 
-		app.MapPost("GrantLootRequest", async (LootGodContext db, LootService lootService, GrantLootRequest dto) =>
+		app.MapPost("GrantLootRequest", async (ILogger<Endpoints> logger, LootGodContext db, LootService lootService, GrantLootRequest dto) =>
 		{
 			lootService.EnsureAdminStatus();
 
@@ -437,6 +454,8 @@ public class Endpoints(string _adminKey)
 				.Where(x => x.Player.GuildId == guildId)
 				.ExecuteUpdate(x => x.SetProperty(y => y.Granted, dto.Grant))
 				.EnsureSingle();
+
+			logger.LootRequestGranted(dto.Id, dto.Grant);
 
 			await lootService.RefreshRequests(guildId);
 		});
@@ -515,7 +534,7 @@ public class Endpoints(string _adminKey)
 			await lootService.RefreshRequests(guildId);
 		});
 
-		app.MapPost("TransferGuildLeadership", Results<Ok, BadRequest<string>> (LootGodContext db, LootService lootService, TransferGuildName dto) =>
+		app.MapPost("TransferGuildLeadership", Results<Ok, BadRequest<string>> (ILogger<Endpoints> logger, LootGodContext db, LootService lootService, TransferGuildName dto) =>
 		{
 			lootService.EnsureGuildLeader();
 
@@ -539,6 +558,8 @@ public class Endpoints(string _adminKey)
 			oldLeader.RankId = null;
 
 			db.SaveChanges();
+
+			logger.GuildLeadershipTransferred(oldLeader.Name, newLeader.Name);
 
 			return TypedResults.Ok();
 		});
