@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Exporter;
@@ -64,7 +63,7 @@ if (builder.Environment.IsProduction())
 			.AddHttpClientInstrumentation()
 			.AddAspNetCoreInstrumentation()
 			.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("LootGod"))
-			.AddSource(nameof(LootService), nameof(Endpoints), nameof(SyncService))
+			.AddSource(nameof(LootService), nameof(Endpoints), nameof(SyncService), nameof(ImportService))
 			.AddOtlpExporter());
 
 	builder.Services
@@ -127,7 +126,7 @@ builder.Services.AddLogging(x => x
 			config.IncludeScopes = true;
 		}
 	})
-	.Configure(y => y.ActivityTrackingOptions = ActivityTrackingOptions.None)
+	//.Configure(y => y.ActivityTrackingOptions = ActivityTrackingOptions.None)
 );
 
 using var app = builder.Build();

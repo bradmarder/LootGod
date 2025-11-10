@@ -204,8 +204,6 @@ public class Endpoints(string _adminKey)
 
 		app.MapGet("GetItems", (LootService lootService) =>
 		{
-			//lootService.EnsureAdminStatus();
-
 			return lootService.LoadItems();
 		});
 
@@ -567,7 +565,7 @@ public class Endpoints(string _adminKey)
 			return TypedResults.Ok();
 		});
 
-		app.MapPost("ImportDump", async Task<Results<Ok, BadRequest<string>>> (ILogger<Endpoints> logger, LootService lootService, IFormFile file, int offset, CancellationToken token) =>
+		app.MapPost("ImportDump", async Task<Results<Ok, BadRequest<string>>> (ILogger<Endpoints> logger, LootService lootService, ImportService importService, IFormFile file, int offset, CancellationToken token) =>
 		{
 			lootService.EnsureAdminStatus();
 
@@ -583,9 +581,9 @@ public class Endpoints(string _adminKey)
 			var ext = Path.GetExtension(file.FileName);
 			var import = (ext, file.FileName) switch
 			{
-				(".zip", _) => lootService.BulkImportRaidDump(file, offset, token),
-				(".txt", var x) when x.StartsWith("RaidRoster") => lootService.ImportRaidDump(file, offset, token),
-				(".txt", var x) when x.Split('-').Length is 3 => lootService.ImportGuildDump(file, token),
+				(".zip", _) => importService.BulkImportRaidDump(file, offset, token),
+				(".txt", var x) when x.StartsWith("RaidRoster") => importService.ImportRaidDump(file, offset, token),
+				(".txt", var x) when x.Split('-').Length is 3 => importService.ImportGuildDump(file, token),
 				_ => Task.FromException(new ImportException($"Cannot determine import dump for filename '{file.FileName}'"))
 			};
 			try
