@@ -141,7 +141,7 @@ public class Endpoints(string _adminKey)
 		{
 			var guildId = lootService.GetGuildId();
 
-			return lootService.LoadLootRequests(guildId);
+			return lootService.GetLootRequests(guildId);
 		});
 
 		app.MapGet("GetArchivedLootRequests", (LootGodContext db, LootService lootService, string? name, int? itemId) =>
@@ -204,14 +204,14 @@ public class Endpoints(string _adminKey)
 
 		app.MapGet("GetItems", (LootService lootService) =>
 		{
-			return lootService.LoadItems();
+			return lootService.GetItems();
 		});
 
 		app.MapGet("GetLoots", (LootService lootService) =>
 		{
 			var guildId = lootService.GetGuildId();
 
-			return lootService.LoadLoots(guildId);
+			return lootService.GetLoots(guildId);
 		});
 
 		app.MapPost("ToggleHiddenPlayer", (ToggleHiddenAdminPlayer dto, LootGodContext db, LootService lootService) =>

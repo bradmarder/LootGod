@@ -46,20 +46,7 @@ if (builder.Environment.IsProduction())
 	builder.Services
 		.AddOpenTelemetry()
 		.WithTracing(config => config
-			.AddEntityFrameworkCoreInstrumentation(options =>
-			{
-				options.SetDbStatementForText = true;
-				options.EnrichWithIDbCommand = (activity, db) =>
-				{
-					foreach (System.Data.IDataParameter x in db.Parameters)
-					{
-						//if (x.Value is System.Collections.IEnumerable) { continue; }
-						//activity.SetTag("Parameter.Value." + x.ParameterName, x.Value);
-						//activity.SetTag("Parameter.DbType." + x.ParameterName, x.DbType);
-					}
-					//activity.SetTag("Parameters", parameters);
-				};
-			})
+			.AddEntityFrameworkCoreInstrumentation(x => x.SetDbStatementForText = true)
 			.AddHttpClientInstrumentation()
 			.AddAspNetCoreInstrumentation()
 			.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("LootGod"))

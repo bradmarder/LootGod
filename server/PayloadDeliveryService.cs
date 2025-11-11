@@ -57,7 +57,7 @@ public class PayloadDeliveryService(
 					});
 					_logger.BrokenConnection(ex, sink.Key);
 
-					// something is wrong with this connection, remove it
+					// abort the broken connection (the datasink will be removed by the CancellationTokenRegistration on the SSE endpoint)
 					sink.Value.Context.Abort();
 				}
 			}

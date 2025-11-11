@@ -151,7 +151,7 @@ public class LootService(
 
 	public bool RemoveDataSink(string connectionId) => _dataSinks.Remove(connectionId, out _);
 
-	public ItemSearch[] LoadItems()
+	public ItemSearch[] GetItems()
 	{
 		return _db.Items
 			.Where(x => EF.Constant(CurrentExpansions).Contains(x.Expansion))
@@ -160,7 +160,7 @@ public class LootService(
 			.ToArray();
 	}
 
-	public LootDto[] LoadLoots(int guildId)
+	public LootDto[] GetLoots(int guildId)
 	{
 		return _db.Loots
 			.Where(x => x.GuildId == EF.Constant(guildId))
@@ -170,7 +170,7 @@ public class LootService(
 			.ToArray();
 	}
 
-	public LootRequestDto[] LoadLootRequests(int guildId)
+	public LootRequestDto[] GetLootRequests(int guildId)
 	{
 		return _db.LootRequests
 			.Where(x => x.Player.GuildId == EF.Constant(guildId))
@@ -199,7 +199,7 @@ public class LootService(
 
 	public async Task RefreshItems()
 	{
-		var items = LoadItems();
+		var items = GetItems();
 		var json = JsonSerializer.Serialize(items, AppJsonSerializerContext.Default.ItemSearchArray);
 		var payload = new Payload(null, "items", json);
 
@@ -208,7 +208,7 @@ public class LootService(
 
 	public async Task RefreshLoots(int guildId)
 	{
-		var loots = LoadLoots(guildId);
+		var loots = GetLoots(guildId);
 		var json = JsonSerializer.Serialize(loots, AppJsonSerializerContext.Default.LootDtoArray);
 		var payload = new Payload(guildId, "loots", json);
 
@@ -217,7 +217,7 @@ public class LootService(
 
 	public async Task RefreshRequests(int guildId)
 	{
-		var requests = LoadLootRequests(guildId);
+		var requests = GetLootRequests(guildId);
 		var json = JsonSerializer.Serialize(requests, AppJsonSerializerContext.Default.LootRequestDtoArray);
 		var payload = new Payload(guildId, "requests", json);
 
