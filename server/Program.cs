@@ -89,6 +89,7 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<LootService>();
 builder.Services.AddScoped<SyncService>();
+builder.Services.AddScoped<ImportService>();
 builder.Services.AddScoped<LogMiddleware>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(x => Channel.CreateUnbounded<Payload>(new() { SingleReader = true, SingleWriter = false }));

@@ -300,7 +300,7 @@ public class LootTest
 
 		using var res = await app.Client.PostAsync("/ImportDump?offset=500", content);
 
-		Assert.True(res.IsSuccessStatusCode);
+		Assert.True(res.IsSuccessStatusCode, await res.Content.ReadAsStringAsync());
 	}
 
 	[Fact]

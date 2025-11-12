@@ -5,7 +5,7 @@ RUN npm ci
 COPY /client/ ./
 RUN npm run build
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS server
+FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS server
 WORKDIR /app
 COPY server/LootGod.csproj ./
 ARG RUNTIME=linux-musl-x64
@@ -18,7 +18,7 @@ RUN dotnet publish -c Release -o out \
 	--self-contained true \
 	/p:PublishSingleFile=true
 
-FROM mcr.microsoft.com/dotnet/runtime-deps:9.0-alpine
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-alpine
 WORKDIR /app
 COPY --from=server /app/out .
 COPY server/appsettings.json /app

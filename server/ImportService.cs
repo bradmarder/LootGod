@@ -107,15 +107,6 @@ public class ImportService(ILogger<LootService> _logger, LootGodContext _db, Loo
 		}
 	}
 
-	// todo: replace in .net10
-	public static async Task<List<T>> ToListAsync<T>(IAsyncEnumerable<T> items)
-	{
-		var evaluatedItems = new List<T>();
-		await foreach (var item in items)
-			evaluatedItems.Add(item);
-		return evaluatedItems;
-	}
-
 	public async Task ImportRaidDump(IFormFile file, int offset, CancellationToken token)
 	{
 		await using var stream = file.OpenReadStream();
@@ -126,7 +117,7 @@ public class ImportService(ILogger<LootService> _logger, LootGodContext _db, Loo
 	{
 		using var activity = source.StartActivity(nameof(ImportGuildDump));
 		var guildId = _lootService.GetGuildId();
-		var dumps = await ToListAsync(ParseGuildDump(file, token));
+		var dumps = await ParseGuildDump(file, token).ToListAsync(token);
 
 		activity?.AddEvent(new("Guild dump parsed"));
 

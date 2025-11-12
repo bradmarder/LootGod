@@ -3,9 +3,9 @@
 	"version": "1.0.0",
 	"private": true,
 	"dependencies": {
-		"@types/react": "19.2.2",
+		"@types/react": "19.2.3",
 		"@types/react-dom": "19.2.2",
-		"axios": "1.13.0",
+		"axios": "1.13.2",
 		"bootstrap": "5.3.8",
 		"react": "19.2.0",
 		"react-bootstrap": "2.10.10",
@@ -28,7 +28,7 @@
 	"devDependencies": {
 		"babel-plugin-react-compiler": "1.0.0",
 		"buffer": "6.0.3",
-		"parcel": "2.16.0",
+		"parcel": "2.16.1",
 		"process": "0.11.10"
 	}
 }
