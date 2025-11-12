@@ -4,24 +4,13 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
 
-public static class Extensions
-{
-	public static void EnsureSingle(this int rows)
-	{
-		if (rows is not 1)
-		{
-			throw new Exception("Expected 1 row updated, actual = " + rows);
-		}
-	}
-}
-
 public class Endpoints(string _adminKey)
 {
 	private static readonly ActivitySource source = new(nameof(Endpoints));
 
-	static string NormalizeName(string name) => char.ToUpperInvariant(name[0]) + name.Substring(1).ToLowerInvariant();
+	private static string NormalizeName(string name) => char.ToUpperInvariant(name[0]) + name.Substring(1).ToLowerInvariant();
 
-	static bool ConstantTimeStringCompare(string a, string b)
+	private static bool ConstantTimeStringCompare(string a, string b)
 	{
 		if (a.Length != b.Length)
 		{
@@ -36,7 +25,7 @@ public class Endpoints(string _adminKey)
 		return diff is 0;
 	}
 
-	void EnsureOwner(string key)
+	private void EnsureOwner(string key)
 	{
 		if (!ConstantTimeStringCompare(key, _adminKey))
 		{
