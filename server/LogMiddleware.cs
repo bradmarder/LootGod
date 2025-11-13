@@ -12,7 +12,7 @@ public class LogMiddleware(
 			IP = _lootService.GetIPAddress(),
 		});
 
-		if (context.Request.Method is not ("POST" or "DELETE") || _lootService.GetPlayerKey() is null)
+		if (_lootService.GetPlayerKey() is null)
 		{
 			await next(context);
 			return;

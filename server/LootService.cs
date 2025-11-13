@@ -136,19 +136,6 @@ public class LootService(
 		return string.Join(Environment.NewLine, output);
 	}
 
-	public bool AddDataSink(string connectionId, HttpContext context)
-	{
-		LogNewDataSink();
-
-		var guildId = GetGuildId();
-		var sink = new DataSink
-		{
-			GuildId = guildId,
-			Context = context,
-		};
-		return _dataSinks.TryAdd(connectionId, sink);
-	}
-
 	public bool RemoveDataSink(string connectionId) => _dataSinks.Remove(connectionId, out _);
 
 	public ItemSearch[] GetItems()
@@ -282,22 +269,5 @@ public class LootService(
 			_logger.DiscordReadContentError(ex);
 			return "";
 		}
-	}
-
-	private void LogNewDataSink()
-	{
-		var key = GetPlayerKey();
-		var player = _db.Players
-			.AsNoTracking()
-			.Include(x => x.Guild)
-			.Single(x => x.Key == key);
-
-		using var _ = _logger.BeginScope(new
-		{
-			IP = GetIPAddress(),
-			Name = player.Name,
-			GuildName = player.Guild.Name,
-		});
-		_logger.DataSinkCreated();
 	}
 }

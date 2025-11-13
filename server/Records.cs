@@ -23,16 +23,8 @@ public record DiscordWebhookContent(string Content);
 /// </summary>
 public record Payload(int? GuildId, string Event, string JsonData);
 
-public class SelfDestruct(string path) : IDisposable
+public record DataSink(int GuildId, HttpContext Context)
 {
-	public void Dispose() => File.Delete(path);
-}
-
-public class DataSink
-{
-	public required int GuildId { get; init; }
-	public required HttpContext Context { get; init; }
-
 	public int EventId { get; set; } = 1;
 }
 

@@ -34,6 +34,7 @@ export default function PlayerData(data: IRaidAttendance) {
 					<ListGroup.Item className='text-info'>Granted T2 Raid Loots</ListGroup.Item>
 					<ListGroup.Item className='flex-fill text-end'>{data.t2GrantedLootCount}</ListGroup.Item>
 				</ListGroup>
+				<hr />
 				<h6 className='text-info'>Notes</h6>
 				<p>{data.notes}</p>
 				<hr />

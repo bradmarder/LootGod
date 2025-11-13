@@ -120,7 +120,6 @@ public class LootTest
 		var emptyItems = await app.Client.EnsureGetJsonAsync<ItemSearch[]>("/GetItems");
 		Assert.Empty(emptyItems);
 
-		// broken cause must be array....
 		var sse = app.Client.GetSsePayload<ItemSearch>();
 		await app.Client.CreateItem();
 		var data = await sse;

@@ -47,22 +47,37 @@ public class Endpoints(string _adminKey)
 		&& long.TryParse(x[..^1], out _);
 	}
 
+	/// <summary>
+	/// avoids keeping a persistent reference to LootService -> DbContext
+	/// </summary>
+	private static async Task<int> GetGuildId(IServiceScopeFactory factory)
+	{
+		await using (var scope = factory.CreateAsyncScope())
+		{
+			return scope.ServiceProvider
+				.GetRequiredService<LootService>()
+				.GetGuildId();
+		}
+	}
+
 	public void Map(IEndpointRouteBuilder app)
 	{
-		app.MapGet("SSE", async (HttpContext ctx, IServiceScopeFactory factory, ConcurrentDictionary<string, DataSink> dataSinks) =>
+		app.MapGet("SSE", async (ILogger<Endpoints> logger, HttpContext ctx, IServiceScopeFactory factory, ConcurrentDictionary<string, DataSink> dataSinks) =>
 		{
+			var watch = Stopwatch.StartNew();
 			var token = ctx.RequestAborted;
 			var connectionId = ctx.Connection.Id ?? "";
+			var guildId = await GetGuildId(factory);
+			var sink = new DataSink(guildId, ctx);
 
-			// avoid keeping a persistent reference to LootService -> DbContext
-			await using (var scope = factory.CreateAsyncScope())
+			dataSinks.TryAdd(connectionId, sink);
+			logger.DataSinkCreated();
+
+			token.Register(() =>
 			{
-				scope.ServiceProvider
-					.GetRequiredService<LootService>()
-					.AddDataSink(connectionId, ctx);
-			}
-
-			token.Register(() => dataSinks.Remove(connectionId, out _));
+				dataSinks.Remove(connectionId, out _);
+				logger.DataSinkRemoved((int)watch.Elapsed.TotalSeconds);
+			});
 
 			ctx.Response.Headers.Append("Content-Type", "text/event-stream");
 			ctx.Response.Headers.Append("Cache-Control", "no-cache");
@@ -91,7 +106,14 @@ public class Endpoints(string _adminKey)
 			return TypedResults.Ok();
 		});
 
-		app.MapGet("Vacuum", (LootGodContext db) => db.Database.ExecuteSqlRaw("VACUUM"));
+		app.MapGet("Vacuum", (ILogger<Endpoints> logger, LootGodContext db) =>
+		{
+			var watch = Stopwatch.StartNew();
+			var val = db.Database.ExecuteSqlRaw("VACUUM");
+			logger.DatabaseVacuumSuccess(watch.ElapsedMilliseconds);
+
+			return val;
+		});
 
 		app.MapGet("Backup", (ILogger<Endpoints> logger, HttpContext ctx, LootGodContext db, TimeProvider time, string key) =>
 		{
@@ -99,13 +121,17 @@ public class Endpoints(string _adminKey)
 
 			var now = time.GetUtcNow().ToUnixTimeSeconds();
 			var tempFileName = Path.GetTempFileName();
+			var watch = Stopwatch.StartNew();
 			db.Database.ExecuteSqlRaw("VACUUM INTO {0}", tempFileName);
 
 			// ensure the backup temp file is deleted once the request finishes processing
-			var delete = new SelfDestruct(tempFileName);
-			ctx.Response.RegisterForDispose(delete);
+			ctx.Response.OnCompleted(() =>
+			{
+				File.Delete(tempFileName);
+				return Task.CompletedTask;
+			});
 
-			logger.DatabaseBackup(tempFileName, now);
+			logger.DatabaseBackup(tempFileName, now, watch.ElapsedMilliseconds);
 
 			return Results.File(tempFileName, fileDownloadName: $"lootgod-backup-{now}.db");
 		});

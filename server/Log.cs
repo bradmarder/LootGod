@@ -12,8 +12,8 @@
 	[LoggerMessage(EventId = 4, Level = LogLevel.Information, Message = "DataSink created")]
 	public static partial void DataSinkCreated(this ILogger logger);
 
-	[LoggerMessage(EventId = 5, Level = LogLevel.Error, Message = "Discord Webhook Failure")]
-	public static partial void DiscordWebhookFailure(this ILogger logger, Exception ex);
+	[LoggerMessage(EventId = 5, Level = LogLevel.Information, Message = "DataSink removed after {Elapsed}s")]
+	public static partial void DataSinkRemoved(this ILogger logger, int elapsed);
 
 	[LoggerMessage(EventId = 6, Level = LogLevel.Information, Message = "Loot request created")]
 	public static partial void LootRequestCreated(this ILogger logger);
@@ -42,8 +42,8 @@
 	[LoggerMessage(EventId = 14, Level = LogLevel.Information, Message = "Discord webhook success")]
 	public static partial void DiscordWebhookSuccess(this ILogger logger);
 
-	[LoggerMessage(EventId = 15, Level = LogLevel.Information, Message = "Database backup created `{TempFileName}` at {Now}")]
-	public static partial void DatabaseBackup(this ILogger logger, string tempFileName, long now);
+	[LoggerMessage(EventId = 15, Level = LogLevel.Information, Message = "Database backup created `{TempFileName}` at {Now} in {Elapsed}ms")]
+	public static partial void DatabaseBackup(this ILogger logger, string tempFileName, long now, long elapsed);
 
 	[LoggerMessage(EventId = 16, Level = LogLevel.Information, Message = "Payload delivery completed")]
 	public static partial void PayloadDeliveryComplete(this ILogger logger);
@@ -68,4 +68,10 @@
 
 	[LoggerMessage(EventId = 23, Level = LogLevel.Information, Message = "Loot quantity updated")]
 	public static partial void LootQuantityUpdated(this ILogger logger);
+
+	[LoggerMessage(EventId = 24, Level = LogLevel.Error, Message = "Discord Webhook Failure")]
+	public static partial void DiscordWebhookFailure(this ILogger logger, Exception ex);
+
+	[LoggerMessage(EventId = 25, Level = LogLevel.Information, Message = "Database vacuum success in {Elapsed}ms")]
+	public static partial void DatabaseVacuumSuccess(this ILogger logger, long elapsed);
 }
