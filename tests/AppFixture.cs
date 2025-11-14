@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -55,11 +57,21 @@ public class LootGodApplicationFactory(DateTimeOffset now) : WebApplicationFacto
 	{
 		builder.ConfigureServices(x =>
 		{
+			x.AddSingleton<IAntiforgery>(new FakeAntiForgery());
 			x.AddSingleton<TimeProvider>(new FixedTimeProvider(now));
 			x.AddLogging(y => y.ClearProviders());
 			x.AddHttpClient<SyncService>().ConfigurePrimaryHttpMessageHandler(() => new FakeHttpMessageHandler(HandlerFunc));
 		});
 	}
+}
+
+public class FakeAntiForgery : IAntiforgery
+{
+	public AntiforgeryTokenSet GetAndStoreTokens(HttpContext httpContext) => new("", "", "", "");
+	public AntiforgeryTokenSet GetTokens(HttpContext httpContext) => new("", "", "", "");
+	public Task<bool> IsRequestValidAsync(HttpContext httpContext) => Task.FromResult(true);
+	public void SetCookieTokenAndHeader(HttpContext httpContext) { }
+	public Task ValidateRequestAsync(HttpContext httpContext) => Task.CompletedTask;
 }
 
 public class FixedTimeProvider(DateTimeOffset now) : TimeProvider

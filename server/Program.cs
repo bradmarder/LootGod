@@ -91,6 +91,7 @@ builder.Services.AddScoped<LootService>();
 builder.Services.AddScoped<SyncService>();
 builder.Services.AddScoped<ImportService>();
 builder.Services.AddScoped<LogMiddleware>();
+builder.Services.AddScoped<AntiForgeryTokenValidationMiddleware>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(x => Channel.CreateUnbounded<Payload>(new() { SingleReader = true, SingleWriter = false }));
 builder.Services.AddSingleton<ConcurrentDictionary<string, DataSink>>();
@@ -98,6 +99,12 @@ builder.Services.AddHttpClient<LootService>();
 builder.Services.AddHttpClient<SyncService>();
 builder.Services.AddHostedService<PayloadDeliveryService>();
 builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
+builder.Services.AddAntiforgery(options =>
+{
+	options.Cookie.HttpOnly = true;
+	options.Cookie.SameSite = SameSiteMode.Strict;
+	options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+});
 builder.Services.AddLogging(x => x
 	.ClearProviders()
 	.AddSimpleConsole(x =>
@@ -116,6 +123,9 @@ builder.Services.AddLogging(x => x
 	})
 	//.Configure(y => y.ActivityTrackingOptions = ActivityTrackingOptions.None)
 );
+
+// Explicitly enable HTTPS configuration for Kestrel because we are using CreateSlimBuilder
+builder.WebHost.UseKestrelHttpsConfiguration();
 
 using var app = builder.Build();
 
@@ -169,6 +179,8 @@ if (app.Environment.IsProduction())
 }
 app.UsePathBase("/api");
 app.MapHealthChecks("/healthz").DisableHttpMetrics();
+app.UseAntiforgery();
+app.UseMiddleware<AntiForgeryTokenValidationMiddleware>();
 
 new Endpoints(adminKey).Map(app);
 

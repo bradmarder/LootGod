@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Threading.Channels;
@@ -9,8 +8,7 @@ public class LootService(
 	IHttpContextAccessor _httpContextAccessor,
 	LootGodContext _db,
 	HttpClient _httpClient,
-	Channel<Payload> _payloadChannel,
-	ConcurrentDictionary<string, DataSink> _dataSinks)
+	Channel<Payload> _payloadChannel)
 {
 	private static readonly Expansion[] CurrentExpansions = [Expansion.ToB, Expansion.SoR];
 
@@ -135,8 +133,6 @@ public class LootService(
 
 		return string.Join(Environment.NewLine, output);
 	}
-
-	public bool RemoveDataSink(string connectionId) => _dataSinks.Remove(connectionId, out _);
 
 	public ItemSearch[] GetItems()
 	{

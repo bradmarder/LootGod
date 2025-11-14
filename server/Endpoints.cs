@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -62,6 +63,11 @@ public class Endpoints(string _adminKey)
 
 	public void Map(IEndpointRouteBuilder app)
 	{
+		app.MapGet("AntiforgeryToken", (IAntiforgery antiforgery, HttpContext ctx) =>
+		{
+			return antiforgery.GetAndStoreTokens(ctx).RequestToken;
+		});
+
 		app.MapGet("SSE", async (ILogger<Endpoints> logger, HttpContext ctx, IServiceScopeFactory factory, ConcurrentDictionary<string, DataSink> dataSinks) =>
 		{
 			var watch = Stopwatch.StartNew();
@@ -612,7 +618,7 @@ public class Endpoints(string _adminKey)
 				activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
 				return TypedResults.BadRequest(ex.Message);
 			}
-		}).DisableAntiforgery();
+		});
 
 		app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService, TimeProvider time) =>
 		{
