@@ -67,8 +67,10 @@ public class LootGodApplicationFactory(DateTimeOffset now) : WebApplicationFacto
 
 public class FakeAntiForgery : IAntiforgery
 {
-	public AntiforgeryTokenSet GetAndStoreTokens(HttpContext httpContext) => new("", "", "", "");
-	public AntiforgeryTokenSet GetTokens(HttpContext httpContext) => new("", "", "", "");
+	private static readonly AntiforgeryTokenSet _fakeTokenSet = new("", "", "", "");
+
+	public AntiforgeryTokenSet GetAndStoreTokens(HttpContext httpContext) => _fakeTokenSet;
+	public AntiforgeryTokenSet GetTokens(HttpContext httpContext) => _fakeTokenSet;
 	public Task<bool> IsRequestValidAsync(HttpContext httpContext) => Task.FromResult(true);
 	public void SetCookieTokenAndHeader(HttpContext httpContext) { }
 	public Task ValidateRequestAsync(HttpContext httpContext) => Task.CompletedTask;

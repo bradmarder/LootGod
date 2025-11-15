@@ -3,7 +3,7 @@ import swal from './swal';
 
 export const setAxiosInterceptors = () => {
 	axios.interceptors.request.use(config => {
-		const token = localStorage.getItem('RequestVerificationToken');
+		const token = sessionStorage.getItem('RequestVerificationToken');
 		if (token) {
 			config.headers['RequestVerificationToken'] = token;
 		}

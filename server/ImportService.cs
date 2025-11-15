@@ -97,12 +97,12 @@ public class ImportService(ILogger<LootService> _logger, LootGodContext _db, Loo
 	{
 		using var activity = source.StartActivity(nameof(BulkImportRaidDump));
 		await using var stream = file.OpenReadStream();
-		using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
+		await using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
 		using var _ = _logger.BeginScope(new { ZipEntryCount = zip.Entries.Count });
 
 		foreach (var entry in zip.Entries.OrderBy(x => x.LastWriteTime))
 		{
-			await using var dump = entry.Open();
+			await using var dump = await entry.OpenAsync(token);
 			await ImportRaidDump(dump, entry.FullName, offset, token);
 		}
 	}

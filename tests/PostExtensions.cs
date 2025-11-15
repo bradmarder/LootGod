@@ -26,11 +26,11 @@ public static class PostExtensions
 		var dump = Encoding.UTF8.GetBytes(lines);
 
 		await using var stream = new MemoryStream();
-		using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
+		await using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
 		{
 			const string now = "20240704";
 			var entry = zip.CreateEntry($"RaidRoster_firiona-{now}-210727.txt");
-			await using var ent = entry.Open();
+			await using var ent = await entry.OpenAsync();
 			await ent.WriteAsync(dump);
 		}
 
