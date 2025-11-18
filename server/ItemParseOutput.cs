@@ -119,6 +119,7 @@ public record ItemParseOutput
 	public int UNKNOWN77 => int.Parse(_data[279]);
 	public DateTime Created => DateTime.Parse(_data[310]);
 	public string CharmFile => _data[86];
+	public int? EMFocusEffect => NullIfZero(int.Parse(_data[193]));
 
 	private static int? NullIfZero(int x) => x > 0 ? x : null;
 

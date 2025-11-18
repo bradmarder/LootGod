@@ -113,4 +113,5 @@ public record ItemDto
 	public string? FocusName { get; init; }
 	public string? FocusDescription { get; init; }
 	public string? FocusDescription2 { get; init; }
+	public string? EMFocusName { get; init; }
 }

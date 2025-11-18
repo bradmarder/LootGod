@@ -57,7 +57,8 @@ public class SyncService(
 		var focusIds = _db.Items.Select(x => x.FocusEffect).Where(x => x != null).ToHashSet();
 		var clickIds = _db.Items.Select(x => x.ClickEffect).Where(x => x != null).ToHashSet();
 		var wornIds = _db.Items.Select(x => x.WornEffect).Where(x => x != null).ToHashSet();
-		HashSet<int?> spellIds = [.. procIds, .. focusIds, .. clickIds, .. wornIds];
+		var emFocusIds = _db.Items.Select(x => x.EMFocusEffect).Where(x => x != null).ToHashSet();
+		HashSet<int?> spellIds = [.. procIds, .. focusIds, .. clickIds, .. wornIds, .. emFocusIds];
 
 		await foreach (var line in FetchLines(SpellDataUrl, token))
 		{

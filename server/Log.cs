@@ -27,9 +27,6 @@
 	[LoggerMessage(EventId = 9, Level = LogLevel.Error, Message = "Discord read content failed")]
 	public static partial void DiscordReadContentError(this ILogger logger, Exception ex);
 
-	[LoggerMessage(EventId = 10, Level = LogLevel.Error, Message = "Activity logging error")]
-	public static partial void ActivityLoggingError(this ILogger logger, Exception ex);
-
 	[LoggerMessage(EventId = 11, Level = LogLevel.Error, Message = "GlobalExceptionHandler - {RequestPath}")]
 	public static partial void GlobalExceptionHandler(this ILogger logger, Exception ex, string requestPath);
 

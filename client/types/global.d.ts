@@ -81,6 +81,7 @@ declare interface IItem
 	readonly focusDescription: string | null;
 	readonly focusDescription2: string | null;
 	readonly charmFile: string;
+	readonly emFocusName: string | null;
 }
 declare interface IItemSearch {
 	readonly id: number;

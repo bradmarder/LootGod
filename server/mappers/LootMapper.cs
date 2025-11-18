@@ -19,6 +19,7 @@ public static partial class LootMapper
 	[MapPropertyFromSource(nameof(ItemDto.FocusName), Use = nameof(MapFocusName))]
 	[MapPropertyFromSource(nameof(ItemDto.FocusDescription), Use = nameof(MapFocusDescription))]
 	[MapPropertyFromSource(nameof(ItemDto.FocusDescription2), Use = nameof(MapFocusDescription2))]
+	[MapPropertyFromSource(nameof(ItemDto.EMFocusName), Use = nameof(MapEMFocusName))]
 	public static partial ItemDto ItemMap(Item item);
 
 	private static string? MapWornName(Item item) => item.WornSpell!.Name;
@@ -31,4 +32,5 @@ public static partial class LootMapper
 	private static string? MapFocusName(Item item) => item.FocusSpell!.Name;
 	private static string? MapFocusDescription(Item item) => item.FocusSpell!.Description;
 	private static string? MapFocusDescription2(Item item) => item.FocusSpell!.Description2;
+	private static string? MapEMFocusName(Item item) => item.EMFocusSpell!.Name;
 }

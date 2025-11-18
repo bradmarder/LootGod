@@ -195,6 +195,9 @@ export default function ItemView(item: IItem) {
 				{item.focusName &&
 					<div>Focus Effect: {item.focusName}</div>
 				}
+				{item.emFocusName &&
+					<div>Focus Effect: {item.emFocusName}</div>
+				}
 				{item.charmFile &&
 					<>Item information: {item.charmFile}</>
 				}

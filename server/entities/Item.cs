@@ -126,6 +126,12 @@ public class Item
 	public int? ClickEffect { get; set; }
 	public int ClickLevel { get; set; }
 	public int? WornEffect { get; set; }
+
+	/// <summary>
+	/// Special focus for Enhanced Minion
+	/// </summary>
+	public int? EMFocusEffect { get; set; }
+
 	public string CharmFile { get; set; } = "";
 
 	[InverseProperty(nameof(LootRequest.Item))]
@@ -145,4 +151,7 @@ public class Item
 
 	[ForeignKey(nameof(FocusEffect))]
 	public virtual Spell? FocusSpell { get; set; }
+
+	[ForeignKey(nameof(EMFocusEffect))]
+	public virtual Spell? EMFocusSpell { get; set; }
 }

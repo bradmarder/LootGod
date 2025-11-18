@@ -53,32 +53,7 @@ if (builder.Environment.IsProduction())
 			.AddSource(nameof(LootService), nameof(Endpoints), nameof(SyncService), nameof(ImportService))
 			.AddOtlpExporter());
 
-	builder.Services
-		.AddOptions<AspNetCoreTraceInstrumentationOptions>()
-		.Configure<IServiceScopeFactory>((options, factory) =>
-		{
-			options.EnrichWithHttpRequest = (activity, req) =>
-			{
-				using var scope = factory.CreateScope();
-				var service = scope.ServiceProvider.GetRequiredService<LootService>();
-				var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-				activity.SetTag("IP", service.GetIPAddress());
-				if (service.GetPlayerKey() is not null)
-				{
-					try
-					{
-						activity.SetTag("PlayerId", service.GetPlayerId());
-						activity.SetTag("GuildId", service.GetGuildId());
-					}
-					catch (Exception ex)
-					{
-						activity.AddException(ex);
-						logger.ActivityLoggingError(ex);
-					}
-				}
-			};
-		});
+	builder.Services.AddOptions<AspNetCoreTraceInstrumentationOptions>();
 }
 
 builder.Services.ConfigureHttpJsonOptions(options =>
