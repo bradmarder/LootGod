@@ -42,6 +42,7 @@ public record ItemParseOutput
 		"Dragonbrood",
 		"Warmonger",
 	];
+	private static int? NullIfZero(int x) => x is 0 ? null : x;
 
 	private readonly string _line;
 	private readonly string[] _data;
@@ -77,6 +78,12 @@ public record ItemParseOutput
 		: Expansion.Unknown;
 
 	public Slots Slots => (Slots)int.Parse(_data[11]);
+	public byte CR => byte.Parse(_data[16]);
+	public byte DR => byte.Parse(_data[17]);
+	public byte PR => byte.Parse(_data[18]);
+	public byte MR => byte.Parse(_data[19]);
+	public byte FR => byte.Parse(_data[20]);
+	public byte SVCorruption => byte.Parse(_data[21]);
 	public byte Regen => byte.Parse(_data[33]);
 	public byte ManaRegen => byte.Parse(_data[34]);
 	public byte EnduranceRegen => byte.Parse(_data[35]);
@@ -120,8 +127,6 @@ public record ItemParseOutput
 	public DateTime Created => DateTime.Parse(_data[310]);
 	public string CharmFile => _data[86];
 	public int? EMFocusEffect => NullIfZero(int.Parse(_data[193]));
-
-	private static int? NullIfZero(int x) => x > 0 ? x : null;
 
 	public bool IsRaid => IsRaidGear || IsRaidContainer || IsRaidSpell;
 

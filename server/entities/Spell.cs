@@ -16,22 +16,22 @@ public class Spell
 
 	[Key]
 	[DatabaseGenerated(DatabaseGeneratedOption.None)]
-	public int Id { get; set; }
+	public int Id { get; init; }
 
 	/// <summary>
 	/// timestamp of last sync
 	/// </summary>
-	public long Sync { get; set; }
+	public long Sync { get; init; }
 
 	[Required]
 	[StringLength(255)]
-	public string Name { get; set; } = null!;
+	public string Name { get; init; } = null!;
 
 	/// <summary>
 	/// hash of the item data, used to detect changes
 	/// </summary>
-	public byte[] Hash { get; set; } = [];
+	public byte[] Hash { get; init; } = [];
 
-	public string Description { get; set; } = null!;
-	public string Description2 { get; set; } = null!;
+	public string Description { get; init; } = null!;
+	public string Description2 { get; init; } = null!;
 }

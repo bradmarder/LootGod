@@ -115,39 +115,39 @@ export default function ItemView(item: IItem) {
 				<span style={{ color: "#bba85a" }}>
 					Slot 5, type 20 (Weapon Ornamentation):{" "}
 				</span>
-				<span style={{ color: "#cccccc" }}>empty</span>
+				empty</span>
 			</div> */}
 			<div style={{ display: "flex", gap: 16 }}>
 				<div style={{ minWidth: 130 }}>
-					<StatRow label="Size:" value={<span style={{ color: "#cccccc" }}>HUGE</span>} />
-					<StatRow label="Weight:" value={<span style={{ color: "#cccccc" }}>0</span>} />
-					<StatRow label="Tribute:" value={<span style={{ color: "#cccccc" }}>0</span>} />
+					<StatRow label="Size:" value={'TINY'} />
+					<StatRow label="Weight:" value={'0.3'} />
+					<StatRow label="Tribute:" value={'0'} />
 					{item.recLevel > 0 &&
-						<StatRow label="Rec Level:" value={<span style={{ color: "#cccccc" }}>{item.recLevel}</span>} />
+						<StatRow label="Rec Level:" value={item.recLevel} />
 					}
 					{item.reqLevel > 0 &&
-						<StatRow label="Req Level:" value={<span style={{ color: "#cccccc" }}>{item.reqLevel}</span>} />
+						<StatRow label="Req Level:" value={item.reqLevel} />
 					}
 					{itemTypeMap[item.itemtype] &&
-						<StatRow label="Skill:" value={<span style={{ color: "#cccccc" }}>{itemTypeMap[item.itemtype]}</span>} />
+						<StatRow label="Skill:" value={itemTypeMap[item.itemtype]} />
 					}
 				</div>
 				<div style={{ minWidth: 120 }}>
-					<StatRow label="AC:" value={<span style={{ color: "#cccccc" }}>{item.ac}</span>} />
-					<StatRow label="HP:" value={<span style={{ color: "#cccccc" }}>{item.hp}</span>} />
-					<StatRow label="Mana:" value={<span style={{ color: "#cccccc" }}>{item.mana}</span>} />
-					<StatRow label="End:" value={<span style={{ color: "#cccccc" }}>{item.endurance}</span>} />
+					<StatRow label="AC:" value={item.ac} />
+					<StatRow label="HP:" value={item.hp} />
+					<StatRow label="Mana:" value={item.mana} />
+					<StatRow label="End:" value={item.endurance} />
 				</div>
 				<div style={{ minWidth: 120 }}>
 					{item.damage > 0 &&
 						<>
-							<StatRow label="Base Dmg:" value={<span style={{ color: "#cccccc" }}>{item.damage}</span>} />
-							<StatRow label="Delay:" value={<span style={{ color: "#cccccc" }}>{item.delay}</span>} />
+							<StatRow label="Base Dmg:" value={item.damage} />
+							<StatRow label="Delay:" value={item.delay} />
 							<StatRow label="Ratio:" value={<span style={statStyle4}>{item.delay ? (item.damage / item.delay).toFixed(2) : ''}</span>} />
 						</>
 					}
 					{false && // RANGE MUST EXIST
-						<StatRow label="Range:" value={<span style={{ color: "#cccccc" }}>0</span>} />
+						<StatRow label="Range:" value={'0'} />
 					}
 				</div>
 			</div>
@@ -162,12 +162,12 @@ export default function ItemView(item: IItem) {
 					<StatRow label="Charisma:" value={<><span>0 </span><span style={statStyle3}>+{item.hcha}</span></>} />
 				</div>
 				<div style={{ minWidth: 120 }}>
-					<StatRow label="Magic:" value={0} />
-					<StatRow label="Fire:" value={0} />
-					<StatRow label="Cold:" value={0} />
-					<StatRow label="Disease:" value={0} />
-					<StatRow label="Poison:" value={0} />
-					<StatRow label="Corrupt:" value={0} />
+					<StatRow label="Magic:" value={item.mr} />
+					<StatRow label="Fire:" value={item.fr} />
+					<StatRow label="Cold:" value={item.cr} />
+					<StatRow label="Disease:" value={item.dr} />
+					<StatRow label="Poison:" value={item.pr} />
+					<StatRow label="Corrupt:" value={item.svCorruption} />
 				</div>
 				<div style={{ minWidth: 120 }}>
 					{item.minLuck > 0 &&

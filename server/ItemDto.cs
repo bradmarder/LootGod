@@ -68,13 +68,13 @@ public record ItemDto
 	public ItemClass Classes { get; init; }
 	public long Prestige { get; init; }
 	public Slots Slots { get; init; }
-	public byte Regen { get; set; }
-	public byte ManaRegen { get; set; }
-	public byte EnduranceRegen { get; set; }
-	public int HealAmt { get; set; }
-	public int SpellDmg { get; set; }
-	public int Clairvoyance { get; set; }
-	public int Attack { get; set; }
+	public byte Regen { get; init; }
+	public byte ManaRegen { get; init; }
+	public byte EnduranceRegen { get; init; }
+	public int HealAmt { get; init; }
+	public int SpellDmg { get; init; }
+	public int Clairvoyance { get; init; }
+	public int Attack { get; init; }
 	public byte Itemtype { get; init; }
 	public byte Augslot1type { get; init; }
 	public byte Augslot3type { get; init; }
@@ -89,6 +89,12 @@ public record ItemDto
 	public byte Delay { get; init; }
 	public byte ReqLevel { get; init; }
 	public byte RecLevel { get; init; }
+	public byte CR { get; init; }
+	public byte DR { get; init; }
+	public byte PR { get; init; }
+	public byte MR { get; init; }
+	public byte FR { get; init; }
+	public byte SVCorruption { get; init; }
 	public int HSTR { get; init; }
 	public int HINT { get; init; }
 	public int HWIS { get; init; }

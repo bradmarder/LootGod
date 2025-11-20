@@ -57,6 +57,12 @@ declare interface IItem
 	readonly delay: number;
 	readonly reqLevel: number;
 	readonly recLevel: number;
+	readonly cr: number;
+	readonly dr: number;
+	readonly pr: number;
+	readonly mr: number;
+	readonly fr: number;
+	readonly svCorruption: number;
 	readonly hstr: number;
 	readonly hint: number;
 	readonly hwis: number;
