@@ -181,9 +181,7 @@ public class ImportService(ILogger<LootService> _logger, LootGodContext _db, Loo
 			player.Alt = dump.Alt;
 			player.Notes = dump.Notes;
 			player.Zone = dump.Zone;
-
-			// TODO: shouldn't be necessary, bug with Kyoto class defaulting to Bard
-			player.Class = Player._classNameToEnumMap[dump.Class];
+			player.Class = Player._classNameToEnumMap[dump.Class]; // personas make this complicated...
 
 			// if a player switches their main to a previously linked alt, reset the MainId to null
 			if (!dump.Alt) { player.MainId = null; }

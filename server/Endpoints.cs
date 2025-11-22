@@ -605,20 +605,19 @@ public class Endpoints(string _adminKey)
 				(".zip", _) => importService.BulkImportRaidDump(file, offset, token),
 				(".txt", var x) when x.StartsWith("RaidRoster") => importService.ImportRaidDump(file, offset, token),
 				(".txt", var x) when x.Split('-').Length is 3 => importService.ImportGuildDump(file, token),
-				_ => Task.FromException(new ImportException($"Cannot determine import dump for filename '{file.FileName}'"))
+				_ => Task.FromException(new ImportException($"Cannot determine import dump"))
 			};
 			try
 			{
 				await import;
-				activity?.SetStatus(ActivityStatusCode.Ok);
 				return TypedResults.Ok();
 			}
 			catch (ImportException ex)
 			{
-				activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+				logger.ImportDumpWarning(ex.Message);
 				return TypedResults.BadRequest(ex.Message);
 			}
-		});
+		}).DisableAntiforgery();
 
 		app.MapGet("GetPlayerAttendance", (LootGodContext db, LootService lootService, TimeProvider time) =>
 		{

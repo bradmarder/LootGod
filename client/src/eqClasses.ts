@@ -12,8 +12,8 @@ const classes: readonly EQClass[] = [
 	'Ranger',
 	'Rogue',
 	'Shadowknight',
-	'Warrior',
 	'Shaman',
+	'Warrior',
 	'Wizard',
 ];
 

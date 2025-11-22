@@ -153,13 +153,13 @@ export default function ItemView(item: IItem) {
 			</div>
 			<div style={{ marginTop: 16, display: "flex", gap: 32 }}>
 				<div style={{ minWidth: 130 }}>
-					<StatRow label="Strength:" value={<><span>0 </span><span style={statStyle3}>+{item.hstr}</span></>} />
-					<StatRow label="Stamina:" value={<><span>0 </span><span style={statStyle3}>+{item.hsta}</span></>} />
-					<StatRow label="Intelligence:" value={<><span>0 </span><span style={statStyle3}>+{item.hint}</span></>} />
-					<StatRow label="Wisdom:" value={<><span>0 </span><span style={statStyle3}>+{item.hwis}</span></>} />
-					<StatRow label="Agility:" value={<><span>0 </span><span style={statStyle3}>+{item.hagi}</span></>} />
-					<StatRow label="Dexterity:" value={<><span>0 </span><span style={statStyle3}>+{item.hdex}</span></>} />
-					<StatRow label="Charisma:" value={<><span>0 </span><span style={statStyle3}>+{item.hcha}</span></>} />
+					<StatRow label="Strength:" value={<><span></span><span style={statStyle3}>+{item.hstr}</span></>} />
+					<StatRow label="Stamina:" value={<><span></span><span style={statStyle3}>+{item.hsta}</span></>} />
+					<StatRow label="Intelligence:" value={<><span></span><span style={statStyle3}>+{item.hint}</span></>} />
+					<StatRow label="Wisdom:" value={<><span></span><span style={statStyle3}>+{item.hwis}</span></>} />
+					<StatRow label="Agility:" value={<><span></span><span style={statStyle3}>+{item.hagi}</span></>} />
+					<StatRow label="Dexterity:" value={<><span></span><span style={statStyle3}>+{item.hdex}</span></>} />
+					<StatRow label="Charisma:" value={<><span></span><span style={statStyle3}>+{item.hcha}</span></>} />
 				</div>
 				<div style={{ minWidth: 120 }}>
 					<StatRow label="Magic:" value={item.mr} />

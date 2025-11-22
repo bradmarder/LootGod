@@ -28,9 +28,9 @@ if (hasKey) {
 }
 axios.defaults.baseURL = 'api/';
 setAxiosInterceptors();
-axios
-	.get<string>('AntiforgeryToken')
-	.then(x => sessionStorage.setItem('RequestVerificationToken', x.data));
+// axios
+// 	.get<string>('AntiforgeryToken')
+// 	.then(x => sessionStorage.setItem('RequestVerificationToken', x.data));
 
 export default function App() {
 	const [raidNight, setRaidNight] = useState<boolean | null>(null);

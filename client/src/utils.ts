@@ -2,13 +2,13 @@ import axios, { AxiosError } from "axios";
 import swal from './swal';
 
 export const setAxiosInterceptors = () => {
-	axios.interceptors.request.use(config => {
-		const token = sessionStorage.getItem('RequestVerificationToken');
-		if (token) {
-			config.headers['RequestVerificationToken'] = token;
-		}
-		return config;
-	});
+	// axios.interceptors.request.use(config => {
+	// 	const token = sessionStorage.getItem('RequestVerificationToken');
+	// 	if (token) {
+	// 		config.headers['RequestVerificationToken'] = token;
+	// 	}
+	// 	return config;
+	// });
 	axios.interceptors.response.use(
 		x => x,
 		async error => {
