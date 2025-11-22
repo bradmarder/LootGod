@@ -1,6 +1,5 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using OpenTelemetry.Exporter;
 using OpenTelemetry.Instrumentation.AspNetCore;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
@@ -66,7 +65,7 @@ builder.Services.AddScoped<LootService>();
 builder.Services.AddScoped<SyncService>();
 builder.Services.AddScoped<ImportService>();
 builder.Services.AddScoped<LogMiddleware>();
-builder.Services.AddScoped<AntiForgeryTokenValidationMiddleware>();
+//builder.Services.AddScoped<AntiForgeryTokenValidationMiddleware>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(x => Channel.CreateUnbounded<Payload>(new() { SingleReader = true, SingleWriter = false }));
 builder.Services.AddSingleton<ConcurrentDictionary<string, DataSink>>();
@@ -74,12 +73,12 @@ builder.Services.AddHttpClient<LootService>();
 builder.Services.AddHttpClient<SyncService>();
 builder.Services.AddHostedService<PayloadDeliveryService>();
 builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
-builder.Services.AddAntiforgery(options =>
-{
-	options.Cookie.HttpOnly = true;
-	options.Cookie.SameSite = SameSiteMode.Strict;
-	options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-});
+//builder.Services.AddAntiforgery(options =>
+//{
+//	options.Cookie.HttpOnly = true;
+//	options.Cookie.SameSite = SameSiteMode.Strict;
+//	options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+//});
 builder.Services.AddLogging(x => x
 	.ClearProviders()
 	.AddSimpleConsole(x =>
@@ -100,7 +99,7 @@ builder.Services.AddLogging(x => x
 );
 
 // Explicitly enable HTTPS configuration for Kestrel because we are using CreateSlimBuilder
-builder.WebHost.UseKestrelHttpsConfiguration();
+// builder.WebHost.UseKestrelHttpsConfiguration();
 
 using var app = builder.Build();
 
@@ -113,13 +112,11 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 	//try
 	//{
 	//	db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = OFF;");
-	//	db.Database.ExecuteSqlRaw("DELETE FROM ITEMS;");
-	//	db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON;");
-	//	app.Logger.LogInformation("SYNC RESET");
+	//	app.Logger.LogInformation("SYNC 2 SUCCESS");
 	//}
 	//catch (Exception ex)
 	//{
-	//	app.Logger.LogError(ex, "SYNC RESET FAIL");
+	//	app.Logger.LogError(ex, "SYNC 2 FAIL");
 	//}
 }
 
@@ -154,8 +151,10 @@ if (app.Environment.IsProduction())
 }
 app.UsePathBase("/api");
 app.MapHealthChecks("/healthz").DisableHttpMetrics();
-app.UseAntiforgery();
-app.UseMiddleware<AntiForgeryTokenValidationMiddleware>();
+
+// people have extensions that block cookies which breaks this feature
+//app.UseAntiforgery();
+//app.UseMiddleware<AntiForgeryTokenValidationMiddleware>();
 
 new Endpoints(adminKey).Map(app);
 
