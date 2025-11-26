@@ -5,12 +5,12 @@ using System.Threading.Channels;
 
 public class PayloadDeliveryService(
 	ILogger<PayloadDeliveryService> _logger,
-	Channel<Payload> _payloadChannel,
+	ChannelReader<Payload> _channel,
 	ConcurrentDictionary<string, DataSink> _dataSinks) : BackgroundService
 {
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 	{
-		await foreach (var payload in _payloadChannel.Reader.ReadAllAsync(stoppingToken))
+		await foreach (var payload in _channel.ReadAllAsync(stoppingToken))
 		{
 			var watch = Stopwatch.StartNew();
 			using var _ = _logger.BeginScope(new

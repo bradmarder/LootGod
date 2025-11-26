@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 [Index(nameof(Key), IsUnique = true)]
 public class Player
 {
-	public static readonly FrozenDictionary<string, EQClass> _classNameToEnumMap = new Dictionary<string, EQClass>
+	public static readonly FrozenDictionary<string, EQClass> ClassNameToEnumMap = new Dictionary<string, EQClass>
 	{
 		["Bard"] = EQClass.Bard,
 		["Beastlord"] = EQClass.Beastlord,
@@ -56,7 +56,7 @@ public class Player
 	public Player(string name, string eqClass, int guildId)
 	{
 		Name = name;
-		Class = _classNameToEnumMap[eqClass];
+		Class = ClassNameToEnumMap[eqClass];
 		GuildId = guildId;
 		Key = GetRandomGuid();
 		Guest = true;
@@ -70,7 +70,7 @@ public class Player
 		GuildId = guildId;
 		Active = true;
 		Name = dump.Name;
-		Class = _classNameToEnumMap[dump.Class];
+		Class = ClassNameToEnumMap[dump.Class];
 		Alt = dump.Alt;
 		Level = dump.Level;
 		LastOnDate = dump.LastOnDate;

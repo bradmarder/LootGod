@@ -19,11 +19,23 @@ public class SyncService(
 		using var activity = source.StartActivity(nameof(DataSync));
 
 		_db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = OFF;");
-
-		await ItemSync(token);
-		await SpellSync(token);
-
-		_db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON;");
+		
+		using (var transaction = _db.Database.BeginTransaction())
+		{
+			try
+			{
+				await ItemSync(token);
+				await SpellSync(token);
+				_db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON;");
+				transaction.Commit();
+			}
+			catch
+			{
+				transaction.Rollback();
+				// _db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON;");
+				throw;
+			}
+		}
 	}
 
 	private async IAsyncEnumerable<string> FetchLines(string requestUri, [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -49,9 +61,7 @@ public class SyncService(
 		using var activity = source.StartActivity(nameof(SpellSync));
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
 		var watch = Stopwatch.StartNew();
-		var spells = new List<Spell>();
 		var totalSpellCount = 0;
-		var deletedCount = 0;
 
 		var procIds = _db.Items.Select(x => x.ProcEffect).Where(x => x != null).ToHashSet();
 		var focusIds = _db.Items.Select(x => x.FocusEffect).Where(x => x != null).ToHashSet();
@@ -66,31 +76,16 @@ public class SyncService(
 			var output = new SpellParseOutput(line);
 			if (spellIds.Contains(output.Id))
 			{
-				spells.Add(new(output, now));
+				_db.Spells.Add(new(output, now));
 			}
 		}
 
-		using (var transaction = _db.Database.BeginTransaction())
-		{
-			try
-			{
-				deletedCount = _db.Spells.ExecuteDelete();
-				_db.Spells.AddRange(spells);
-				_db.SaveChanges();
-				transaction.Commit();
-			}
-			catch
-			{
-				transaction.Rollback();
-				throw;
-			}
-		}
+		var count = _db.SaveChanges();
 
 		var state = new
 		{
 			ElapsedMs = watch.ElapsedMilliseconds,
-			DeletedCount = deletedCount,
-			SpellCount = spells.Count,
+			SpellCount = count,
 			TotalSpellCount = totalSpellCount,
 		};
 		using var _ = _logger.BeginScope(state);
@@ -102,9 +97,7 @@ public class SyncService(
 		using var activity = source.StartActivity(nameof(ItemSync));
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
 		var watch = Stopwatch.StartNew();
-		var raidItems = new List<Item>();
 		var totalItemCount = 0;
-		var deletedCount = 0;
 
 		await foreach (var line in FetchLines(ItemDataUrl, token))
 		{
@@ -112,31 +105,16 @@ public class SyncService(
 			var item = new ItemParseOutput(line);
 			if (item is { IsRaid: true, Expansion: not Expansion.Unknown })
 			{
-				raidItems.Add(ItemMapper.ItemOutputMap(item, now));
+				_db.Items.Add(ItemMapper.ItemOutputMap(item, now));
 			}
 		}
 
-		using (var transaction = _db.Database.BeginTransaction())
-		{
-			try
-			{
-				deletedCount = _db.Items.ExecuteDelete();
-				_db.Items.AddRange(raidItems);
-				_db.SaveChanges();
-				transaction.Commit();
-			}
-			catch
-			{
-				transaction.Rollback();
-				throw;
-			}
-		}
+		var count = _db.SaveChanges();
 
 		var state = new
 		{
 			ElapsedMs = watch.ElapsedMilliseconds,
-			DeletedCount = deletedCount,
-			RaidItemCount = raidItems.Count,
+			RaidItemCount = count,
 			TotalItemCount = totalItemCount,
 		};
 		using var _ = _logger.BeginScope(state);

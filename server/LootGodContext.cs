@@ -2,19 +2,26 @@
 
 public class LootGodContext : DbContext
 {
+	private static readonly OnConflictInterceptor _onConflictInterceptor = new();
+
 	public LootGodContext(DbContextOptions<LootGodContext> options) : base(options)
 	{
 		ChangeTracker.LazyLoadingEnabled = false;
 	}
 
 	public DbSet<Guild> Guilds => Set<Guild>();
-	public DbSet<LootRequest> LootRequests => Set<LootRequest>();
 	public DbSet<Item> Items => Set<Item>();
+	public DbSet<LootRequest> LootRequests => Set<LootRequest>();
 	public DbSet<Loot> Loots => Set<Loot>();
 	public DbSet<Player> Players => Set<Player>();
 	public DbSet<RaidDump> RaidDumps => Set<RaidDump>();
 	public DbSet<Rank> Ranks => Set<Rank>();
 	public DbSet<Spell> Spells => Set<Spell>();
+
+	protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+	{
+		optionsBuilder.AddInterceptors(_onConflictInterceptor);
+	}
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{

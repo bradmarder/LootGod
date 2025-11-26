@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 public class ImportService(ILogger<LootService> _logger, LootGodContext _db, LootService _lootService)
 {
@@ -67,17 +66,13 @@ public class ImportService(ILogger<LootService> _logger, LootGodContext _db, Loo
 		activity?.AddEvent(new("Players saved"));
 
 		// save raid dumps for all players
-		var values = _db.Players
+		var raidDumps = _db.Players
 			.Where(x => x.GuildId == guildId)
 			.Where(x => nameToClassMap.Keys.Contains(x.Name)) // ContainsKey cannot be translated by EFCore
-			.Select(x => $"({x.Id}, {timestamp})")
+			.Select(x => new RaidDump(timestamp, x.Id))
 			.ToArray();
-		var sql = new StringBuilder()
-			.AppendLine($"INSERT INTO '{nameof(RaidDump)}s' ('{nameof(RaidDump.PlayerId)}', '{nameof(RaidDump.Timestamp)}') VALUES")
-			.AppendLine(string.Join(',', values))
-			.AppendLine("ON CONFLICT DO NOTHING") // UPSERT - Ignore unique constraint on the primary composite key for RaidDump (Timestamp/Player)
-			.ToString();
-		var raidDumpCreatedCount = _db.Database.ExecuteSqlRaw(sql);
+		_db.RaidDumps.AddRange(raidDumps);
+		var raidDumpCreatedCount = _db.SaveChanges();
 
 		activity?.AddEvent(new("Raid dumps saved"));
 
@@ -181,7 +176,7 @@ public class ImportService(ILogger<LootService> _logger, LootGodContext _db, Loo
 			player.Alt = dump.Alt;
 			player.Notes = dump.Notes;
 			player.Zone = dump.Zone;
-			player.Class = Player._classNameToEnumMap[dump.Class]; // personas make this complicated...
+			player.Class = Player.ClassNameToEnumMap[dump.Class]; // personas make this complicated...
 
 			// if a player switches their main to a previously linked alt, reset the MainId to null
 			if (!dump.Alt) { player.MainId = null; }

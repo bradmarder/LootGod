@@ -8,7 +8,7 @@ public class LootService(
 	IHttpContextAccessor _httpContextAccessor,
 	LootGodContext _db,
 	HttpClient _httpClient,
-	Channel<Payload> _payloadChannel)
+	ChannelWriter<Payload> _channel)
 {
 	private static readonly Expansion[] CurrentExpansions = [Expansion.ToB, Expansion.SoR];
 
@@ -29,9 +29,9 @@ public class LootService(
 		var key = GetPlayerKey();
 
 		return _db.Players
-			.Where(x => x.Guest || x.Active != false)
-			.Single(x => x.Key == key)
-			.Id;
+			.Where(x => x.Key == key && (x.Guest || x.Active != false))
+			.Select(x => x.Id)
+			.Single();
 	}
 
 	public int GetGuildId()
@@ -39,9 +39,9 @@ public class LootService(
 		var key = GetPlayerKey();
 
 		return _db.Players
-			.Where(x => x.Guest || x.Active != false)
-			.Single(x => x.Key == key)
-			.GuildId;
+			.Where(x => x.Key == key && (x.Guest || x.Active != false))
+			.Select(x => x.GuildId)
+			.Single();
 	}
 
 	public bool GetAdminStatus()
@@ -170,14 +170,14 @@ public class LootService(
 		var json = locked ? "[true]" : "[false]";
 		var payload = new Payload(guildId, "lock", json);
 
-		await _payloadChannel.Writer.WriteAsync(payload);
+		await _channel.WriteAsync(payload);
 	}
 
 	public async Task RefreshMessageOfTheDay(int guildId, string motd)
 	{
 		var payload = new Payload(guildId, "motd", motd);
 
-		await _payloadChannel.Writer.WriteAsync(payload);
+		await _channel.WriteAsync(payload);
 	}
 
 	public async Task RefreshItems()
@@ -186,7 +186,7 @@ public class LootService(
 		var json = JsonSerializer.Serialize(items, AppJsonSerializerContext.Default.ItemSearchArray);
 		var payload = new Payload(null, "items", json);
 
-		await _payloadChannel.Writer.WriteAsync(payload);
+		await _channel.WriteAsync(payload);
 	}
 
 	public async Task RefreshLoots(int guildId)
@@ -195,7 +195,7 @@ public class LootService(
 		var json = JsonSerializer.Serialize(loots, AppJsonSerializerContext.Default.LootDtoArray);
 		var payload = new Payload(guildId, "loots", json);
 
-		await _payloadChannel.Writer.WriteAsync(payload);
+		await _channel.WriteAsync(payload);
 	}
 
 	public async Task RefreshRequests(int guildId)
@@ -204,7 +204,7 @@ public class LootService(
 		var json = JsonSerializer.Serialize(requests, AppJsonSerializerContext.Default.LootRequestDtoArray);
 		var payload = new Payload(guildId, "requests", json);
 
-		await _payloadChannel.Writer.WriteAsync(payload);
+		await _channel.WriteAsync(payload);
 	}
 
 	private static IEnumerable<string[]> GetBuckets(string output)
