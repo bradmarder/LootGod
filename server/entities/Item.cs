@@ -36,7 +36,7 @@ public enum ItemClass
 	Enchanter = 1 << 13,
 	Beastlord = 1 << 14,
 	Berserker = 1 << 15,
-	
+
 	All = ushort.MaxValue
 }
 

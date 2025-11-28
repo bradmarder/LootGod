@@ -137,12 +137,12 @@ public record ItemParseOutput
 		|| Augslot4type is 8;
 
 	public bool IsRaidGear => HasRaidAugSlot
-		&& Augslot4type is not 18					// ignore evolve
+		&& Augslot4type is not 18                   // ignore evolve
 		&& !_chaseLootPrefixes.Any(Name.StartsWith)
 		&& !_chaseLootSuffixes.Any(Name.EndsWith)
 		&& !_t2Prefixes.Any(Name.StartsWith)
 		&& !_t2Suffixes.Any(Name.EndsWith)
-		&& !_classKeywords.Any(Name.Contains);		// probably faster/simpler to ignore visible slots
+		&& !_classKeywords.Any(Name.Contains);      // probably faster/simpler to ignore visible slots
 
 	public bool IsRaidContainer =>
 		Itemtype is 11 or 67

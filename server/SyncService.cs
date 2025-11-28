@@ -19,7 +19,7 @@ public class SyncService(
 		using var activity = source.StartActivity(nameof(DataSync));
 
 		_db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = OFF;");
-		
+
 		using (var transaction = _db.Database.BeginTransaction())
 		{
 			try

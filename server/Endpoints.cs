@@ -276,7 +276,7 @@ public class Endpoints(string _adminKey)
 				.EnsureSingle();
 		});
 
-		app.MapPost("CreateLootRequest", async(ILogger<Endpoints> logger, CreateLootRequest dto, LootGodContext db, LootService lootService) =>
+		app.MapPost("CreateLootRequest", async (ILogger<Endpoints> logger, CreateLootRequest dto, LootGodContext db, LootService lootService) =>
 		{
 			lootService.EnsureRaidLootUnlocked();
 
