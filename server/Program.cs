@@ -175,7 +175,9 @@ using (app.Logger.BeginScope(new
 	SqliteInMemory = useSqliteMemory,
 }))
 {
-	app.Logger.ApplicationStarted();
+	app.Lifetime.ApplicationStarted.Register(app.Logger.ApplicationStarted);
+	app.Lifetime.ApplicationStopping.Register(() => app.Logger.ApplicationStopping(cts.Token.IsCancellationRequested));
+	app.Lifetime.ApplicationStopped.Register(() => app.Logger.ApplicationStopped(cts.Token.IsCancellationRequested));
 }
 
 await app.RunAsync(cts.Token);

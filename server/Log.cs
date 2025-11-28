@@ -77,4 +77,10 @@
 
 	[LoggerMessage(EventId = 26, Level = LogLevel.Information, Message = "Application started")]
 	public static partial void ApplicationStarted(this ILogger logger);
+
+	[LoggerMessage(EventId = 27, Level = LogLevel.Information, Message = "Application stopping - {CancellationRequested}")]
+	public static partial void ApplicationStopping(this ILogger logger, bool cancellationRequested);
+
+	[LoggerMessage(EventId = 28, Level = LogLevel.Information, Message = "Application stopped - {CancellationRequested}")]
+	public static partial void ApplicationStopped(this ILogger logger, bool cancellationRequested);
 }
