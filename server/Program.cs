@@ -11,7 +11,7 @@ using System.Threading.Channels;
 var builder = WebApplication.CreateSlimBuilder(args);
 var adminKey = builder.Configuration["ADMIN_KEY"]!;
 var source = builder.Configuration["DATABASE_URL"]!;
-var useSqliteMemory = builder.Configuration["USE_SQLITE_MEMORY"] is "true";
+var useSqliteMemory = builder.Configuration["USE_SQLITE_MEMORY"] == bool.TrueString;
 
 using var cts = new CancellationTokenSource();
 
@@ -67,7 +67,11 @@ builder.Services.AddScoped<ImportService>();
 builder.Services.AddScoped<LogMiddleware>();
 //builder.Services.AddScoped<AntiForgeryTokenValidationMiddleware>();
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton(x => Channel.CreateUnbounded<Payload>(new() { SingleReader = true, SingleWriter = false }));
+
+var channel = Channel.CreateUnbounded<Payload>(new() { SingleReader = true, SingleWriter = false });
+builder.Services.AddSingleton(x => channel.Reader);
+builder.Services.AddSingleton(x => channel.Writer);
+
 builder.Services.AddSingleton<ConcurrentDictionary<string, DataSink>>();
 builder.Services.AddHttpClient<LootService>();
 builder.Services.AddHttpClient<SyncService>();
@@ -95,7 +99,7 @@ builder.Services.AddLogging(x => x
 			config.IncludeScopes = true;
 		}
 	})
-	//.Configure(y => y.ActivityTrackingOptions = ActivityTrackingOptions.None)
+//.Configure(y => y.ActivityTrackingOptions = ActivityTrackingOptions.None)
 );
 
 // Explicitly enable HTTPS configuration for Kestrel because we are using CreateSlimBuilder
@@ -112,11 +116,16 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 	//try
 	//{
 	//	db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = OFF;");
-	//	app.Logger.LogInformation("SYNC 2 SUCCESS");
+	//	db.Database.ExecuteSqlRaw("DROP TABLE Items");
+	//	db.Database.ExecuteSqlRaw("DROP TABLE Spells");
+	//	var sync = scope.ServiceProvider.GetRequiredService<SyncService>();
+	//	await sync.DataSync(CancellationToken.None);
+	//	db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON;");
+	//	app.Logger.LogInformation("SYNC 3 SUCCESS");
 	//}
 	//catch (Exception ex)
 	//{
-	//	app.Logger.LogError(ex, "SYNC 2 FAIL");
+	//	app.Logger.LogError(ex, "SYNC 3 FAIL");
 	//}
 }
 
@@ -157,6 +166,17 @@ app.MapHealthChecks("/healthz").DisableHttpMetrics();
 //app.UseMiddleware<AntiForgeryTokenValidationMiddleware>();
 
 new Endpoints(adminKey).Map(app);
+
+using (app.Logger.BeginScope(new
+{
+	Application = app.Environment.ApplicationName,
+	Environment = app.Environment.EnvironmentName,
+	Database = source ?? ephemeral,
+	SqliteInMemory = useSqliteMemory,
+}))
+{
+	app.Logger.ApplicationStarted();
+}
 
 await app.RunAsync(cts.Token);
 

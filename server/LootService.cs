@@ -48,9 +48,7 @@ public class LootService(
 	{
 		var key = GetPlayerKey();
 
-		return _db.Players
-			.Single(x => x.Key == key && x.Active == true)
-			.Admin;
+		return _db.Players.Any(x => x.Key == key && x.Admin && x.Active == true);
 	}
 
 	public bool IsGuildLeader()

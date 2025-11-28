@@ -74,4 +74,7 @@
 
 	[LoggerMessage(EventId = 25, Level = LogLevel.Information, Message = "Database vacuum success in {Elapsed}ms")]
 	public static partial void DatabaseVacuumSuccess(this ILogger logger, long elapsed);
+
+	[LoggerMessage(EventId = 26, Level = LogLevel.Information, Message = "Application started")]
+	public static partial void ApplicationStarted(this ILogger logger);
 }

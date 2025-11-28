@@ -17,7 +17,7 @@ public class AppFixture : IAsyncDisposable
 	static AppFixture()
 	{
 		Environment.SetEnvironmentVariable("ADMIN_KEY", AdminKey);
-		Environment.SetEnvironmentVariable("USE_SQLITE_MEMORY", "true");
+		Environment.SetEnvironmentVariable("USE_SQLITE_MEMORY", bool.TrueString);
 	}
 
 	public AppFixture(double futureDays = 0)
