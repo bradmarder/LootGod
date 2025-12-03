@@ -83,4 +83,7 @@
 
 	[LoggerMessage(EventId = 28, Level = LogLevel.Information, Message = "Application stopped - {CancellationRequested}")]
 	public static partial void ApplicationStopped(this ILogger logger, bool cancellationRequested);
+
+	[LoggerMessage(EventId = 29, Level = LogLevel.Information, Message = "Required player key missing")]
+	public static partial void RequiredPlayerKeyMissing(this ILogger logger);
 }

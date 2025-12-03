@@ -14,10 +14,23 @@ public class LootService(
 
 	private HttpRequest Request => _httpContextAccessor.HttpContext!.Request;
 
-	public Guid? GetPlayerKey() =>
+	public bool HasPlayerKey()
+	{
+		try
+		{
+			GetPlayerKey();
+			return true;
+		}
+		catch
+		{
+			return false;
+		}
+	}
+
+	public Guid GetPlayerKey() =>
 		Request.Headers.TryGetValue("Player-Key", out var headerKey) ? Guid.Parse(headerKey.ToString())
 		: Request.Query.TryGetValue("playerKey", out var queryKey) ? Guid.Parse(queryKey.ToString())
-		: null;
+		: throw new MissingPlayerKeyException();
 
 	public string? GetIPAddress() =>
 		Request.Headers.TryGetValue("Fly-Client-IP", out var val)

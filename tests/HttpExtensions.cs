@@ -26,10 +26,10 @@ public static class HttpExtensions
 			response = await client.DeleteAsync(requestUri);
 			response.EnsureSuccessStatusCode();
 		}
-		catch
+		catch (Exception ex)
 		{
 			Assert.NotNull(response);
-			Assert.Fail(response.ToString() + Environment.NewLine + await response.Content.ReadAsStringAsync());
+			Assert.Fail(ex.Message + Environment.NewLine + response.ToString() + Environment.NewLine + await response.Content.ReadAsStringAsync());
 			throw;
 		}
 		finally
@@ -70,10 +70,10 @@ public static class HttpExtensions
 
 			return (await response.EnsureSuccessStatusCode().Content.ReadFromJsonAsync<T>())!;
 		}
-		catch
+		catch (Exception ex)
 		{
 			Assert.NotNull(response);
-			Assert.Fail(response.ToString() + Environment.NewLine + await response.Content.ReadAsStringAsync());
+			Assert.Fail(ex.Message + Environment.NewLine + response.ToString() + Environment.NewLine + await response.Content.ReadAsStringAsync());
 			throw;
 		}
 		finally
@@ -142,10 +142,10 @@ public static class HttpExtensions
 
 			return response.EnsureSuccessStatusCode().Content.Headers;
 		}
-		catch
+		catch (Exception ex)
 		{
 			Assert.NotNull(response);
-			Assert.Fail(response.ToString() + Environment.NewLine + await response.Content.ReadAsStringAsync());
+			Assert.Fail(ex.Message + Environment.NewLine + response.ToString() + Environment.NewLine + await response.Content.ReadAsStringAsync());
 			throw;
 		}
 		finally

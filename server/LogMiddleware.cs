@@ -12,7 +12,7 @@ public class LogMiddleware(
 			IP = _lootService.GetIPAddress(),
 		});
 
-		if (_lootService.GetPlayerKey() is null)
+		if (!_lootService.HasPlayerKey())
 		{
 			await next(context);
 			return;

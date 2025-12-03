@@ -2,6 +2,7 @@
 
 * Front-end built with Typescript/React/Parcel
 * Back-end built with c#/EFCore/SQLite
+* React compiler enabled
 * Uses SSE for real-time push notifications
 * Structured logging and tracing with OTEL
 * Source generator mapping with Mapperly

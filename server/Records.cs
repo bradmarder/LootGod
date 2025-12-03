@@ -29,4 +29,5 @@ public record DataSink(int GuildId, HttpContext Context)
 }
 
 public class ImportException(string message) : Exception(message) { }
+public class MissingPlayerKeyException : Exception { }
 public record PlayerDto(EQClass Class);

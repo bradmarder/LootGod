@@ -132,13 +132,10 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 // ensure this comes before app.UseExceptionHandler() so that the GlobalExceptionHandler has access to log state properties
 app.UseMiddleware<LogMiddleware>();
 
+app.UseExceptionHandler(_ => { });
 if (app.Environment.IsDevelopment())
 {
 	app.UseDeveloperExceptionPage();
-}
-else
-{
-	app.UseExceptionHandler(_ => { });
 }
 
 app.UseResponseCompression();
@@ -169,9 +166,10 @@ new Endpoints(adminKey).Map(app);
 
 using (app.Logger.BeginScope(new
 {
+	Machine = Environment.MachineName,
 	Application = app.Environment.ApplicationName,
 	Environment = app.Environment.EnvironmentName,
-	Database = source ?? ephemeral,
+	Database = useSqliteMemory ? null : source ?? ephemeral,
 	SqliteInMemory = useSqliteMemory,
 }))
 {
