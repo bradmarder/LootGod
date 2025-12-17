@@ -63,6 +63,9 @@ public enum Slots
 	Feet = 1 << 19,
 }
 
+/// <summary>
+/// ON CONFLICT REPLACE <see cref="OnConflictInterceptor"/>
+/// </summary>
 [Index(nameof(Expansion))]
 public class Item
 {

@@ -7,10 +7,10 @@
 		"@types/react-dom": "19.2.3",
 		"axios": "1.13.2",
 		"bootstrap": "5.3.8",
-		"react": "19.2.0",
+		"react": "19.2.3",
 		"react-bootstrap": "2.10.10",
-		"react-dom": "19.2.0",
-		"sweetalert2": "11.26.3",
+		"react-dom": "19.2.3",
+		"sweetalert2": "11.26.10",
 		"typescript": "5.9.3"
 	},
 	"source": "public/index.html",
@@ -28,7 +28,7 @@
 	"devDependencies": {
 		"babel-plugin-react-compiler": "1.0.0",
 		"buffer": "6.0.3",
-		"parcel": "2.16.1",
+		"parcel": "2.16.3",
 		"process": "0.11.10"
 	}
 }

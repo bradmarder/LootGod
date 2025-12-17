@@ -1,6 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+/// <summary>
+/// ON CONFLICT REPLACE <see cref="OnConflictInterceptor"/>
+/// </summary>
 public class Spell
 {
 	public Spell() { }

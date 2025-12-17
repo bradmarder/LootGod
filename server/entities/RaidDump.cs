@@ -1,6 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 
+/// <summary>
+/// ON CONFLICT IGNORE <see cref="OnConflictInterceptor"/>
+/// </summary>
 [PrimaryKey(nameof(Timestamp), nameof(PlayerId))]
 public class RaidDump
 {

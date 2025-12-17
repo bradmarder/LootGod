@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Net;
 
 public class LogMiddleware(
 	ILogger<LogMiddleware> _logger,
@@ -19,12 +20,20 @@ public class LogMiddleware(
 		}
 
 		var player = TryGetPlayer();
+		if (player is null)
+		{
+			// a player key was provided, but it's no longer valid (they were removed from the guild)
+			context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+			_logger.RemovedPlayerLogin();
+			return;
+		}
+
 		using var __ = _logger.BeginScope(new
 		{
-			PlayerId = player?.Id,
-			PlayerName = player?.Name,
-			GuildId = player?.GuildId,
-			GuildName = player?.Guild.Name,
+			PlayerId = player.Id,
+			PlayerName = player.Name,
+			GuildId = player.GuildId,
+			GuildName = player.Guild.Name,
 		});
 
 		await next(context);
@@ -43,7 +52,7 @@ public class LogMiddleware(
 		}
 		catch
 		{
-			// no need to log if any error is thrown - the pipeline will throw the same error later to be caught by the GlobalExceptionHandler
+			// no need to log error is thrown - 
 			return null;
 		}
 	}

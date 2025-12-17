@@ -86,4 +86,7 @@
 
 	[LoggerMessage(EventId = 29, Level = LogLevel.Information, Message = "Required player key missing")]
 	public static partial void RequiredPlayerKeyMissing(this ILogger logger);
+
+	[LoggerMessage(EventId = 30, Level = LogLevel.Information, Message = "Removed player trying to log in")]
+	public static partial void RemovedPlayerLogin(this ILogger logger);
 }

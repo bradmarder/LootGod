@@ -10,7 +10,7 @@ public class SyncService(
 	HttpClient _httpClient)
 {
 	private const string ItemDataUrl = "https://items.sodeq.org/downloads/items.txt.gz";
-	private const string SpellDataUrl = "https://lucy.allakhazam.com/static/spelldata/spelldata_Live_2025-08-27_01:59:10.txt.gz";
+	private const string SpellDataUrl = "https://lucy.allakhazam.com/static/spelldata/spelldata_Live_2025-12-03_05:26:16.txt.gz";
 
 	private static readonly ActivitySource source = new(nameof(SyncService));
 
@@ -80,6 +80,7 @@ public class SyncService(
 			}
 		}
 
+		/// ON CONFLICT REPLACE <see cref="OnConflictInterceptor"/>
 		var count = _db.SaveChanges();
 
 		var state = new
@@ -109,6 +110,7 @@ public class SyncService(
 			}
 		}
 
+		/// ON CONFLICT REPLACE <see cref="OnConflictInterceptor"/>
 		var count = _db.SaveChanges();
 
 		var state = new
