@@ -182,11 +182,11 @@ public class Endpoints(string _adminKey)
 				.ToArray();
 		});
 
-		// TODO!
-		// TODO: remove? lockdown somehow
-		app.MapPost("CreateItem", async (LootGodContext db, string name, LootService lootService, int id = 1) =>
+		// in case the item DB doesn't have certain items uploaded yet
+		app.MapPost("CreateItem", async (LootGodContext db, string name, LootService lootService) =>
 		{
-			var item = new Item { Id = id, Name = name, Expansion = Expansion.SoR };
+			var randomId = Random.Shared.Next(1_000_000_000, 1_001_000_000);
+			var item = new Item { Id = randomId, Name = name, Expansion = Expansion.SoR };
 			db.Items.Add(item);
 			db.SaveChanges();
 
@@ -631,15 +631,15 @@ public class Endpoints(string _adminKey)
 				.Where(x => x.Player.GuildId == EF.Constant(guildId))
 				.Where(x => x.Player.Active != false || x.Player.Guest)
 				.Where(x => x.Archived != null && x.Granted && x.RaidNight)
-				.Where(x => x.Item.Expansion == Expansion.ToB)
+				.Where(x => x.Item.Expansion == Expansion.SoR)
 
 				// exclude spells from granted count
-				.Where(x => !x.Item.Name.EndsWith(" Engram"))
+				.Where(x => !x.Item.Name.EndsWith(" Mirrorshard of Relic"))
 
 				.GroupBy(x => new
 				{
 					Id = x.Player.MainId ?? x.PlayerId,
-					T2 = x.Item.Name.EndsWith(" of Rebellion"),
+					T2 = x.Item.Name.StartsWith("Fractured "),
 				}, (x, y) => KeyValuePair.Create(x, y.Count()))
 				.ToDictionary();
 			var playerMap = db.Players

@@ -3,9 +3,13 @@ using System.Security.Cryptography;
 
 public record ItemParseOutput
 {
+	private static readonly FrozenSet<string> _t1Prefixes = [
+		"Diminished Shattered Dominion ",
+	];
 	private static readonly FrozenSet<string> _t2Suffixes = [
 		" of Rebellion",
 		" of Eternal Reverie",
+		" of Resonant Fracture",
 	];
 	private static readonly FrozenSet<string> _t2Prefixes = [
 		"Velium Endowed ",
@@ -17,12 +21,14 @@ public record ItemParseOutput
 		"Spectral Luclinite ",
 		"Apparitional ",
 		"Valiant ",
+		"Fractured ",
 	];
 	private static readonly FrozenSet<string> _chaseLootPrefixes = [
 		"Blood-Soaked ",
 	];
 	private static readonly FrozenSet<string> _chaseLootSuffixes = [
 		" of Memoryforged Desolation",
+		" of Unbound Radiance",
 	];
 	private static readonly FrozenSet<string> _classKeywords = [
 		"Legionnaire",
@@ -138,6 +144,7 @@ public record ItemParseOutput
 
 	public bool IsRaidGear => HasRaidAugSlot
 		&& Augslot4type is not 18                   // ignore evolve
+		// TODO: Mask of the Vortex 
 		&& !_chaseLootPrefixes.Any(Name.StartsWith)
 		&& !_chaseLootSuffixes.Any(Name.EndsWith)
 		&& !_t2Prefixes.Any(Name.StartsWith)
@@ -146,18 +153,19 @@ public record ItemParseOutput
 
 	public bool IsRaidContainer =>
 		Itemtype is 11 or 67
-		&& !CharmFile.Contains("GroupT") // exclude group loot containers (SKU31GroupT2Armor)
-		&& (_t2Prefixes.Any(Name.StartsWith) || _t2Suffixes.Any(Name.EndsWith));
+		&& !CharmFile.Contains("GroupT") // exclude group loot containers (SKU31GroupT2Armor) - Raid containers look like "SKU33RaidArmor"
+		&& (_t2Prefixes.Any(Name.StartsWith) || _t2Suffixes.Any(Name.EndsWith) || _t1Prefixes.Any(Name.StartsWith));
 
 	public bool IsRaidSpell =>
 		Itemtype is 11
 		&& Classes is ItemClass.All
-		&& IsSpellText;
+		&& HasSpellText;
 
-	public bool IsSpellText =>
+	public bool HasSpellText =>
 		Name.EndsWith(" Emblem of the Forge")
 		|| Name.EndsWith(" Dragontouched Rune")
 		|| Name.EndsWith(" Shadowscribed Parchment")
 		|| Name.EndsWith(" Symbol of Shar Vahl")
+		|| Name.EndsWith(" Mirrorshard of Relic")
 		|| (Name.StartsWith("Energized ") && Name.EndsWith(" Engram"));
 }
