@@ -34,6 +34,7 @@ public record ItemDto
 	];
 	private static readonly FrozenSet<string> _spellSuffixes =
 	[
+		"Mirrorshard of Relic",
 		"Engram",
 		"Rune",
 		"Ethernere",
