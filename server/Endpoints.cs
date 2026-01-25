@@ -675,6 +675,7 @@ public class Endpoints(string _adminKey)
 				.Select(x => altMainMap.TryGetValue(x.PlayerId, out var mainId)
 					? new RaidDump(x.Timestamp, mainId)
 					: x)
+				.Where(x => playerMap.ContainsKey(x.PlayerId)) // case when main is inactive? maybe better to add .Where() check on playerMap
 				.GroupBy(x => x.PlayerId)
 				.ToDictionary(
 					x => playerMap[x.Key],

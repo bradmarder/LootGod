@@ -144,7 +144,7 @@ public record ItemParseOutput
 
 	public bool IsRaidGear => HasRaidAugSlot
 		&& Augslot4type is not 18                   // ignore evolve
-		// TODO: Mask of the Vortex 
+													// TODO: Mask of the Vortex 
 		&& !_chaseLootPrefixes.Any(Name.StartsWith)
 		&& !_chaseLootSuffixes.Any(Name.EndsWith)
 		&& !_t2Prefixes.Any(Name.StartsWith)

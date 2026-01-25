@@ -10,12 +10,14 @@ public class OnConflictInterceptor : DbCommandInterceptor
 		if (command.CommandText.StartsWith("CREATE TABLE \"Items\"")
 			|| command.CommandText.StartsWith("CREATE TABLE \"Spells\""))
 		{
-			command.CommandText = command.CommandText.Replace("PRIMARY KEY", "PRIMARY KEY ON CONFLICT REPLACE");
+			const string key = "PRIMARY KEY";
+			command.CommandText = command.CommandText.Replace(key, key + " ON CONFLICT REPLACE");
 		}
 
 		if (command.CommandText.StartsWith("CREATE TABLE \"RaidDumps\""))
 		{
-			command.CommandText = command.CommandText.Replace("PRIMARY KEY (\"Timestamp\", \"PlayerId\")", "PRIMARY KEY (\"Timestamp\", \"PlayerId\") ON CONFLICT IGNORE");
+			const string key = """PRIMARY KEY ("Timestamp", "PlayerId")""";
+			command.CommandText = command.CommandText.Replace(key, key + " ON CONFLICT IGNORE");
 		}
 
 		return result;

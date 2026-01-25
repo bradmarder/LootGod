@@ -3,9 +3,9 @@
 	"version": "1.0.0",
 	"private": true,
 	"dependencies": {
-		"@types/react": "19.2.7",
+		"@types/react": "19.2.9",
 		"@types/react-dom": "19.2.3",
-		"axios": "1.13.2",
+		"axios": "1.13.3",
 		"bootstrap": "5.3.8",
 		"react": "19.2.3",
 		"react-bootstrap": "2.10.10",
