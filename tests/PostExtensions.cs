@@ -65,22 +65,24 @@ public static class PostExtensions
 		Assert.True(res.IsSuccessStatusCode, await res.Content.ReadAsStringAsync());
 	}
 
-	public static async Task CreateItem(this HttpClient client)
+	public static async Task<int> CreateItem(this HttpClient client)
 	{
 		await client.EnsurePostAsJsonAsync("/CreateItem?name=" + TestData.DefaultItemName);
 
 		var items = await client.EnsureGetJsonAsync<ItemSearch[]>("/GetItems");
 		Assert.Single(items);
 		var item = items.Single();
-		Assert.Equal(1, item.Id);
+		Assert.True(item.Id > 1_000_000_000);
 		Assert.Equal(TestData.DefaultItemName, item.Name);
+
+		return item.Id;
 	}
 
-	public static async Task CreateLootRequest(this HttpClient client)
+	public static async Task CreateLootRequest(this HttpClient client, int itemId)
 	{
 		var dto = new CreateLootRequest
 		{
-			ItemId = 1,
+			ItemId = itemId,
 			Class = EQClass.Berserker,
 			CurrentItem = "Rusty Axe",
 			Quantity = 1,

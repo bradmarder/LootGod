@@ -191,6 +191,8 @@ public class Endpoints(string _adminKey)
 			db.SaveChanges();
 
 			await lootService.RefreshItems();
+
+			return item.Id;
 		});
 
 		app.MapPost("Guest", (LootGodContext db, LootService lootService, MakeGuest dto) =>

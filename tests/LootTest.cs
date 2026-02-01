@@ -42,10 +42,10 @@ public class LootTest
 
 		await app.Client.CreateGuildAndLeader();
 
-		var id = await app.Client.EnsureGetJsonAsync<int>("/GetPlayerId");
+		var playerId = await app.Client.EnsureGetJsonAsync<int>("/GetPlayerId");
 		var admin = await app.Client.EnsureGetJsonAsync<bool>("/GetAdminStatus");
 		var leader = await app.Client.EnsureGetJsonAsync<bool>("/GetLeaderStatus");
-		Assert.Equal(1, id);
+		Assert.Equal(1, playerId);
 		Assert.True(admin);
 		Assert.True(leader);
 	}
@@ -129,7 +129,6 @@ public class LootTest
 		var item = items.Single();
 		Assert.Equal("items", data.Evt);
 		Assert.Equal(1, data.Id);
-		Assert.Equal(1, data.Json.Id);
 		Assert.True(item.Id == data.Json.Id);
 		Assert.True(item.Name == data.Json.Name);
 	}
@@ -141,13 +140,13 @@ public class LootTest
 	{
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
-		await app.Client.CreateItem();
+		var itemId = await app.Client.CreateItem();
 
 		var emptyLoots = await app.Client.EnsureGetJsonAsync<LootDto[]>("/GetLoots");
 		Assert.Empty(emptyLoots);
 
 		var sse = app.Client.GetSsePayload<LootDto>();
-		var loot = new CreateLoot(3, 1, raidNight);
+		var loot = new CreateLoot(3, itemId, raidNight);
 		await app.Client.EnsurePostAsJsonAsync("/UpdateLootQuantity", loot);
 		var data = await sse;
 
@@ -167,10 +166,10 @@ public class LootTest
 	{
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
-		await app.Client.CreateItem();
+		var itemId = await app.Client.CreateItem();
 
 		var sse = app.Client.GetSsePayload<LootRequestDto>();
-		await app.Client.CreateLootRequest();
+		await app.Client.CreateLootRequest(itemId);
 		var data = await sse;
 
 		Assert.Equal("requests", data.Evt);
@@ -195,8 +194,8 @@ public class LootTest
 	{
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
-		await app.Client.CreateItem();
-		await app.Client.CreateLootRequest();
+		var itemId = await app.Client.CreateItem();
+		await app.Client.CreateLootRequest(itemId);
 
 		await app.Client.EnsureDeleteAsync("/DeleteLootRequest?id=1");
 
@@ -209,8 +208,8 @@ public class LootTest
 	{
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
-		await app.Client.CreateItem();
-		await app.Client.CreateLootRequest();
+		var itemId = await app.Client.CreateItem();
+		await app.Client.CreateLootRequest(itemId);
 		await app.Client.GrantLootRequest();
 
 		var requests = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetLootRequests");
@@ -223,8 +222,8 @@ public class LootTest
 	{
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
-		await app.Client.CreateItem();
-		await app.Client.CreateLootRequest();
+		var itemId = await app.Client.CreateItem();
+		await app.Client.CreateLootRequest(itemId);
 		await app.Client.GrantLootRequest();
 
 		var output = await app.Client.GetStringAsync("/GetGrantedLootOutput?raidNight=true");
@@ -237,15 +236,15 @@ public class LootTest
 	{
 		await using var app = new AppFixture();
 		await app.Client.CreateGuildAndLeader();
-		await app.Client.CreateItem();
-		await app.Client.CreateLootRequest();
+		var itemId = await app.Client.CreateItem();
+		await app.Client.CreateLootRequest(itemId);
 		await app.Client.GrantLootRequest();
 
 		// TODO: validate discord
 		await app.Client.EnsurePostAsJsonAsync("/FinishLootRequests", new FinishLoots(true));
 
 		var activeRequests = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetLootRequests");
-		var archiveItem = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetArchivedLootRequests?itemId=1");
+		var archiveItem = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetArchivedLootRequests?itemId=" + itemId);
 		var archiveName = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetArchivedLootRequests?name=" + TestData.GuildLeader);
 		Assert.Empty(activeRequests);
 		Assert.Single(archiveItem);
@@ -254,7 +253,7 @@ public class LootTest
 		Assert.True(archiveItem[0].Granted);
 
 		// create another request to ensure correct lootRequest duplicate logic
-		await app.Client.CreateLootRequest();
+		await app.Client.CreateLootRequest(itemId);
 		activeRequests = await app.Client.EnsureGetJsonAsync<LootRequestDto[]>("/GetLootRequests");
 		Assert.True(activeRequests[0].Duplicate);
 	}
