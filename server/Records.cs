@@ -31,3 +31,12 @@ public record DataSink(int GuildId, HttpContext Context)
 public class ImportException(string message) : Exception(message) { }
 public class MissingPlayerKeyException : Exception { }
 public record PlayerDto(EQClass Class);
+
+public class LogState : Dictionary<string, object?>
+{
+	public LogState() { }
+	public LogState(string key, object? value)
+	{
+		this[key] = value;
+	}
+}

@@ -83,11 +83,11 @@ public class SyncService(
 		/// ON CONFLICT REPLACE <see cref="OnConflictInterceptor"/>
 		var count = _db.SaveChanges();
 
-		var state = new
+		var state = new LogState
 		{
-			ElapsedMs = watch.ElapsedMilliseconds,
-			SpellCount = count,
-			TotalSpellCount = totalSpellCount,
+			["ElapsedMs"] = watch.ElapsedMilliseconds,
+			["SpellCount"] = count,
+			["TotalSpellCount"] = totalSpellCount,
 		};
 		using var _ = _logger.BeginScope(state);
 		_logger.SpellSyncSuccess();
@@ -113,11 +113,11 @@ public class SyncService(
 		/// ON CONFLICT REPLACE <see cref="OnConflictInterceptor"/>
 		var count = _db.SaveChanges();
 
-		var state = new
+		var state = new LogState
 		{
-			ElapsedMs = watch.ElapsedMilliseconds,
-			RaidItemCount = count,
-			TotalItemCount = totalItemCount,
+			["ElapsedMs"] = watch.ElapsedMilliseconds,
+			["RaidItemCount"] = count,
+			["TotalItemCount"] = totalItemCount,
 		};
 		using var _ = _logger.BeginScope(state);
 		_logger.ItemSyncSuccess();

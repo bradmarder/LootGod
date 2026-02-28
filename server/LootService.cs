@@ -237,10 +237,10 @@ public class LootService(
 		{
 			var data = string.Join(Environment.NewLine, bucket);
 			var json = new DiscordWebhookContent($"```{syntax}{Environment.NewLine}{data}{Environment.NewLine}```");
-			using var _ = _logger.BeginScope(new
+			using var _ = _logger.BeginScope(new LogState
 			{
-				Data = data,
-				DiscordWebhookUrl = discordWebhookUrl,
+				["Data"] = data,
+				["DiscordWebhookUrl"] = discordWebhookUrl,
 			});
 			HttpResponseMessage? response = null;
 			try
@@ -251,8 +251,10 @@ public class LootService(
 			}
 			catch (Exception ex)
 			{
-				var content = await TryReadContentAsync(response);
-				var state = new { ResponseContent = content };
+				var state = new LogState
+				{
+					["ResponseContent"] = await TryReadContentAsync(response),
+				};
 				using (_logger.BeginScope(state))
 				{
 					_logger.DiscordWebhookFailure(ex);

@@ -53,16 +53,61 @@ public class Endpoints(string _adminKey)
 	/// </summary>
 	private static async Task<int> GetGuildId(IServiceScopeFactory factory)
 	{
-		await using (var scope = factory.CreateAsyncScope())
+		await using var scope = factory.CreateAsyncScope();
+
+		var semaphore = scope.ServiceProvider.GetRequiredService<SemaphoreSlim>();
+		await semaphore.WaitAsync();
+		try
 		{
 			return scope.ServiceProvider
 				.GetRequiredService<LootService>()
 				.GetGuildId();
 		}
+		finally
+		{
+			semaphore.Release();
+		}
 	}
 
 	public void Map(IEndpointRouteBuilder app)
 	{
+		app.MapGet("replaceManualItems", (LootGodContext db) =>
+		{
+			var manualItems = db.Items
+				.Where(x => x.Sync == 0)
+				.Where(x => x.Id > 1_000_000_000 && x.Id < 1_001_000_000)
+				.ToArray();
+			var manualNames = manualItems
+				.Select(x => x.Name.ToLower())
+				.ToArray();
+			var oneYearAgo = DateTimeOffset.UtcNow.AddYears(-1).ToUnixTimeSeconds();
+			var syncItems = db.Items
+				.Where(x => x.Sync > oneYearAgo)
+				.Where(x => manualNames.Contains(x.Name.ToLower()))
+				.ToArray();
+			var manualIdToSyncIdMap = Enumerable
+				.Join(manualItems, syncItems, x => x.Name, x => x.Name, (x, y) => (x.Id, y.Id))
+				.ToDictionary(x => x.Item1, x => x.Item2);
+			var manualItemIds = manualIdToSyncIdMap
+				.Select(x => x.Key)
+				.ToArray();
+			var requests = db.LootRequests
+				.Where(x => manualItemIds.Contains(x.ItemId))
+				.ToArray();
+
+			// update loot requests FK to point to latest synced item
+			foreach (var req in requests)
+			{
+				req.ItemId = manualIdToSyncIdMap[req.ItemId];
+			}
+			db.SaveChanges();
+
+			// delete the manually added items
+			db.Items
+				.Where(x => manualItemIds.Contains(x.Id))
+				.ExecuteDelete();
+		});
+
 		app.MapGet("AntiforgeryToken", (IAntiforgery antiforgery, HttpContext ctx) =>
 		{
 			return antiforgery.GetAndStoreTokens(ctx).RequestToken;
@@ -115,10 +160,13 @@ public class Endpoints(string _adminKey)
 		app.MapGet("Vacuum", (ILogger<Endpoints> logger, LootGodContext db) =>
 		{
 			var watch = Stopwatch.StartNew();
-			var val = db.Database.ExecuteSqlRaw("VACUUM");
+
+			db.Database.ExecuteSqlRaw("VACUUM");
+			db.Database.ExecuteSqlRaw("ANALYZE");
+
 			logger.DatabaseVacuumSuccess(watch.ElapsedMilliseconds);
 
-			return val;
+			return 0;
 		});
 
 		app.MapGet("Backup", (ILogger<Endpoints> logger, HttpContext ctx, LootGodContext db, TimeProvider time, string key) =>
@@ -297,8 +345,21 @@ public class Endpoints(string _adminKey)
 			db.LootRequests.Add(request);
 			db.SaveChanges();
 
-			using var _ = logger.BeginScope(dto);
-			logger.LootRequestCreated();
+			var state = new LogState
+			{
+				["RaidNight"] = dto.RaidNight,
+				["AltName"] = dto.AltName,
+				["Spell"] = dto.Spell,
+				["Class"] = dto.Class,
+				["ItemId"] = dto.ItemId,
+				["Quantity"] = dto.Quantity,
+				["CurrentItem"] = dto.CurrentItem,
+				["Persona"] = dto.Persona,
+			};
+			using (logger.BeginScope(state))
+			{
+				logger.LootRequestCreated();
+			}
 
 			await lootService.RefreshRequests(guildId);
 		});
@@ -351,8 +412,16 @@ public class Endpoints(string _adminKey)
 
 			db.SaveChanges();
 
-			using var __ = logger.BeginScope(dto);
-			logger.LootQuantityUpdated();
+			var state = new LogState
+			{
+				["ItemId"] = dto.ItemId,
+				["Quantity"] = dto.Quantity,
+				["RaidNight"] = dto.RaidNight,
+			};
+			using (logger.BeginScope(state))
+			{
+				logger.LootQuantityUpdated();
+			}
 
 			await lootService.RefreshLoots(guildId);
 		});
@@ -363,7 +432,13 @@ public class Endpoints(string _adminKey)
 			db.Players.Add(player);
 			db.SaveChanges();
 
-			using var _ = logger.BeginScope(dto);
+			var state = new LogState
+			{
+				["LeaderName"] = dto.LeaderName,
+				["GuildName"] = dto.GuildName,
+				["Server"] = dto.Server.ToString(),
+			};
+			using var _ = logger.BeginScope(state);
 			logger.GuildCreated();
 
 			return player.Key!.Value;
@@ -540,14 +615,14 @@ public class Endpoints(string _adminKey)
 				await lootService.DiscordWebhook(output, webhook);
 			}
 
-			var state = new
+			var state = new LogState
 			{
-				Output = output,
-				RequestCount = requests.Count,
-				LootCount = loots.Count,
-				ChangeCount = changeCount,
-				FinishTime = now,
-				DiscordWebhook = webhook,
+				["Output"] = output,
+				["RequestCount"] = requests.Count,
+				["LootCount"] = loots.Count,
+				["ChangeCount"] = changeCount,
+				["FinishTime"] = now,
+				["DiscordWebhook"] = webhook,
 			};
 			using (logger.BeginScope(state))
 			{
@@ -593,11 +668,11 @@ public class Endpoints(string _adminKey)
 			lootService.EnsureAdminStatus();
 
 			using var activity = source.StartActivity("ImportDump");
-			var state = new
+			var state = new LogState
 			{
-				FileName = file.FileName,
-				FileLength = file.Length,
-				Offset = offset,
+				["FileName"] = file.FileName,
+				["FileLength"] = file.Length,
+				["Offset"] = offset,
 			};
 			using var _ = logger.BeginScope(state);
 

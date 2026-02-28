@@ -28,12 +28,12 @@ public class LogMiddleware(
 			return;
 		}
 
-		using var __ = _logger.BeginScope(new
+		using var __ = _logger.BeginScope(new LogState
 		{
-			PlayerId = player.Id,
-			PlayerName = player.Name,
-			GuildId = player.GuildId,
-			GuildName = player.Guild.Name,
+			["PlayerId"] = player.Id,
+			["PlayerName"] = player.Name,
+			["GuildId"] = player.GuildId,
+			["GuildName"] = player.Guild.Name,
 		});
 
 		await next(context);

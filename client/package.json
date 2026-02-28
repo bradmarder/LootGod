@@ -3,20 +3,20 @@
 	"version": "1.0.0",
 	"private": true,
 	"dependencies": {
-		"@types/react": "19.2.10",
+		"@types/react": "19.2.14",
 		"@types/react-dom": "19.2.3",
-		"axios": "1.13.4",
+		"axios": "1.13.6",
 		"bootstrap": "5.3.8",
 		"react": "19.2.4",
 		"react-bootstrap": "2.10.10",
 		"react-dom": "19.2.4",
-		"sweetalert2": "11.26.17",
+		"sweetalert2": "11.26.20",
 		"typescript": "5.9.3"
 	},
 	"source": "public/index.html",
 	"browserslist": "> 0.5%, last 2 versions, not dead",
 	"scripts": {
-		"start": "parcel --cert localhost.pem --key localhost.key",
+		"start": "parcel --cert localhost.pem --key localhost.key --no-cors",
 		"build": "parcel build --no-source-maps public/index.html",
 		"check": "tsc --noEmit"
 	},
@@ -28,7 +28,7 @@
 	"devDependencies": {
 		"babel-plugin-react-compiler": "1.0.0",
 		"buffer": "6.0.3",
-		"parcel": "2.16.3",
+		"parcel": "2.16.4",
 		"process": "0.11.10"
 	}
 }

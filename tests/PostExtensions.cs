@@ -3,10 +3,10 @@ using System.Text;
 
 public static class PostExtensions
 {
-	public static async Task<string> CreateGuildAndLeader(this HttpClient client)
+	public static async Task<string> CreateGuildAndLeader(this HttpClient client, CancellationToken token)
 	{
 		var dto = new CreateGuild(TestData.GuildLeader, "The Unknown", Server.FirionaVie);
-		var json = await client.EnsurePostAsJsonAsync("/CreateGuild", dto);
+		var json = await client.EnsurePostAsJsonAsync("/CreateGuild", dto, token);
 		var key = json[1..^1];
 		var success = Guid.TryParse(key, out var pKey);
 
@@ -18,7 +18,7 @@ public static class PostExtensions
 		return key;
 	}
 
-	public static async Task CreateZipRaidDumps(this HttpClient client)
+	public static async Task CreateZipRaidDumps(this HttpClient client, CancellationToken token)
 	{
 		const string vulak = $"7\t{TestData.GuildLeader}\t120\tDruid\tGroup Leader\t\t\tYes\t";
 		const string tormax = $"7\t{TestData.Commander}\t120\tWizard\tGroup Leader\t\t\tYes\t";
@@ -30,8 +30,8 @@ public static class PostExtensions
 		{
 			const string now = "20240704";
 			var entry = zip.CreateEntry($"RaidRoster_firiona-{now}-210727.txt");
-			await using var ent = await entry.OpenAsync();
-			await ent.WriteAsync(dump);
+			await using var ent = await entry.OpenAsync(token);
+			await ent.WriteAsync(dump, token);
 		}
 
 		using var content = new MultipartFormDataContent
@@ -39,12 +39,12 @@ public static class PostExtensions
 			{ new ByteArrayContent(stream.ToArray()), "file", "RaidRoster_firiona.zip" }
 		};
 
-		using var res = await client.PostAsync("/ImportDump?offset=500", content);
+		using var res = await client.PostAsync("/ImportDump?offset=500", content, token);
 
-		Assert.True(res.IsSuccessStatusCode, await res.Content.ReadAsStringAsync());
+		Assert.True(res.IsSuccessStatusCode, await res.Content.ReadAsStringAsync(token));
 	}
 
-	public static async Task CreateGuildDump(this HttpClient client)
+	public static async Task CreateGuildDump(this HttpClient client, CancellationToken token)
 	{
 		const string vulak = $"{TestData.GuildLeader}\t120\tDruid\t{Rank.Leader}\t\t01/10/23\t{TestData.Zone}\tMain -  Leader\t\ton\ton\t7344198\t01/06/23\tMain - Leader\t";
 		var seru = vulak
@@ -60,16 +60,16 @@ public static class PostExtensions
 			{ new StringContent(dump), "file", "The_Unknown_firiona-20230111-141432.txt" }
 		};
 
-		using var res = await client.PostAsync("/ImportDump?offset=500", content);
+		using var res = await client.PostAsync("/ImportDump?offset=500", content, token);
 
-		Assert.True(res.IsSuccessStatusCode, await res.Content.ReadAsStringAsync());
+		Assert.True(res.IsSuccessStatusCode, await res.Content.ReadAsStringAsync(token));
 	}
 
-	public static async Task<int> CreateItem(this HttpClient client)
+	public static async Task<int> CreateItem(this HttpClient client, CancellationToken token)
 	{
-		await client.EnsurePostAsJsonAsync("/CreateItem?name=" + TestData.DefaultItemName);
+		await client.EnsurePostAsJsonAsync("/CreateItem?name=" + TestData.DefaultItemName, token);
 
-		var items = await client.EnsureGetJsonAsync<ItemSearch[]>("/GetItems");
+		var items = await client.EnsureGetJsonAsync<ItemSearch[]>("/GetItems", token);
 		Assert.Single(items);
 		var item = items.Single();
 		Assert.True(item.Id > 1_000_000_000);
@@ -78,7 +78,7 @@ public static class PostExtensions
 		return item.Id;
 	}
 
-	public static async Task CreateLootRequest(this HttpClient client, int itemId)
+	public static async Task CreateLootRequest(this HttpClient client, int itemId, CancellationToken token)
 	{
 		var dto = new CreateLootRequest
 		{
@@ -88,11 +88,11 @@ public static class PostExtensions
 			Quantity = 1,
 			RaidNight = true,
 		};
-		await client.EnsurePostAsJsonAsync("/CreateLootRequest", dto);
+		await client.EnsurePostAsJsonAsync("/CreateLootRequest", dto, token);
 	}
 
-	public static async Task GrantLootRequest(this HttpClient client)
+	public static async Task GrantLootRequest(this HttpClient client, CancellationToken token)
 	{
-		await client.EnsurePostAsJsonAsync($"/GrantLootRequest", new GrantLootRequest(1, true));
+		await client.EnsurePostAsJsonAsync($"/GrantLootRequest", new GrantLootRequest(1, true), token);
 	}
 }

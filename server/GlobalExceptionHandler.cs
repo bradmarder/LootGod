@@ -15,9 +15,9 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> _logger) : I
 
 		// if request is GET and token is cancelled, we don't really need to log it
 
-		using var _ = _logger.BeginScope(new
+		using var _ = _logger.BeginScope(new LogState
 		{
-			cancellationToken.IsCancellationRequested,
+			["IsCancellationRequested"] = cancellationToken.IsCancellationRequested,
 		});
 		_logger.GlobalExceptionHandler(exception, httpContext.Request.Path);
 

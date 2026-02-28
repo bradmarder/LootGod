@@ -13,12 +13,12 @@ public class PayloadDeliveryService(
 		await foreach (var payload in _channel.ReadAllAsync(stoppingToken))
 		{
 			var watch = Stopwatch.StartNew();
-			using var _ = _logger.BeginScope(new
+			using var _ = _logger.BeginScope(new Dictionary<string, object?>
 			{
-				GuildId = payload.GuildId,
-				Event = payload.Event,
-				JsonLength = payload.JsonData.Length,
-				DataSinkCount = _dataSinks.Count,
+				["GuildId"] = payload.GuildId,
+				["Event"] = payload.Event,
+				["JsonLength"] = payload.JsonData.Length,
+				["DataSinkCount"] = _dataSinks.Count,
 			});
 
 			foreach (var sink in _dataSinks)
@@ -47,13 +47,13 @@ public class PayloadDeliveryService(
 				}
 				catch (Exception ex)
 				{
-					using var __ = _logger.BeginScope(new
+					using var __ = _logger.BeginScope(new LogState
 					{
-						EventId = sink.Value.EventId,
-						LinkCancel = link.IsCancellationRequested,
-						FailSafeCancel = failsafe.IsCancellationRequested,
-						StoppingCancel = stoppingToken.IsCancellationRequested,
-						RequestCancel = sink.Value.Context.RequestAborted.IsCancellationRequested,
+						["EventId"] = sink.Value.EventId,
+						["LinkCancel"] = link.IsCancellationRequested,
+						["FailSafeCancel"] = failsafe.IsCancellationRequested,
+						["StoppingCancel"] = stoppingToken.IsCancellationRequested,
+						["RequestCancel"] = sink.Value.Context.RequestAborted.IsCancellationRequested,
 					});
 					_logger.BrokenConnection(ex, sink.Key);
 
@@ -62,9 +62,9 @@ public class PayloadDeliveryService(
 				}
 			}
 
-			using var ___ = _logger.BeginScope(new
+			using var ___ = _logger.BeginScope(new LogState
 			{
-				ElapsedMs = watch.ElapsedMilliseconds,
+				["ElapsedMs"] = watch.ElapsedMilliseconds,
 			});
 			_logger.PayloadDeliveryComplete();
 		}

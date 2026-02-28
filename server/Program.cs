@@ -33,6 +33,8 @@ if (useSqliteMemory)
 	var conn = new SqliteConnection(connString.ConnectionString);
 	conn.Open();
 	builder.Services.AddDbContext<LootGodContext>(x => x.UseSqlite(conn));
+
+	builder.Services.AddScoped<SingleConnectionMiddleware>();
 }
 else
 {
@@ -61,6 +63,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton(x => new SemaphoreSlim(1, 1)); // only intended for SQLite single connection
 builder.Services.AddScoped<LootService>();
 builder.Services.AddScoped<SyncService>();
 builder.Services.AddScoped<ImportService>();
@@ -85,10 +88,10 @@ builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
 //});
 builder.Services.AddLogging(x => x
 	.ClearProviders()
-	.AddSimpleConsole(x =>
+	.AddJsonConsole(x =>
 	{
 		x.IncludeScopes = true;
-		x.SingleLine = true;
+		x.UseUtcTimestamp = true;
 		x.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
 	})
 	.AddOpenTelemetry(config =>
@@ -127,6 +130,12 @@ await using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>()
 	//{
 	//	app.Logger.LogError(ex, "SYNC 3 FAIL");
 	//}
+}
+
+if (useSqliteMemory)
+{
+	// ensure this comes before any middleware that access the shared SQLite connection
+	app.UseMiddleware<SingleConnectionMiddleware>();
 }
 
 // ensure this comes before app.UseExceptionHandler() so that the GlobalExceptionHandler has access to log state properties
