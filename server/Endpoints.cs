@@ -94,8 +94,15 @@ public class Endpoints(string _adminKey)
 			var requests = db.LootRequests
 				.Where(x => manualItemIds.Contains(x.ItemId))
 				.ToArray();
+			var loots = db.Loots
+				.Where(x => manualItemIds.Contains(x.ItemId))
+				.ToArray();
 
-			// update loot requests FK to point to latest synced item
+			// update loots + loot requests FK to point to latest synced item
+			foreach (var loot in loots)
+			{
+				loot.ItemId = manualIdToSyncIdMap[loot.ItemId];
+			}
 			foreach (var req in requests)
 			{
 				req.ItemId = manualIdToSyncIdMap[req.ItemId];

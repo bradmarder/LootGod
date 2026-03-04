@@ -13,7 +13,7 @@ public class PayloadDeliveryService(
 		await foreach (var payload in _channel.ReadAllAsync(stoppingToken))
 		{
 			var watch = Stopwatch.StartNew();
-			using var _ = _logger.BeginScope(new Dictionary<string, object?>
+			using var _ = _logger.BeginScope(new LogState
 			{
 				["GuildId"] = payload.GuildId,
 				["Event"] = payload.Event,
@@ -62,11 +62,7 @@ public class PayloadDeliveryService(
 				}
 			}
 
-			using var ___ = _logger.BeginScope(new LogState
-			{
-				["ElapsedMs"] = watch.ElapsedMilliseconds,
-			});
-			_logger.PayloadDeliveryComplete();
+			_logger.PayloadDeliveryComplete(watch.ElapsedMilliseconds);
 		}
 	}
 }

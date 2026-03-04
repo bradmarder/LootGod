@@ -138,6 +138,7 @@ public record ItemParseOutput
 
 	public bool HasRaidAugSlot =>
 		Augslot1type is 8
+		|| Name is "Barkhide Barrier" or "Elderbark Bulwark" or "Verdant Cupule" // bug with SoR raid shields having slot 7
 		|| Augslot2type is 8
 		|| Augslot3type is 8
 		|| Augslot4type is 8;

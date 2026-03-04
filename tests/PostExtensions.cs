@@ -7,10 +7,13 @@ public static class PostExtensions
 	{
 		var dto = new CreateGuild(TestData.GuildLeader, "The Unknown", Server.FirionaVie);
 		var json = await client.EnsurePostAsJsonAsync("/CreateGuild", dto, token);
+		Assert.Equal(38, json.Length);
+		Assert.Equal('"', json[0]);
+		Assert.Equal('"', json[^1]);
 		var key = json[1..^1];
 		var success = Guid.TryParse(key, out var pKey);
 
-		Assert.True(success, json);
+		Assert.True(success, key);
 		Assert.NotEqual(Guid.Empty, pKey);
 
 		client.DefaultRequestHeaders.Add("Player-Key", key);

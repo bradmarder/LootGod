@@ -45,8 +45,8 @@
 	[LoggerMessage(EventId = 15, Level = LogLevel.Information, Message = "Database backup created `{TempFileName}` at {Now} in {Elapsed}ms")]
 	public static partial void DatabaseBackup(this ILogger logger, string tempFileName, long now, long elapsed);
 
-	[LoggerMessage(EventId = 16, Level = LogLevel.Information, Message = "Payload delivery completed")]
-	public static partial void PayloadDeliveryComplete(this ILogger logger);
+	[LoggerMessage(EventId = 16, Level = LogLevel.Information, Message = "Payload delivery completed in {Elapsed}ms")]
+	public static partial void PayloadDeliveryComplete(this ILogger logger, long elapsed);
 
 	[LoggerMessage(EventId = 17, Level = LogLevel.Information, Message = "Guild created")]
 	public static partial void GuildCreated(this ILogger logger);
