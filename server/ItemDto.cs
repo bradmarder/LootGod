@@ -4,6 +4,12 @@ public record ItemDto
 {
 	private static readonly FrozenDictionary<string, int> _spellNameLevelMap = new Dictionary<string, int>
 	{
+		["Glowing Mirrorshard of Relic"] = 130,
+		["Greater Mirrorshard of Relic"] = 129,
+		["Median Mirrorshard of Relic"] = 128,
+		["Lesser Mirrorshard of Relic"] = 127,
+		["Minor Mirrorshard of Relic"] = 126,
+
 		["Energized Glowing Engram"] = 125,
 		["Energized Greater Engram"] = 124,
 		["Energized Median Engram"] = 123,

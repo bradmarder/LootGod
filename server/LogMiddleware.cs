@@ -8,10 +8,8 @@ public class LogMiddleware(
 {
 	public async Task InvokeAsync(HttpContext context, RequestDelegate next)
 	{
-		using var _ = _logger.BeginScope(new
-		{
-			IP = _lootService.GetIPAddress(),
-		});
+		var ip = _lootService.GetIPAddress();
+		using var _ = _logger.BeginScope(new LogState("IP", ip));
 
 		if (!_lootService.HasPlayerKey())
 		{

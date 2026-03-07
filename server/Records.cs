@@ -39,4 +39,11 @@ public class LogState : Dictionary<string, object?>
 	{
 		this[key] = value;
 	}
+
+	public override string ToString()
+	{
+		var values = this.Select(x => x.Key + ":" + x.Value?.ToString());
+
+		return string.Join(", ", values);
+	}
 }

@@ -88,7 +88,7 @@ builder.Services.AddResponseCompression(x => x.EnableForHttps = true);
 //});
 builder.Services.AddLogging(x => x
 	.ClearProviders()
-	.AddJsonConsole(x =>
+	.AddSimpleConsole(x =>
 	{
 		x.IncludeScopes = true;
 		x.UseUtcTimestamp = true;

@@ -56,19 +56,24 @@ public class SyncService(
 		}
 	}
 
+	private HashSet<int?> GetSpellIds()
+	{
+		var procIds = _db.Items.Select(x => x.ProcEffect).Where(x => x != null).ToHashSet();
+		var focusIds = _db.Items.Select(x => x.FocusEffect).Where(x => x != null).ToHashSet();
+		var clickIds = _db.Items.Select(x => x.ClickEffect).Where(x => x != null).ToHashSet();
+		var wornIds = _db.Items.Select(x => x.WornEffect).Where(x => x != null).ToHashSet();
+		var emFocusIds = _db.Items.Select(x => x.EMFocusEffect).Where(x => x != null).ToHashSet();
+		
+		return [.. procIds, .. focusIds, .. clickIds, .. wornIds, .. emFocusIds];
+	}
+
 	private async Task SpellSync(CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(SpellSync));
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
 		var watch = Stopwatch.StartNew();
 		var totalSpellCount = 0;
-
-		var procIds = _db.Items.Select(x => x.ProcEffect).Where(x => x != null).ToHashSet();
-		var focusIds = _db.Items.Select(x => x.FocusEffect).Where(x => x != null).ToHashSet();
-		var clickIds = _db.Items.Select(x => x.ClickEffect).Where(x => x != null).ToHashSet();
-		var wornIds = _db.Items.Select(x => x.WornEffect).Where(x => x != null).ToHashSet();
-		var emFocusIds = _db.Items.Select(x => x.EMFocusEffect).Where(x => x != null).ToHashSet();
-		HashSet<int?> spellIds = [.. procIds, .. focusIds, .. clickIds, .. wornIds, .. emFocusIds];
+		var spellIds = GetSpellIds();
 
 		await foreach (var line in FetchLines(SpellDataUrl, token))
 		{
