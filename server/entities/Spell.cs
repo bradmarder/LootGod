@@ -11,6 +11,8 @@ public class Spell
 	{
 		Sync = sync;
 		Id = data.Id;
+		Class = data.Class;
+		Level = data.Level;
 		Name = data.Name;
 		Hash = data.Hash;
 		Description = data.Description;
@@ -26,6 +28,9 @@ public class Spell
 	/// </summary>
 	public long Sync { get; init; }
 
+	public EQClass? Class { get; init; }
+	public byte? Level { get; init; }
+
 	[Required]
 	[StringLength(255)]
 	public string Name { get; init; } = null!;
@@ -37,4 +42,7 @@ public class Spell
 
 	public string Description { get; init; } = null!;
 	public string Description2 { get; init; } = null!;
+
+	[InverseProperty(nameof(LootRequest.Spell))]
+	public virtual List<LootRequest> LootRequests { get; } = [];
 }

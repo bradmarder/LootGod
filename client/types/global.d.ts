@@ -25,6 +25,12 @@ declare interface ILoot {
 
 	readonly item: IItem;
 }
+declare interface ISpell {
+	readonly id: number;
+	readonly class: number;
+	readonly level: number;
+	readonly name: string;
+}
 declare interface IItem
 {
 	readonly id: number;

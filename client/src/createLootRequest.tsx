@@ -5,75 +5,87 @@ import classes from './eqClasses';
 
 export default function CreateLootRequest(props: IContext) {
 
-	const [loading, setLoading] = useState(true);
+	const [loading, setLoading] = useState(0);
 	const [persona, setPersona] = useState(false);
 	const [altName, setAltName] = useState('');
-	const [spell, setSpell] = useState('');
 	const [currentItem, setCurrentItem] = useState('');
 	const [quantity, setQuantity] = useState(1);
 	const [eqClass, setClass] = useState<EQClass | ''>('');
 	const [itemId, setItemId] = useState(0);
+	const [spellId, setSpellId] = useState<number>(0);
 	const [linkedAlts, setLinkedAlts] = useState<string[]>([]);
+	const [spells, setSpells] = useState<ISpell[]>([]);
 
 	const hasQtyLoots = props.loots.filter(x => (props.raidNight ? x.raidQuantity : x.rotQuantity) > 0);
-
-	const spellSelected = itemId > 0 && props.loots.find(x => x.itemId === itemId)!.item.isSpell;
+	const selectedSpell = props.loots.find(x => x.itemId === itemId);
+	const spellSelected = selectedSpell?.item.isSpell;
 	const reset = () => {
 		setAltName('');
 		setItemId(0);
+		setSpellId(0);
 		setQuantity(1);
 		setClass('');
-		setSpell('');
 		setCurrentItem('');
-		setLoading(false);
+		setLoading(0);
 	};
 
 	const isCreateLootDisabled =
 		hasQtyLoots.length === 0
-		|| loading
+		|| loading > 0
 		|| itemId === 0
 		|| quantity < 1
 
 		// if specifying an alt, then class is required
 		|| (altName.length > 0 && eqClass === '')
 
-		// if a spell is selected, the user *must* enter a spell name
-		|| (spellSelected && spell == null);
+		// if a spell is selected, the user *must* select a spell
+		|| (spellSelected && spellId == null);
 
 	const createLootRequest = () => {
 		const data = {
 			AltName: altName || null,
 			Class: eqClass === '' ? null : classes.indexOf(eqClass),
 			ItemId: itemId,
+			SpellId: spellId || null,
 			Quantity: spellSelected ? 1 : quantity,
-			Spell: spellSelected ? spell : null,
-			CurrentItem: currentItem,
+			CurrentItem: spellSelected ? null : currentItem,
 			RaidNight: props.raidNight,
 			Persona: persona,
 		};
-		setLoading(true);
+		setLoading(1);
 		axios
 			.post('/CreateLootRequest', data)
 			.finally(() => reset());
 	};
-	const setLootLogic = (itemId: number) => {
 
-		// if someone selects a spell, they must enter the name of the spell, and the quantity defaults to 1
-		// ....but then we have to remove the char/lootId unique combo...
-		if (itemId > 0 && props.loots.find(x => x.itemId === itemId)!.item.isSpell) {
-			setQuantity(1);
-		}
+	const spellLevel = spellSelected
+		? Number(selectedSpell!.item.name.split('|')[0]!.trim())
+		: 0;
+	const classLevelSpells = spells
+		.filter(x => x.level === spellLevel)
+		.filter(x => eqClass === '' || classes[x.class] === eqClass);
 
-		setItemId(itemId);
-	};
+	useEffect(() => {
+		setSpellId(0);
+	}, [eqClass, itemId])
 
 	useEffect(() => {
 		const ac = new AbortController();
-		setLoading(true);
+		setLoading(x => x + 1);
+		axios
+			.get<ISpell[]>('/GetSpells', { signal: ac.signal })
+			.then(x => setSpells(x.data))
+			.finally(() => setLoading(x => x - 1));
+		return () => ac.abort();
+	}, []);
+
+	useEffect(() => {
+		const ac = new AbortController();
+		setLoading(x => x + 1);
 		axios
 			.get<string[]>('/GetLinkedAlts', { signal: ac.signal })
 			.then(x => setLinkedAlts(x.data))
-			.finally(() => setLoading(false));
+			.finally(() => setLoading(x => x - 1));
 		return () => ac.abort();
 	}, [props.linkedAltsCacheKey]);
 
@@ -122,7 +134,7 @@ export default function CreateLootRequest(props: IContext) {
 					<Col xs={12} md={6}>
 						<Form.Group className="mb-3">
 							<Form.Label>Loot</Form.Label>
-							<Form.Select value={itemId} onChange={e => setLootLogic(Number(e.target.value))}>
+							<Form.Select value={itemId} onChange={e => setItemId(Number(e.target.value))}>
 								<option value={0}>Select an Item</option>
 								{hasQtyLoots.map(loot =>
 									<option key={loot.itemId} value={loot.itemId}>{loot.item.name}</option>
@@ -141,20 +153,27 @@ export default function CreateLootRequest(props: IContext) {
 					<Row>
 						<Col>
 							<Form.Group className="mb-3">
-								<Form.Label>Looks like you've selected a spell rune/nugget. You are <strong className={'text-danger'}>*required*</strong> to name the spell/item you want with this rune/nugget.</Form.Label>
-								<Form.Control type="text" placeholder="Spell name" value={spell} onChange={e => setSpell(e.target.value)} />
+								<Form.Label>You are <strong className={'text-danger'}>*required*</strong> to select the spell you want with this rune.</Form.Label>
+								<Form.Select value={spellId} onChange={e => setSpellId(Number(e.target.value))}>
+									<option value={0}>Select a Spell</option>
+									{classLevelSpells.map(spell =>
+										<option key={spell.id} value={spell.id}>{spell.name}</option>
+									)}
+								</Form.Select>
 							</Form.Group>
 						</Col>
 					</Row>
 				}
-				<Row>
-					<Col>
-						<Form.Group className="mb-3">
-							<Form.Label>Upgrading From (your current item) <strong className={'text-danger'} hidden={!props.raidNight}>Required</strong></Form.Label>
-							<Form.Control type="text" placeholder="Current Item" value={currentItem} onChange={e => setCurrentItem(e.target.value)} />
-						</Form.Group>
-					</Col>
-				</Row>
+				{!spellSelected && itemId > 0 &&
+					<Row>
+						<Col>
+							<Form.Group className="mb-3">
+								<Form.Label>Upgrading From (your current item) <strong className={'text-danger'} hidden={!props.raidNight}>Required</strong></Form.Label>
+								<Form.Control type="text" placeholder="Current Item" value={currentItem} onChange={e => setCurrentItem(e.target.value)} />
+							</Form.Group>
+						</Col>
+					</Row>
+				}
 				{props.lootLocked &&
 					<Alert variant={'danger'}>
 						Loot requests are currently locked/disabled. Please check back later!

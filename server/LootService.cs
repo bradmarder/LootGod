@@ -169,7 +169,7 @@ public class LootService(
 		return _db.LootRequests
 			.Where(x => x.Player.GuildId == EF.Constant(guildId))
 			.Where(x => x.Archived == null)
-			.OrderByDescending(x => x.Spell != null)
+			.OrderByDescending(x => x.SpellId != null)
 			.ThenBy(x => x.ItemId)
 			.ThenByDescending(x => x.AltName ?? x.Player.Name)
 			.ProjectToDto()

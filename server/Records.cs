@@ -17,6 +17,13 @@ public record ItemSearch
 	public string Name { get; init; } = null!;
 }
 public record DiscordWebhookContent(string Content);
+public record SpellDto
+{
+	public int Id { get; init; }
+	public EQClass Class { get; init; }
+	public byte Level { get; init; }
+	public string Name { get; init; } = null!;
+}
 
 /// <summary>
 /// null GuildId implies the payload is sent to every client (items)

@@ -9,10 +9,12 @@ public static partial class LootRequestMapper
 	[MapPropertyFromSource(nameof(LootRequestDto.Class), Use = nameof(MapClass))]
 	[MapPropertyFromSource(nameof(LootRequestDto.MainName), Use = nameof(MapMainName))]
 	[MapPropertyFromSource(nameof(LootRequestDto.Duplicate), Use = nameof(MapDuplicate))]
+	[MapPropertyFromSource(nameof(LootRequestDto.Spell), Use = nameof(MapSpellName))]
 	public static partial LootRequestDto LootRequestMap(LootRequest request);
 
 	private static string MapLootName(LootRequest lr) => lr.Item.Name;
 	private static EQClass MapClass(LootRequest lr) => lr.Class ?? lr.Player.Class;
 	private static string MapMainName(LootRequest lr) => lr.Player.Name;
 	private static bool MapDuplicate(LootRequest lr) => lr.Player.LootRequests.Any(PLR => PLR.ItemId == lr.ItemId && PLR.Granted && PLR.Archived != null);
+	private static string? MapSpellName(LootRequest lr) => lr.SpellId == null ? null : lr.Spell.Name;
 }

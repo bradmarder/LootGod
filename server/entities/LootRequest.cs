@@ -11,11 +11,11 @@ public class LootRequest
 	{
 		IP = ip;
 		PlayerId = playerId;
-		Spell = dto.Spell?.Trim();
 		Class = dto.Class;
 		ItemId = dto.ItemId;
+		SpellId = dto.SpellId;
 		Quantity = dto.Quantity;
-		CurrentItem = dto.CurrentItem;
+		CurrentItem = dto.CurrentItem ?? "";
 		RaidNight = dto.RaidNight;
 		Persona = dto.Persona;
 
@@ -39,8 +39,10 @@ public class LootRequest
 	/// <summary>
 	/// Required only if loot type is a spell or nugget
 	/// </summary>
+	[Obsolete("This property is only used for legacy loot requests. New requests should use SpellId instead.")]
 	[StringLength(255)]
-	public string? Spell { get; set; }
+	[Column("Spell")]
+	public string? ObsoleteSpell { get; set; }
 
 	/// <summary>
 	/// Why have this property here and not just use Player.Class? Because the player may be requesting loot for a persona
@@ -49,6 +51,8 @@ public class LootRequest
 	public EQClass? Class { get; set; }
 
 	public int ItemId { get; set; }
+
+	public int? SpellId { get; set; }
 
 	/// <summary>
 	/// True for "raid night" loots, false for "Rot Loot"
@@ -68,7 +72,8 @@ public class LootRequest
 
 	[Range(1, 255)]
 	public byte Quantity { get; set; }
-
+	
+	// TODO: make nullable because of SpellId
 	[StringLength(255)]
 	public string CurrentItem { get; set; } = null!;
 
@@ -76,6 +81,12 @@ public class LootRequest
 
 	[ForeignKey(nameof(ItemId))]
 	public virtual Item Item { get; set; } = null!;
+
+	/// <summary>
+	/// TODO: rebuild table with FK constraint
+	/// </summary>
+	[ForeignKey(nameof(SpellId))]
+	public virtual Spell Spell { get; set; } = null!;
 
 	[ForeignKey(nameof(PlayerId))]
 	public virtual Player Player { get; set; } = null!;

@@ -292,6 +292,15 @@ public class Endpoints(string _adminKey)
 			return lootService.GetLoots(guildId);
 		});
 
+		app.MapGet("GetSpells", (LootGodContext db) =>
+		{
+			return db.Spells
+				.Where(x => x.Level != null && x.Class != null) // exclude item spell effects and only include Rk. III spells
+				.OrderBy(x => x.Name)
+				.ProjectToDto()
+				.ToArray();
+		});
+
 		app.MapPost("ToggleHiddenPlayer", (ToggleHiddenAdminPlayer dto, LootGodContext db, LootService lootService) =>
 		{
 			lootService.EnsureAdminStatus();
@@ -356,9 +365,9 @@ public class Endpoints(string _adminKey)
 			{
 				["RaidNight"] = dto.RaidNight,
 				["AltName"] = dto.AltName,
-				["Spell"] = dto.Spell,
 				["Class"] = dto.Class,
 				["ItemId"] = dto.ItemId,
+				["SpellId"] = dto.SpellId,
 				["Quantity"] = dto.Quantity,
 				["CurrentItem"] = dto.CurrentItem,
 				["Persona"] = dto.Persona,

@@ -79,7 +79,8 @@ public class SyncService(
 		{
 			totalSpellCount++;
 			var output = new SpellParseOutput(line);
-			if (spellIds.Contains(output.Id))
+
+			if (spellIds.Contains(output.Id) || output.IsRaid)
 			{
 				_db.Spells.Add(new(output, now));
 			}
