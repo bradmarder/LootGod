@@ -1,10 +1,10 @@
 ﻿public static partial class Log
 {
-	[LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Spell sync successfully completed")]
-	public static partial void SpellSyncSuccess(this ILogger logger);
+	[LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Spell sync {SpellCount} of {TotalSpellCount} in {ElapsedMs}")]
+	public static partial void SpellSyncSuccess(this ILogger logger, int spellCount, int totalSpellCount, long elapsedMs);
 
-	[LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Item sync successfully completed")]
-	public static partial void ItemSyncSuccess(this ILogger logger);
+	[LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Item sync {RaidItemCount} of {TotalItemCount} in {ElapsedMs}")]
+	public static partial void ItemSyncSuccess(this ILogger logger, int raidItemCount, int totalItemCount, long elapsedMs);
 
 	[LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "Loot requests finished")]
 	public static partial void LootRequestsFinished(this ILogger logger);

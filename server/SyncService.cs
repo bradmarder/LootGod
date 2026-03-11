@@ -87,16 +87,9 @@ public class SyncService(
 		}
 
 		/// ON CONFLICT REPLACE <see cref="OnConflictInterceptor"/>
-		var count = _db.SaveChanges();
+		var spellCount = _db.SaveChanges();
 
-		var state = new LogState
-		{
-			["ElapsedMs"] = watch.ElapsedMilliseconds,
-			["SpellCount"] = count,
-			["TotalSpellCount"] = totalSpellCount,
-		};
-		using var _ = _logger.BeginScope(state);
-		_logger.SpellSyncSuccess();
+		_logger.SpellSyncSuccess(spellCount, totalSpellCount, watch.ElapsedMilliseconds);
 	}
 
 	private async Task ItemSync(CancellationToken token)
@@ -117,15 +110,8 @@ public class SyncService(
 		}
 
 		/// ON CONFLICT REPLACE <see cref="OnConflictInterceptor"/>
-		var count = _db.SaveChanges();
+		var raidItemCount = _db.SaveChanges();
 
-		var state = new LogState
-		{
-			["ElapsedMs"] = watch.ElapsedMilliseconds,
-			["RaidItemCount"] = count,
-			["TotalItemCount"] = totalItemCount,
-		};
-		using var _ = _logger.BeginScope(state);
-		_logger.ItemSyncSuccess();
+		_logger.ItemSyncSuccess(raidItemCount, totalItemCount, watch.ElapsedMilliseconds);
 	}
 }

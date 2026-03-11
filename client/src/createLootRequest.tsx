@@ -26,7 +26,7 @@ export default function CreateLootRequest(props: IContext) {
 		setQuantity(1);
 		setClass('');
 		setCurrentItem('');
-		setLoading(0);
+		setLoading(x => x - 1);
 	};
 
 	const isCreateLootDisabled =
@@ -52,7 +52,7 @@ export default function CreateLootRequest(props: IContext) {
 			RaidNight: props.raidNight,
 			Persona: persona,
 		};
-		setLoading(1);
+		setLoading(x => x + 1);
 		axios
 			.post('/CreateLootRequest', data)
 			.finally(() => reset());
