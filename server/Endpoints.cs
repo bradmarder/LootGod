@@ -295,7 +295,7 @@ public class Endpoints(string _adminKey)
 		app.MapGet("GetSpells", (LootGodContext db) =>
 		{
 			return db.Spells
-				.Where(x => x.Level != null && x.Class != null) // exclude item spell effects and only include Rk. III spells
+				.Where(x => x.Name.EndsWith(" Rk. III"))
 				.OrderBy(x => x.Name)
 				.ProjectToDto()
 				.ToArray();

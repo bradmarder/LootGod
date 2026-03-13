@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Row, Col, Alert, Button, Form, FormCheck } from 'react-bootstrap';
 import axios from 'axios';
 import classes from './eqClasses';
+import shortClassMap from './shortClassMap';
 
 export default function CreateLootRequest(props: IContext) {
 
@@ -59,11 +60,17 @@ export default function CreateLootRequest(props: IContext) {
 	};
 
 	const spellLevel = spellSelected
-		? Number(selectedSpell!.item.name.split('|')[0]!.trim())
-		: 0;
+		? selectedSpell!.item.name.split('|')[0]!.trim()
+		: null;
 	const classLevelSpells = spells
-		.filter(x => x.level === spellLevel)
-		.filter(x => eqClass === '' || classes[x.class] === eqClass);
+		.filter(x => x.classLevel
+			.split(' ')
+			.map(y => y.split('/')[1])
+			.some(y => y === spellLevel))
+		.filter(x => eqClass === '' || x.classLevel
+			.split(' ')
+			.map(y => y.split('/')[0] as string)
+			.some(y => shortClassMap.get(y) === eqClass));
 
 	useEffect(() => {
 		setSpellId(0);

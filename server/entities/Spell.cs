@@ -11,8 +11,7 @@ public class Spell
 	{
 		Sync = sync;
 		Id = data.Id;
-		Class = data.Class;
-		Level = data.Level;
+		ClassLevel = data.ClassLevel;
 		Name = data.Name;
 		Hash = data.Hash;
 		Description = data.Description;
@@ -28,8 +27,7 @@ public class Spell
 	/// </summary>
 	public long Sync { get; init; }
 
-	public EQClass? Class { get; init; }
-	public byte? Level { get; init; }
+	public string ClassLevel { get; init; } = null!;
 
 	[Required]
 	[StringLength(255)]

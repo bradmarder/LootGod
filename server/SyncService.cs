@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 public class SyncService(
 	TimeProvider _time,
 	ILogger<SyncService> _logger,
-	LootGodContext _db,
+	IServiceScopeFactory _factory,
 	HttpClient _httpClient)
 {
 	private const string ItemDataUrl = "https://items.sodeq.org/downloads/items.txt.gz";
@@ -17,24 +17,24 @@ public class SyncService(
 	public async Task DataSync(CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(DataSync));
+		await using var scope = _factory.CreateAsyncScope();
+		var db = scope.ServiceProvider.GetRequiredService<LootGodContext>();
 
-		_db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = OFF;");
+		db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = OFF;");
 
-		using (var transaction = _db.Database.BeginTransaction())
+		using var transaction = db.Database.BeginTransaction();
+		try
 		{
-			try
-			{
-				await ItemSync(token);
-				await SpellSync(token);
-				_db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON;");
-				transaction.Commit();
-			}
-			catch
-			{
-				transaction.Rollback();
-				// _db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON;");
-				throw;
-			}
+			await ItemSync(db, token);
+			await SpellSync(db, token);
+			db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON;");
+			transaction.Commit();
+		}
+		catch
+		{
+			transaction.Rollback();
+			// db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON;");
+			throw;
 		}
 	}
 
@@ -56,24 +56,24 @@ public class SyncService(
 		}
 	}
 
-	private HashSet<int?> GetSpellIds()
+	private static HashSet<int?> GetSpellIds(LootGodContext db)
 	{
-		var procIds = _db.Items.Select(x => x.ProcEffect).Where(x => x != null).ToHashSet();
-		var focusIds = _db.Items.Select(x => x.FocusEffect).Where(x => x != null).ToHashSet();
-		var clickIds = _db.Items.Select(x => x.ClickEffect).Where(x => x != null).ToHashSet();
-		var wornIds = _db.Items.Select(x => x.WornEffect).Where(x => x != null).ToHashSet();
-		var emFocusIds = _db.Items.Select(x => x.EMFocusEffect).Where(x => x != null).ToHashSet();
+		var procIds = db.Items.Select(x => x.ProcEffect).Where(x => x != null).ToHashSet();
+		var focusIds = db.Items.Select(x => x.FocusEffect).Where(x => x != null).ToHashSet();
+		var clickIds = db.Items.Select(x => x.ClickEffect).Where(x => x != null).ToHashSet();
+		var wornIds = db.Items.Select(x => x.WornEffect).Where(x => x != null).ToHashSet();
+		var emFocusIds = db.Items.Select(x => x.EMFocusEffect).Where(x => x != null).ToHashSet();
 		
 		return [.. procIds, .. focusIds, .. clickIds, .. wornIds, .. emFocusIds];
 	}
 
-	private async Task SpellSync(CancellationToken token)
+	private async Task SpellSync(LootGodContext db, CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(SpellSync));
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
 		var watch = Stopwatch.StartNew();
 		var totalSpellCount = 0;
-		var spellIds = GetSpellIds();
+		var spellIds = GetSpellIds(db);
 
 		await foreach (var line in FetchLines(SpellDataUrl, token))
 		{
@@ -82,17 +82,17 @@ public class SyncService(
 
 			if (spellIds.Contains(output.Id) || output.IsRaid)
 			{
-				_db.Spells.Add(new(output, now));
+				db.Spells.Add(new(output, now));
 			}
 		}
 
 		/// ON CONFLICT REPLACE <see cref="OnConflictInterceptor"/>
-		var spellCount = _db.SaveChanges();
+		var spellCount = db.SaveChanges();
 
 		_logger.SpellSyncSuccess(spellCount, totalSpellCount, watch.ElapsedMilliseconds);
 	}
 
-	private async Task ItemSync(CancellationToken token)
+	private async Task ItemSync(LootGodContext db, CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(ItemSync));
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
@@ -105,12 +105,12 @@ public class SyncService(
 			var item = new ItemParseOutput(line);
 			if (item is { IsRaid: true, Expansion: not Expansion.Unknown })
 			{
-				_db.Items.Add(ItemMapper.ItemOutputMap(item, now));
+				db.Items.Add(ItemMapper.ItemOutputMap(item, now));
 			}
 		}
 
 		/// ON CONFLICT REPLACE <see cref="OnConflictInterceptor"/>
-		var raidItemCount = _db.SaveChanges();
+		var raidItemCount = db.SaveChanges();
 
 		_logger.ItemSyncSuccess(raidItemCount, totalItemCount, watch.ElapsedMilliseconds);
 	}

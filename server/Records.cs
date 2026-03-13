@@ -20,8 +20,7 @@ public record DiscordWebhookContent(string Content);
 public record SpellDto
 {
 	public int Id { get; init; }
-	public EQClass Class { get; init; }
-	public byte Level { get; init; }
+	public string ClassLevel { get; init; } = null!;
 	public string Name { get; init; } = null!;
 }
 
