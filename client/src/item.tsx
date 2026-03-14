@@ -100,7 +100,7 @@ export default function ItemView(item: IItem) {
 			}}
 		>
 			<div style={{ display: "flex", alignItems: "flex-start" }}>
-				<img src={`https://items.sodeq.org/img/item_${item.icon}.png`} width="40" height="40" />
+				<img src={`/icons/item_${item.icon}.png`} width="40" height="40" />
 				<div>
 					<div style={{ color: "green", fontWeight: "bold", fontSize: 20 }}>
 						{item.name}

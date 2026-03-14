@@ -76,14 +76,14 @@ public class ImportService(ILogger<LootService> _logger, LootGodContext _db, Loo
 
 		activity?.AddEvent(new("Raid dumps saved"));
 
-		using var _ = _logger.BeginScope(new
+		using var _ = _logger.BeginScope(new LogState
 		{
-			StreamLength = output.Length,
-			RaidPlayerCount = nameToClassMap.Count,
-			InnerFileName = fileName,
-			FileNameTimestamp = timestamp,
-			PlayerCreatedCount = playerCreatedCount,
-			RaidDumpCreatedCount = raidDumpCreatedCount,
+			["StreamLength"] = output.Length,
+			["RaidPlayerCount"] = nameToClassMap.Count,
+			["InnerFileName"] = fileName,
+			["FileNameTimestamp"] = timestamp,
+			["PlayerCreatedCount"] = playerCreatedCount,
+			["RaidDumpCreatedCount"] = raidDumpCreatedCount,
 		});
 		_logger.RaidDumpImportCompleted();
 	}
@@ -93,7 +93,7 @@ public class ImportService(ILogger<LootService> _logger, LootGodContext _db, Loo
 		using var activity = source.StartActivity(nameof(BulkImportRaidDump));
 		await using var stream = file.OpenReadStream();
 		await using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
-		using var _ = _logger.BeginScope(new { ZipEntryCount = zip.Entries.Count });
+		using var _ = _logger.BeginScope(new LogState("ZipEntryCount", zip.Entries.Count));
 
 		foreach (var entry in zip.Entries.OrderBy(x => x.LastWriteTime))
 		{
@@ -198,12 +198,12 @@ public class ImportService(ILogger<LootService> _logger, LootGodContext _db, Loo
 
 		activity?.AddEvent(new("Players created"));
 
-		using var _ = _logger.BeginScope(new
+		using var _ = _logger.BeginScope(new LogState
 		{
-			DumpCount = dumps.Count,
-			RankCreatedCount = rankCreatedCount,
-			PlayerUpdatedCount = playerUpdatedCount,
-			PlayerCreatedCount = playerCreatedCount,
+			["DumpCount"] = dumps.Count,
+			["RankCreatedCount"] = rankCreatedCount,
+			["PlayerUpdatedCount"] = playerUpdatedCount,
+			["PlayerCreatedCount"] = playerCreatedCount,
 		});
 		_logger.GuildDumpImportCompleted();
 	}

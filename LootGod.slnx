@@ -4,6 +4,7 @@
     <File Path=".gitignore" />
     <File Path="README.md" />
   </Folder>
+  <Project Path="ItemIconParser/ItemIconParser.csproj" Id="5ae35fd2-6b65-423b-bffd-893bd436f4f6" />
   <Project Path="server/LootGod.csproj" />
   <Project Path="tests/Tests.csproj" />
 </Solution>

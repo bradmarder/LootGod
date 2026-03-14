@@ -155,14 +155,15 @@ app.Use(async (context, next) =>
 	headers["Referrer-Policy"] = "no-referrer";
 
 	// include "img-src 'self' data:;" for bootstrap svgs
-	headers.ContentSecurityPolicy = "default-src 'self'; child-src 'none'; img-src 'self' https://items.sodeq.org data:;";
+	headers.ContentSecurityPolicy = "default-src 'self'; child-src 'none'; img-src 'self' data:;";
 
 	await next();
 });
 if (app.Environment.IsProduction())
 {
 	app.UseDefaultFiles();
-	app.MapStaticAssets();
+	//app.MapStaticAssets(); // makes app freeze with all icons?! if there are just a few, it works fine
+	app.UseStaticFiles();
 }
 app.UsePathBase("/api");
 app.MapHealthChecks("/healthz").DisableHttpMetrics();
@@ -173,13 +174,13 @@ app.MapHealthChecks("/healthz").DisableHttpMetrics();
 
 new Endpoints(adminKey).Map(app);
 
-using (app.Logger.BeginScope(new
+using (app.Logger.BeginScope(new LogState
 {
-	Machine = Environment.MachineName,
-	Application = app.Environment.ApplicationName,
-	Environment = app.Environment.EnvironmentName,
-	Database = useSqliteMemory ? null : source ?? ephemeral,
-	SqliteInMemory = useSqliteMemory,
+	["Machine"] = Environment.MachineName,
+	["Application"] = app.Environment.ApplicationName,
+	["Environment"] = app.Environment.EnvironmentName,
+	["Database"] = useSqliteMemory ? null : source ?? ephemeral,
+	["SqliteInMemory"] = useSqliteMemory,
 }))
 {
 	app.Lifetime.ApplicationStarted.Register(app.Logger.ApplicationStarted);
