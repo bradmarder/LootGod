@@ -71,50 +71,6 @@ public class Endpoints(string _adminKey)
 
 	public void Map(IEndpointRouteBuilder app)
 	{
-		app.MapGet("replaceManualItems", (LootGodContext db) =>
-		{
-			var manualItems = db.Items
-				.Where(x => x.Sync == 0)
-				.Where(x => x.Id > 1_000_000_000 && x.Id < 1_001_000_000)
-				.ToArray();
-			var manualNames = manualItems
-				.Select(x => x.Name.ToLower())
-				.ToArray();
-			var oneYearAgo = DateTimeOffset.UtcNow.AddYears(-1).ToUnixTimeSeconds();
-			var syncItems = db.Items
-				.Where(x => x.Sync > oneYearAgo)
-				.Where(x => manualNames.Contains(x.Name.ToLower()))
-				.ToArray();
-			var manualIdToSyncIdMap = Enumerable
-				.Join(manualItems, syncItems, x => x.Name, x => x.Name, (x, y) => (x.Id, y.Id))
-				.ToDictionary(x => x.Item1, x => x.Item2);
-			var manualItemIds = manualIdToSyncIdMap
-				.Select(x => x.Key)
-				.ToArray();
-			var requests = db.LootRequests
-				.Where(x => manualItemIds.Contains(x.ItemId))
-				.ToArray();
-			var loots = db.Loots
-				.Where(x => manualItemIds.Contains(x.ItemId))
-				.ToArray();
-
-			// update loots + loot requests FK to point to latest synced item
-			foreach (var loot in loots)
-			{
-				loot.ItemId = manualIdToSyncIdMap[loot.ItemId];
-			}
-			foreach (var req in requests)
-			{
-				req.ItemId = manualIdToSyncIdMap[req.ItemId];
-			}
-			db.SaveChanges();
-
-			// delete the manually added items
-			db.Items
-				.Where(x => manualItemIds.Contains(x.Id))
-				.ExecuteDelete();
-		});
-
 		app.MapGet("AntiforgeryToken", (IAntiforgery antiforgery, HttpContext ctx) =>
 		{
 			return antiforgery.GetAndStoreTokens(ctx).RequestToken;
@@ -240,7 +196,7 @@ public class Endpoints(string _adminKey)
 		// in case the item DB doesn't have certain items uploaded yet
 		app.MapPost("CreateItem", async (LootGodContext db, string name, LootService lootService) =>
 		{
-			var randomId = Random.Shared.Next(1_000_000_000, 1_001_000_000);
+			var randomId = Random.Shared.Next(SyncService.ManualItemMinId, SyncService.ManualItemMaxId);
 			var item = new Item { Id = randomId, Name = name, Expansion = Expansion.SoR };
 			db.Items.Add(item);
 			db.SaveChanges();

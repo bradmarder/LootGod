@@ -89,4 +89,7 @@
 
 	[LoggerMessage(30, LogLevel.Information, "Removed player trying to log in")]
 	public static partial void RemovedPlayerLogin(this ILogger logger);
+
+	[LoggerMessage(31, LogLevel.Information, "Manually created items synced")]
+	public static partial void ManualItemSync(this ILogger logger);
 }

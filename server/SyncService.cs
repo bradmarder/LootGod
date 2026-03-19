@@ -9,6 +9,8 @@ public class SyncService(
 	IServiceScopeFactory _factory,
 	HttpClient _httpClient)
 {
+	public const int ManualItemMinId = 1_000_000_000;
+	public const int ManualItemMaxId = 1_001_000_000;
 	private const string ItemDataUrl = "https://items.sodeq.org/downloads/items.txt.gz";
 	private const string SpellDataUrl = "https://lucy.allakhazam.com/static/spelldata/spelldata_Live_2025-12-03_05:26:16.txt.gz";
 
@@ -27,6 +29,8 @@ public class SyncService(
 		{
 			await ItemSync(db, token);
 			await SpellSync(db, token);
+			await ManualItemSync(db);
+
 			db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON;");
 			transaction.Commit();
 		}
@@ -113,5 +117,51 @@ public class SyncService(
 		var raidItemCount = db.SaveChanges();
 
 		_logger.ItemSyncSuccess(raidItemCount, totalItemCount, watch.ElapsedMilliseconds);
+	}
+
+	private async Task ManualItemSync(LootGodContext db)
+	{
+		var manualItems = db.Items
+			.Where(x => x.Sync == 0)
+			.Where(x => x.Id > ManualItemMinId && x.Id < ManualItemMaxId)
+			.ToArray();
+		var manualNames = manualItems
+			.Select(x => x.Name.ToLower())
+			.ToArray();
+		var oneYearAgo = _time.GetUtcNow().AddYears(-1).ToUnixTimeSeconds();
+		var syncItems = db.Items
+			.Where(x => x.Sync > oneYearAgo)
+			.Where(x => manualNames.Contains(x.Name.ToLower()))
+			.ToArray();
+		var manualIdToSyncIdMap = Enumerable
+			.Join(manualItems, syncItems, x => x.Name, x => x.Name, (x, y) => (x.Id, y.Id))
+			.ToDictionary(x => x.Item1, x => x.Item2);
+		var manualItemIds = manualIdToSyncIdMap
+			.Select(x => x.Key)
+			.ToArray();
+		var requests = db.LootRequests
+			.Where(x => manualItemIds.Contains(x.ItemId))
+			.ToArray();
+		var loots = db.Loots
+			.Where(x => manualItemIds.Contains(x.ItemId))
+			.ToArray();
+
+		// update loots + loot requests FK to point to latest synced item
+		foreach (var loot in loots)
+		{
+			loot.ItemId = manualIdToSyncIdMap[loot.ItemId];
+		}
+		foreach (var req in requests)
+		{
+			req.ItemId = manualIdToSyncIdMap[req.ItemId];
+		}
+		db.SaveChanges();
+
+		// delete the manually added items
+		db.Items
+			.Where(x => manualItemIds.Contains(x.Id))
+			.ExecuteDelete();
+
+		_logger.ManualItemSync();
 	}
 }
