@@ -162,6 +162,6 @@ public class SyncService(
 			.Where(x => manualItemIds.Contains(x.Id))
 			.ExecuteDelete();
 
-		_logger.ManualItemSync();
+		_logger.ManualItemSync(manualItemIds.Length, loots.Length, requests.Length);
 	}
 }
