@@ -1,6 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Data.Common;
 
+/// <summary>
+/// BUG WARNING! The SQL logged by EF doesn't reflect changes made by interceptors
+/// https://github.com/dotnet/efcore/issues/37236
+/// </summary>
 public class OnConflictInterceptor : DbCommandInterceptor
 {
 	public override InterceptionResult<int> NonQueryExecuting(DbCommand command, CommandEventData eventData, InterceptionResult<int> result)

@@ -57,7 +57,7 @@ public class ImportService(ILogger<LootService> _logger, LootGodContext _db, Loo
 			.Select(x => x.Name)
 			.ToArray();
 		var players = nameToClassMap.Keys
-			.Except(existingNames)
+			.Except(existingNames, StringComparer.OrdinalIgnoreCase)
 			.Select(x => new Player(x, nameToClassMap[x], guildId))
 			.ToList();
 		_db.Players.AddRange(players);
@@ -139,7 +139,7 @@ public class ImportService(ILogger<LootService> _logger, LootGodContext _db, Loo
 		var ranks = dumps
 			.Select(x => x.Rank)
 			.Distinct(StringComparer.OrdinalIgnoreCase)
-			.Except(existingRankNames)
+			.Except(existingRankNames, StringComparer.OrdinalIgnoreCase)
 			.Select(x => new Rank(x, guildId))
 			.ToArray();
 		_db.Ranks.AddRange(ranks);
@@ -160,7 +160,7 @@ public class ImportService(ILogger<LootService> _logger, LootGodContext _db, Loo
 		{
 			var dump = dumps.SingleOrDefault(x => x.Name == player.Name);
 
-			// if a player no longer appears in a guild dump output, we assert them inactive
+			// if a player no longer appears in a guild dump output, we set them inactive
 			if (dump is null)
 			{
 				player.Active = false;

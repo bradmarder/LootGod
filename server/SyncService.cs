@@ -22,24 +22,9 @@ public class SyncService(
 		await using var scope = _factory.CreateAsyncScope();
 		var db = scope.ServiceProvider.GetRequiredService<LootGodContext>();
 
-		db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = OFF;");
-
-		using var transaction = db.Database.BeginTransaction();
-		try
-		{
-			await ItemSync(db, token);
-			await SpellSync(db, token);
-			await ManualItemSync(db);
-
-			db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON;");
-			transaction.Commit();
-		}
-		catch
-		{
-			transaction.Rollback();
-			// db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON;");
-			throw;
-		}
+		await ItemSync(db, token);
+		await SpellSync(db, token);
+		await ManualItemSync(db);
 	}
 
 	private async IAsyncEnumerable<string> FetchLines(string requestUri, [EnumeratorCancellation] CancellationToken cancellationToken)
