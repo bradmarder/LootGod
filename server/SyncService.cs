@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 public class SyncService(
 	TimeProvider _time,
 	ILogger<SyncService> _logger,
-	IServiceScopeFactory _factory,
+	LootGodContext _db,
 	HttpClient _httpClient)
 {
 	public const int ManualItemMinId = 1_000_000_000;
@@ -19,12 +19,11 @@ public class SyncService(
 	public async Task DataSync(CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(DataSync));
-		await using var scope = _factory.CreateAsyncScope();
-		var db = scope.ServiceProvider.GetRequiredService<LootGodContext>();
 
-		await ItemSync(db, token);
-		await SpellSync(db, token);
-		await ManualItemSync(db);
+		await ItemSync(token);
+		await SpellSync(token);
+
+		ManualItemSync();
 	}
 
 	private async IAsyncEnumerable<string> FetchLines(string requestUri, [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -45,24 +44,24 @@ public class SyncService(
 		}
 	}
 
-	private static HashSet<int?> GetSpellIds(LootGodContext db)
+	private HashSet<int?> GetSpellIds()
 	{
-		var procIds = db.Items.Select(x => x.ProcEffect).Where(x => x != null).ToHashSet();
-		var focusIds = db.Items.Select(x => x.FocusEffect).Where(x => x != null).ToHashSet();
-		var clickIds = db.Items.Select(x => x.ClickEffect).Where(x => x != null).ToHashSet();
-		var wornIds = db.Items.Select(x => x.WornEffect).Where(x => x != null).ToHashSet();
-		var emFocusIds = db.Items.Select(x => x.EMFocusEffect).Where(x => x != null).ToHashSet();
-		
+		var procIds = _db.Items.Select(x => x.ProcEffect).Where(x => x != null).ToHashSet();
+		var focusIds = _db.Items.Select(x => x.FocusEffect).Where(x => x != null).ToHashSet();
+		var clickIds = _db.Items.Select(x => x.ClickEffect).Where(x => x != null).ToHashSet();
+		var wornIds = _db.Items.Select(x => x.WornEffect).Where(x => x != null).ToHashSet();
+		var emFocusIds = _db.Items.Select(x => x.EMFocusEffect).Where(x => x != null).ToHashSet();
+
 		return [.. procIds, .. focusIds, .. clickIds, .. wornIds, .. emFocusIds];
 	}
 
-	private async Task SpellSync(LootGodContext db, CancellationToken token)
+	private async Task SpellSync(CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(SpellSync));
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
 		var watch = Stopwatch.StartNew();
 		var totalSpellCount = 0;
-		var spellIds = GetSpellIds(db);
+		var spellIds = GetSpellIds();
 
 		await foreach (var line in FetchLines(SpellDataUrl, token))
 		{
@@ -71,17 +70,17 @@ public class SyncService(
 
 			if (spellIds.Contains(output.Id) || output.IsRaid)
 			{
-				db.Spells.Add(new(output, now));
+				_db.Spells.Add(new(output, now));
 			}
 		}
 
 		/// ON CONFLICT REPLACE <see cref="OnConflictInterceptor"/>
-		var spellCount = db.SaveChanges();
+		var spellCount = _db.SaveChanges();
 
 		_logger.SpellSyncSuccess(spellCount, totalSpellCount, watch.ElapsedMilliseconds);
 	}
 
-	private async Task ItemSync(LootGodContext db, CancellationToken token)
+	private async Task ItemSync(CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(ItemSync));
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
@@ -94,19 +93,19 @@ public class SyncService(
 			var item = new ItemParseOutput(line);
 			if (item is { IsRaid: true, Expansion: not Expansion.Unknown })
 			{
-				db.Items.Add(ItemMapper.ItemOutputMap(item, now));
+				_db.Items.Add(ItemMapper.ItemOutputMap(item, now));
 			}
 		}
 
 		/// ON CONFLICT REPLACE <see cref="OnConflictInterceptor"/>
-		var raidItemCount = db.SaveChanges();
+		var raidItemCount = _db.SaveChanges();
 
 		_logger.ItemSyncSuccess(raidItemCount, totalItemCount, watch.ElapsedMilliseconds);
 	}
 
-	private async Task ManualItemSync(LootGodContext db)
+	private void ManualItemSync()
 	{
-		var manualItems = db.Items
+		var manualItems = _db.Items
 			.Where(x => x.Sync == 0)
 			.Where(x => x.Id > ManualItemMinId && x.Id < ManualItemMaxId)
 			.ToArray();
@@ -114,7 +113,7 @@ public class SyncService(
 			.Select(x => x.Name.ToLower())
 			.ToArray();
 		var oneYearAgo = _time.GetUtcNow().AddYears(-1).ToUnixTimeSeconds();
-		var syncItems = db.Items
+		var syncItems = _db.Items
 			.Where(x => x.Sync > oneYearAgo)
 			.Where(x => manualNames.Contains(x.Name.ToLower()))
 			.ToArray();
@@ -124,10 +123,10 @@ public class SyncService(
 		var manualItemIds = manualIdToSyncIdMap
 			.Select(x => x.Key)
 			.ToArray();
-		var requests = db.LootRequests
+		var requests = _db.LootRequests
 			.Where(x => manualItemIds.Contains(x.ItemId))
 			.ToArray();
-		var loots = db.Loots
+		var loots = _db.Loots
 			.Where(x => manualItemIds.Contains(x.ItemId))
 			.ToArray();
 
@@ -140,10 +139,10 @@ public class SyncService(
 		{
 			req.ItemId = manualIdToSyncIdMap[req.ItemId];
 		}
-		db.SaveChanges();
+		_db.SaveChanges();
 
 		// delete the manually added items
-		db.Items
+		_db.Items
 			.Where(x => manualItemIds.Contains(x.Id))
 			.ExecuteDelete();
 
