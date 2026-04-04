@@ -9,10 +9,12 @@ export default function LootRequests(props: IContext) {
 	const [playerId, setPlayerId] = useState(0);
 
 	useEffect(() => {
+		const ac = new AbortController();
 		axios
-			.get<number>('/GetPlayerId')
+			.get<number>('/GetPlayerId', { signal: ac.signal })
 			.then(x => setPlayerId(x.data))
 			.finally(() => setLoading(false));
+		return () => ac.abort();
 	}, []);
 
 	const deleteLootRequest = (id: number) => {

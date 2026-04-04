@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Row, Col, Button, Form, Table, FormCheck } from 'react-bootstrap';
 import axios from 'axios';
 import classes from './eqClasses';
@@ -10,18 +10,21 @@ export default function ArchivedLoot(props: IContext) {
 	const [requests, setRequests] = useState<ILootRequest[]>([]);
 	const [name, setName] = useState('');
 	const [itemId, setItemId] = useState('');
+	const [loot, setLoot] = useState(0);
 
-	const getLootRequests = () => {
+	useEffect(() => {
 		setLoading(true);
+		const ac = new AbortController();
 		const params = {
 			name: name || null,
 			itemId: itemId || null,
 		};
 		axios
-			.get<ILootRequest[]>('/GetArchivedLootRequests', { params })
+			.get<ILootRequest[]>('/GetArchivedLootRequests', { params, signal: ac.signal })
 			.then(res => setRequests(res.data))
 			.finally(() => setLoading(false));
-	};
+		return () => ac.abort();
+	}, [loot]);
 
 	return (
 		<>
@@ -50,7 +53,7 @@ export default function ArchivedLoot(props: IContext) {
 						</Form.Group>
 					</Col>
 				</Row>
-				<Button variant='success' disabled={loading || (name === '' && itemId === '')} onClick={getLootRequests}>Search</Button>
+				<Button variant='success' disabled={loading || (name === '' && itemId === '')} onClick={() => setLoot(x => x + 1)}>Search</Button>
 			</Form>
 			{requests.length > 0 &&
 				<Table striped bordered hover size="sm">
