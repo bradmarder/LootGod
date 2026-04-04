@@ -48,7 +48,7 @@ public record ItemParseOutput
 		"Dragonbrood",
 		"Warmonger",
 	];
-	private static int? NullIfZero(int x) => x is 0 ? null : x;
+	private static int? NullIfLessThanOne(int x) => x < 1 ? null : x;
 
 	private readonly string _line;
 	private readonly string[] _data;
@@ -124,17 +124,19 @@ public record ItemParseOutput
 	public bool Lore => _data[120] is "-1";
 	public byte ProcLevel => byte.Parse(_data[152]);
 	public byte FocusLevel => byte.Parse(_data[174]);
-	public int? ProcEffect => NullIfZero(int.Parse(_data[149]));
-	public int? FocusEffect => NullIfZero(int.Parse(_data[171]));
-	public int? ClickEffect => NullIfZero(int.Parse(_data[138]));
-	public int? WornEffect => NullIfZero(int.Parse(_data[160]));
+	public int? ProcEffect => NullIfLessThanOne(int.Parse(_data[149]));
+	public int? FocusEffect => NullIfLessThanOne(int.Parse(_data[171]));
+	public int? ClickEffect => NullIfLessThanOne(int.Parse(_data[138]));
+	public int? WornEffect => NullIfLessThanOne(int.Parse(_data[160]));
 	public int ClickLevel => byte.Parse(_data[141]);
 	public int UNKNOWN77 => int.Parse(_data[279]);
 	public DateTime Created => DateTime.Parse(_data[310]);
 	public string CharmFile => _data[86];
-	public int? EMFocusEffect => NullIfZero(int.Parse(_data[193]));
+	public int? EMFocusEffect => NullIfLessThanOne(int.Parse(_data[193]));
 
-	public bool IsRaid => IsRaidGear || IsRaidContainer || IsRaidSpell;
+	public bool IsRaid =>
+		Expansion is not Expansion.Unknown
+		&& (IsRaidGear || IsRaidContainer || IsRaidSpell);
 
 	public bool HasRaidAugSlot =>
 		Augslot1type is 8

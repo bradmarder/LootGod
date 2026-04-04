@@ -20,8 +20,8 @@ public class SyncService(
 	{
 		using var activity = source.StartActivity(nameof(DataSync));
 
-		await ItemSync(token);
 		await SpellSync(token);
+		await ItemSync(token);
 
 		ManualItemSync();
 	}
@@ -44,15 +44,20 @@ public class SyncService(
 		}
 	}
 
-	private HashSet<int?> GetSpellIds()
+	private async IAsyncEnumerable<int?> GetSpellEffectIds([EnumeratorCancellation] CancellationToken cancellationToken)
 	{
-		var procIds = _db.Items.Select(x => x.ProcEffect).Where(x => x != null).ToHashSet();
-		var focusIds = _db.Items.Select(x => x.FocusEffect).Where(x => x != null).ToHashSet();
-		var clickIds = _db.Items.Select(x => x.ClickEffect).Where(x => x != null).ToHashSet();
-		var wornIds = _db.Items.Select(x => x.WornEffect).Where(x => x != null).ToHashSet();
-		var emFocusIds = _db.Items.Select(x => x.EMFocusEffect).Where(x => x != null).ToHashSet();
-
-		return [.. procIds, .. focusIds, .. clickIds, .. wornIds, .. emFocusIds];
+		await foreach (var line in FetchLines(ItemDataUrl, cancellationToken))
+		{
+			var item = new ItemParseOutput(line);
+			if (item.IsRaid)
+			{
+				yield return item.ProcEffect;
+				yield return item.ClickEffect;
+				yield return item.WornEffect;
+				yield return item.FocusEffect;
+				yield return item.EMFocusEffect;
+			}
+		}
 	}
 
 	private async Task SpellSync(CancellationToken token)
@@ -61,14 +66,16 @@ public class SyncService(
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
 		var watch = Stopwatch.StartNew();
 		var totalSpellCount = 0;
-		var spellIds = GetSpellIds();
+		var spellEffectIds = await GetSpellEffectIds(token)
+			.Where(x => x > 0)
+			.ToHashSetAsync(cancellationToken: token);
 
 		await foreach (var line in FetchLines(SpellDataUrl, token))
 		{
 			totalSpellCount++;
 			var output = new SpellParseOutput(line);
 
-			if (spellIds.Contains(output.Id) || output.IsRaid)
+			if (spellEffectIds.Contains(output.Id) || output.IsRaid)
 			{
 				_db.Spells.Add(new(output, now));
 			}
@@ -91,7 +98,7 @@ public class SyncService(
 		{
 			totalItemCount++;
 			var item = new ItemParseOutput(line);
-			if (item is { IsRaid: true, Expansion: not Expansion.Unknown })
+			if (item.IsRaid)
 			{
 				_db.Items.Add(ItemMapper.ItemOutputMap(item, now));
 			}
