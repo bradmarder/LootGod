@@ -55,18 +55,13 @@ public class Endpoints(string _adminKey)
 	{
 		await using var scope = factory.CreateAsyncScope();
 
-		var semaphore = scope.ServiceProvider.GetRequiredService<SemaphoreSlim>();
-		await semaphore.WaitAsync();
-		try
-		{
-			return scope.ServiceProvider
-				.GetRequiredService<LootService>()
-				.GetGuildId();
-		}
-		finally
-		{
-			semaphore.Release();
-		}
+		using var _ = await scope.ServiceProvider
+			.GetRequiredService<SemaphoreSlim>()
+			.LockAsync();
+
+		return scope.ServiceProvider
+			.GetRequiredService<LootService>()
+			.GetGuildId();
 	}
 
 	public void Map(IEndpointRouteBuilder app)

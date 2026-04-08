@@ -9,14 +9,8 @@
 			return;
 		}
 
-		await _semaphore.WaitAsync();
-		try
-		{
-			await next(context);
-		}
-		finally
-		{
-			_semaphore.Release();
-		}
+		using var _ = await _semaphore.LockAsync();
+
+		await next(context);
 	}
 }

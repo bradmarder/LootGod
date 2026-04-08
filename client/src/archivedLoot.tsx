@@ -13,6 +13,7 @@ export default function ArchivedLoot(props: IContext) {
 	const [loot, setLoot] = useState(0);
 
 	useEffect(() => {
+		if (loot === 0) { return; }
 		setLoading(true);
 		const ac = new AbortController();
 		const params = {

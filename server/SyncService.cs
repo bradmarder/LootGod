@@ -9,6 +9,12 @@ public class SyncService(
 	LootGodContext _db,
 	HttpClient _httpClient)
 {
+	private record Counter
+	{
+		public int Total { get; private set; }
+		public void Increment() => Total++;
+	}
+
 	public const int ManualItemMinId = 1_000_000_000;
 	public const int ManualItemMaxId = 1_001_000_000;
 	private const string ItemDataUrl = "https://items.sodeq.org/downloads/items.txt.gz";
@@ -20,8 +26,13 @@ public class SyncService(
 	{
 		using var activity = source.StartActivity(nameof(DataSync));
 
+		/// disable FK constraints during sync because <see cref="OnConflictInterceptor"/> will *DELETE* and re-insert rows on conflict, which combined
+		/// with "ON DELETE CASCADE" will delete all related rows in loots/lootRequests
+		/// Transactions don't help here
+		_db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = OFF;");
 		await SpellSync(token);
 		await ItemSync(token);
+		_db.Database.ExecuteSqlRaw("PRAGMA foreign_keys = ON;");
 
 		ManualItemSync();
 	}
@@ -63,51 +74,69 @@ public class SyncService(
 	private async Task SpellSync(CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(SpellSync));
-		var now = _time.GetUtcNow().ToUnixTimeSeconds();
+
 		var watch = Stopwatch.StartNew();
-		var totalSpellCount = 0;
+		var counter = new Counter();
 		var spellEffectIds = await GetSpellEffectIds(token)
 			.Where(x => x > 0)
 			.ToHashSetAsync(cancellationToken: token);
+		var spells = await GetSpells(counter, spellEffectIds, token).ToArrayAsync(token);
+
+		/// ON CONFLICT REPLACE <see cref="OnConflictInterceptor"/>
+		_db.AddRange(spells);
+		_db.SaveChanges();
+
+		_logger.SpellSyncSuccess(spells.Length, counter.Total, watch.ElapsedMilliseconds);
+	}
+
+	private async IAsyncEnumerable<Spell> GetSpells(Counter counter, ISet<int?> spellEffectIds, [EnumeratorCancellation] CancellationToken token)
+	{
+		using var activity = source.StartActivity(nameof(GetSpells));
+
+		var now = _time.GetUtcNow().ToUnixTimeSeconds();
 
 		await foreach (var line in FetchLines(SpellDataUrl, token))
 		{
-			totalSpellCount++;
+			counter.Increment();
 			var output = new SpellParseOutput(line);
 
 			if (spellEffectIds.Contains(output.Id) || output.IsRaid)
 			{
-				_db.Spells.Add(new(output, now));
+				yield return new(output, now);
 			}
 		}
+	}
 
-		/// ON CONFLICT REPLACE <see cref="OnConflictInterceptor"/>
-		var spellCount = _db.SaveChanges();
+	private async IAsyncEnumerable<Item> GetItems(Counter counter, [EnumeratorCancellation] CancellationToken token)
+	{
+		using var activity = source.StartActivity(nameof(GetItems));
 
-		_logger.SpellSyncSuccess(spellCount, totalSpellCount, watch.ElapsedMilliseconds);
+		var now = _time.GetUtcNow().ToUnixTimeSeconds();
+
+		await foreach (var line in FetchLines(ItemDataUrl, token))
+		{
+			counter.Increment();
+			var item = new ItemParseOutput(line);
+			if (item.IsRaid)
+			{
+				yield return ItemMapper.ItemOutputMap(item, now);
+			}
+		}
 	}
 
 	private async Task ItemSync(CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(ItemSync));
-		var now = _time.GetUtcNow().ToUnixTimeSeconds();
+		
 		var watch = Stopwatch.StartNew();
-		var totalItemCount = 0;
-
-		await foreach (var line in FetchLines(ItemDataUrl, token))
-		{
-			totalItemCount++;
-			var item = new ItemParseOutput(line);
-			if (item.IsRaid)
-			{
-				_db.Items.Add(ItemMapper.ItemOutputMap(item, now));
-			}
-		}
+		var counter = new Counter();
+		var items = await GetItems(counter, token).ToArrayAsync(token);
 
 		/// ON CONFLICT REPLACE <see cref="OnConflictInterceptor"/>
-		var raidItemCount = _db.SaveChanges();
+		_db.Items.AddRange(items);
+		_db.SaveChanges();
 
-		_logger.ItemSyncSuccess(raidItemCount, totalItemCount, watch.ElapsedMilliseconds);
+		_logger.ItemSyncSuccess(items.Length, counter.Total, watch.ElapsedMilliseconds);
 	}
 
 	private void ManualItemSync()
