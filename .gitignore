@@ -32,3 +32,4 @@ yarn-error.log*
 *.user
 *.pem
 *.key
+/server/wwwroot/icons/

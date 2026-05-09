@@ -9,8 +9,9 @@
 			return;
 		}
 
-		using var _ = await _semaphore.LockAsync();
-
-		await next(context);
+		using (await _semaphore.LockAsync())
+		{
+			await next(context);
+		}
 	}
 }
