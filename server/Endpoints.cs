@@ -459,9 +459,9 @@ public class Endpoints(string _adminKey)
 			{
 				return TypedResults.BadRequest($"'{normalizedAltName}' is already linked to you.");
 			}
-			if (alt.MainId is not null)
+			if (alt.Main?.Active is true)
 			{
-				return TypedResults.BadRequest($"'{normalizedAltName}' is already linked to guild member '{alt.Main!.Name}'.");
+				return TypedResults.BadRequest($"'{normalizedAltName}' is already linked to active guild member '{alt.Main!.Name}'.");
 			}
 
 			alt.MainId = playerId;
