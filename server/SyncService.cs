@@ -9,12 +9,6 @@ public class SyncService(
 	LootGodContext _db,
 	HttpClient _httpClient)
 {
-	private record Counter
-	{
-		public int Total { get; private set; }
-		public void Increment() => Total++;
-	}
-
 	public const int ManualItemMinId = 1_000_000_000;
 	public const int ManualItemMaxId = 1_001_000_000;
 	private const string ItemDataUrl = "https://items.sodeq.org/downloads/items.txt.gz";
@@ -37,9 +31,9 @@ public class SyncService(
 		ManualItemSync();
 	}
 
-	private async IAsyncEnumerable<string> FetchLines(string requestUri, [EnumeratorCancellation] CancellationToken cancellationToken)
+	private async IAsyncEnumerable<T> Fetch<T>(string requestUri, [EnumeratorCancellation] CancellationToken cancellationToken) where T : IParseOutput<T>
 	{
-		using var activity = source.StartActivity(nameof(FetchLines));
+		using var activity = source.StartActivity(nameof(Fetch));
 		using var response = await _httpClient.GetAsync(requestUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 		response.EnsureSuccessStatusCode();
 		await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -51,15 +45,14 @@ public class SyncService(
 
 		while (await reader.ReadLineAsync(cancellationToken) is string line)
 		{
-			yield return line;
+			yield return T.Parse(line);
 		}
 	}
 
 	private async IAsyncEnumerable<int?> GetSpellEffectIds([EnumeratorCancellation] CancellationToken cancellationToken)
 	{
-		await foreach (var line in FetchLines(ItemDataUrl, cancellationToken))
+		await foreach (var item in Fetch<ItemParseOutput>(ItemDataUrl, cancellationToken))
 		{
-			var item = new ItemParseOutput(line);
 			if (item.IsRaid)
 			{
 				yield return item.ProcEffect;
@@ -95,14 +88,13 @@ public class SyncService(
 
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
 
-		await foreach (var line in FetchLines(SpellDataUrl, token))
+		await foreach (var spell in Fetch<SpellParseOutput>(SpellDataUrl, token))
 		{
 			counter.Increment();
-			var output = new SpellParseOutput(line);
 
-			if (spellEffectIds.Contains(output.Id) || output.IsRaid)
+			if (spellEffectIds.Contains(spell.Id) || spell.IsRaid)
 			{
-				yield return new(output, now);
+				yield return new(spell, now);
 			}
 		}
 	}
@@ -113,10 +105,10 @@ public class SyncService(
 
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
 
-		await foreach (var line in FetchLines(ItemDataUrl, token))
+		await foreach (var item in Fetch<ItemParseOutput>(ItemDataUrl, token))
 		{
 			counter.Increment();
-			var item = new ItemParseOutput(line);
+
 			if (item.IsRaid)
 			{
 				yield return ItemMapper.ItemOutputMap(item, now);

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Frozen;
 using System.Security.Cryptography;
 
-public record ItemParseOutput
+public record ItemParseOutput : IParseOutput<ItemParseOutput>
 {
 	private static readonly FrozenSet<string> _t1Prefixes = [
 		"Diminished Shattered Dominion ",
@@ -49,6 +49,8 @@ public record ItemParseOutput
 		"Warmonger",
 	];
 	private static int? NullIfLessThanOne(int x) => x < 1 ? null : x;
+
+	public static ItemParseOutput Parse(string line) => new(line);
 
 	private readonly string _line;
 	private readonly string[] _data;

@@ -1,10 +1,12 @@
 ﻿using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
-public partial record SpellParseOutput
+public partial record SpellParseOutput : IParseOutput<SpellParseOutput>
 {
 	[GeneratedRegex(",(?=(?:[^\"]*\\\"[^\"]*\\\")*[^\\\"-]*$)")]
 	private static partial Regex SplitByCommaConsideringQuotes();
+
+	public static SpellParseOutput Parse(string line) => new(line);
 
 	private readonly string _line;
 	private readonly string[] _data;

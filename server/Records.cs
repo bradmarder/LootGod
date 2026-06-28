@@ -53,3 +53,14 @@ public class LogState : Dictionary<string, object?>
 		return string.Join(", ", values);
 	}
 }
+
+public record Counter
+{
+	public int Total { get; private set; }
+	public void Increment() => Total++;
+}
+
+public interface IParseOutput<T>
+{
+	abstract static T Parse(string line);
+}
