@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Runtime.CompilerServices;
 
 public class SyncService(
+	IOptions<DataUrlOptions> _dataUrl,
 	TimeProvider _time,
 	ILogger<SyncService> _logger,
 	LootGodContext _db,
@@ -11,8 +13,6 @@ public class SyncService(
 {
 	public const int ManualItemMinId = 1_000_000_000;
 	public const int ManualItemMaxId = 1_001_000_000;
-	private const string ItemDataUrl = "https://items.sodeq.org/downloads/items.txt.gz";
-	private const string SpellDataUrl = "https://lucy.allakhazam.com/static/spelldata/spelldata_Live_2025-12-03_05:26:16.txt.gz";
 
 	private static readonly ActivitySource source = new(nameof(SyncService));
 
@@ -51,7 +51,7 @@ public class SyncService(
 
 	private async IAsyncEnumerable<int?> GetSpellEffectIds([EnumeratorCancellation] CancellationToken cancellationToken)
 	{
-		await foreach (var item in Fetch<ItemParseOutput>(ItemDataUrl, cancellationToken))
+		await foreach (var item in Fetch<ItemParseOutput>(_dataUrl.Value.Items, cancellationToken))
 		{
 			if (item.IsRaid)
 			{
@@ -88,7 +88,7 @@ public class SyncService(
 
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
 
-		await foreach (var spell in Fetch<SpellParseOutput>(SpellDataUrl, token))
+		await foreach (var spell in Fetch<SpellParseOutput>(_dataUrl.Value.Spells, token))
 		{
 			counter.Increment();
 
@@ -105,7 +105,7 @@ public class SyncService(
 
 		var now = _time.GetUtcNow().ToUnixTimeSeconds();
 
-		await foreach (var item in Fetch<ItemParseOutput>(ItemDataUrl, token))
+		await foreach (var item in Fetch<ItemParseOutput>(_dataUrl.Value.Items, token))
 		{
 			counter.Increment();
 

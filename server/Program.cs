@@ -12,6 +12,7 @@ var builder = WebApplication.CreateSlimBuilder(args);
 var adminKey = builder.Configuration["ADMIN_KEY"]!;
 var source = builder.Configuration["DATABASE_URL"]!;
 var useSqliteMemory = builder.Configuration["USE_SQLITE_MEMORY"] == bool.TrueString;
+builder.Services.Configure<DataUrlOptions>(builder.Configuration.GetRequiredSection("DataUrl"));
 
 using var cts = new CancellationTokenSource();
 

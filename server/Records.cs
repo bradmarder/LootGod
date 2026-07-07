@@ -60,6 +60,12 @@ public record Counter
 	public void Increment() => Total++;
 }
 
+public record DataUrlOptions
+{
+	public string Items { get; init; } = null!;
+	public string Spells { get; init; } = null!;
+}
+
 public interface IParseOutput<T>
 {
 	abstract static T Parse(string line);

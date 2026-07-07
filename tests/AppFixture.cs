@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 public class AppFixture : IAsyncDisposable
 {
@@ -39,12 +40,11 @@ public class LootGodApplicationFactory(DateTimeOffset now) : WebApplicationFacto
 {
 	private static HttpResponseMessage HandlerFunc(HttpRequestMessage msg)
 	{
-		// the spellDataUrl has a `:` in the path which is automatically converted to '_' when downloading
-		var file = msg.RequestUri!.AbsolutePath
-			.Split('/')
-			.Last()
-			.Replace(':', '_');
-		var path = Path.Combine(AppContext.BaseDirectory, file);
+		var url = msg.RequestUri!.OriginalString;
+		var data = url.Contains("items") ? "items.txt.gz"
+			: url.Contains("spelldata") ? "spelldata_Live_2025-12-03_05_26_16.txt.gz"
+			: throw new NotImplementedException($"Unhandled URL: `{url}`");
+		var path = Path.Combine(AppContext.BaseDirectory, data);
 		var stream = File.OpenRead(path);
 
 		return new()
