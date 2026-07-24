@@ -20,6 +20,11 @@
 		}
 	}
 
+	extension(ILogger logger)
+	{
+		public IDisposable? BeginScope(LogState state) => logger.BeginScope(state);
+	}
+
 	private class Releaser(SemaphoreSlim _semaphore) : IDisposable
 	{
 		public void Dispose() => _semaphore.Release();

@@ -45,6 +45,7 @@ export default function Loots(props: IContext) {
 		});
 
 	const getText = (request: ILootRequest) => [
+		new Date(request.createdDate).toLocaleString(),
 		props.raidNight ? '' // raid night assumes main only
 			: request.isAlt ? 'alt'
 			: request.persona ? 'persona'

@@ -171,7 +171,7 @@ public class LootService(
 			.Where(x => x.Archived == null)
 			.OrderByDescending(x => x.SpellId != null)
 			.ThenBy(x => x.ItemId)
-			.ThenByDescending(x => x.AltName ?? x.Player.Name)
+			.ThenBy(x => x.CreatedDate)
 			.ProjectToDto()
 			.ToArray();
 	}

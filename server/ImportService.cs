@@ -23,10 +23,9 @@ public class ImportService(ILogger<LootService> _logger, LootGodContext _db, Loo
 			.ToUnixTimeSeconds();
 	}
 
-	private static async IAsyncEnumerable<GuildDumpPlayerOutput> ParseGuildDump(IFormFile file, [EnumeratorCancellation] CancellationToken token)
+	private static async IAsyncEnumerable<GuildDumpPlayerOutput> ParseGuildDump(Stream stream, [EnumeratorCancellation] CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(ParseGuildDump));
-		await using var stream = file.OpenReadStream();
 		using var sr = new StreamReader(stream);
 
 		while (await sr.ReadLineAsync(token) is string line)
@@ -88,12 +87,15 @@ public class ImportService(ILogger<LootService> _logger, LootGodContext _db, Loo
 		_logger.RaidDumpImportCompleted();
 	}
 
-	public async Task BulkImportRaidDump(IFormFile file, int offset, CancellationToken token)
+	public async Task BulkImportRaidDump(Stream stream, int offset, CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(BulkImportRaidDump));
-		await using var stream = file.OpenReadStream();
 		await using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
-		using var _ = _logger.BeginScope(new LogState("ZipEntryCount", zip.Entries.Count));
+		using var _ = _logger.BeginScope(new()
+		{
+			["ZipEntryCount"] = zip.Entries.Count,
+			["ZipArchiveComment"] = zip.Comment,
+		});
 
 		foreach (var entry in zip.Entries.OrderBy(x => x.LastWriteTime))
 		{
@@ -102,17 +104,11 @@ public class ImportService(ILogger<LootService> _logger, LootGodContext _db, Loo
 		}
 	}
 
-	public async Task ImportRaidDump(IFormFile file, int offset, CancellationToken token)
-	{
-		await using var stream = file.OpenReadStream();
-		await ImportRaidDump(stream, file.FileName, offset, token);
-	}
-
-	public async Task ImportGuildDump(IFormFile file, CancellationToken token)
+	public async Task ImportGuildDump(Stream stream, CancellationToken token)
 	{
 		using var activity = source.StartActivity(nameof(ImportGuildDump));
 		var guildId = _lootService.GetGuildId();
-		var dumps = await ParseGuildDump(file, token).ToListAsync(token);
+		var dumps = await ParseGuildDump(stream, token).ToListAsync(token);
 
 		activity?.AddEvent(new("Guild dump parsed"));
 

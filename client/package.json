@@ -11,7 +11,7 @@
 		"react-bootstrap": "2.10.10",
 		"react-dom": "19.2.7",
 		"sweetalert2": "11.26.25",
-		"typescript": "6.0.3"
+		"typescript": "7.0.2"
 	},
 	"source": "public/index.html",
 	"browserslist": "> 0.5%, last 2 versions, not dead",

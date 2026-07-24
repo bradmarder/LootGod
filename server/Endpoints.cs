@@ -643,12 +643,13 @@ public class Endpoints(string _adminKey)
 			};
 			using var _ = logger.BeginScope(state);
 
+			await using var stream = file.OpenReadStream();
 			var ext = Path.GetExtension(file.FileName);
 			var import = (ext, file.FileName) switch
 			{
-				(".zip", _) => importService.BulkImportRaidDump(file, offset, token),
-				(".txt", var x) when x.StartsWith("RaidRoster") => importService.ImportRaidDump(file, offset, token),
-				(".txt", var x) when x.Split('-').Length is 3 => importService.ImportGuildDump(file, token),
+				(".zip", _) => importService.BulkImportRaidDump(stream, offset, token),
+				(".txt", var x) when x.StartsWith("RaidRoster") => importService.ImportRaidDump(stream, file.FileName, offset, token),
+				(".txt", var x) when x.Split('-').Length is 3 => importService.ImportGuildDump(stream, token),
 				_ => Task.FromException(new ImportException($"Cannot determine import dump"))
 			};
 			try
